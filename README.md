@@ -1,6 +1,6 @@
 # golang-boilerplate
 
-This project includes a boilerplate structure for a golang project.
+This project includes a boilerplate structure for a golang project. It includes service and functions and is targetting to be deployed on GCP.
 
 ## Dev Env Setup
 
