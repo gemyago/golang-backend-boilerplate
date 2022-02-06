@@ -6,6 +6,9 @@ Includes the following:
 * Linter: [golangci](https://github.com/golangci/golangci-lint)
 * service boilerplate
   * uses [chi](https://github.com/go-chi/chi) router mainly due to it's simplicity, speed, context support and stdlib interfaces.
+* unit testing
+  * go standard approach - it's simple and powerful
+  * [testify/assert](https://github.com/stretchr/testify) - nicely extends standard assertions
 
 ## Dev Env Setup
 

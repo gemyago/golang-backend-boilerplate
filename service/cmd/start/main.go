@@ -29,7 +29,9 @@ func main() {
 
 	log.Print("Starting server on port 3000")
 	srv := newHttpServer("localhost:3000", r.ServeHTTP)
-	srv.ListenAndServe()
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func newHttpServer(addr string, handler http.HandlerFunc) *http.Server {

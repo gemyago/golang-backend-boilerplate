@@ -8,6 +8,6 @@ import (
 
 func NewRoutes() http.Handler {
 	r := chi.NewRouter()
-	r.Get("/ping", Ping)
+	r.Get("/ping", handlePing)
 	return r
 }
