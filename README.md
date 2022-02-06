@@ -1,6 +1,11 @@
 # golang-boilerplate
 
-This project includes a boilerplate structure for a golang project. It includes service and functions and is targetting to be deployed on GCP.
+This project includes a boilerplate structure for a golang project. 
+
+Includes the following:
+* Linter: [golangci](https://github.com/golangci/golangci-lint)
+* service boilerplate
+  * uses [chi](https://github.com/go-chi/chi) router mainly due to it's simplicity, speed, context support and stdlib interfaces.
 
 ## Dev Env Setup
 
