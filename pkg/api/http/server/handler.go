@@ -30,6 +30,7 @@ func NewRootHandler(deps routes.Deps) http.Handler {
 			WithSpanID:         true,
 			WithTraceID:        true,
 		}),
+		middleware.NewRecovererMiddleware(deps.RootLogger),
 	)
 	return chain(mux)
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 
 type HTTPServerParams struct {
 	dig.In
+
+	RootLogger *slog.Logger
 
 	// config
 	Port              int           `name:"config/http-server/port"`
@@ -31,5 +34,6 @@ func NewHTTPServer(params HTTPServerParams) *http.Server {
 		ReadTimeout:       params.ReadTimeout,
 		WriteTimeout:      params.WriteTimeout,
 		Handler:           params.Handler,
+		ErrorLog:          slog.NewLogLogger(params.RootLogger.Handler(), slog.LevelError),
 	}
 }

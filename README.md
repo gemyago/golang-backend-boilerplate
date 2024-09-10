@@ -2,7 +2,7 @@
 
 Basic golang boilerplate for backend projects.
 
-Key feature:
+Key features:
 * http.ServeMux is used as router (pluggable)
 * uber [dig](go.uber.org/dig) is used as DI framework
 * `slog` is used for logs
