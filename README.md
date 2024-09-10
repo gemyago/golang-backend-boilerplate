@@ -1,6 +1,27 @@
 # golang-backend-boilerplate
 
-Basic golang boilerplate project
+Basic golang boilerplate for backend projects.
+
+Key feature:
+* http.ServeMux is used as router (pluggable)
+* uber [dig](go.uber.org/dig) is used as DI framework
+* `slog` is used for logs
+* [slog-http](github.com/samber/slog-http) is used to produce access logs
+* [testify](github.com/stretchr/testify) and [mockery](github.com/vektra/mockery) are used for tests
+* [gow](github.com/mitranim/gow) is used to watch and restart tests or server
+
+To be added:
+* Docker
+* CI/CD (github actions)
+* Examples of APIs
+
+##  Project structure
+
+* [cmd/server](./cmd/server) is a main entrypoint to start API server. Dependencies wire-up is happening here.
+* [pkg/api/http](./pkg/api/http) - includes http routes related stuff
+  * [pkg/api/http/routes](./pkg/api/http/routes) - add new routes here and register in [handler.go](./pkg/api/http/server/handler.go)
+* `pkg/app` - is assumed to include application layer code (e.g business logic). Examples to be added.
+* `pkg/services` - lower level components are supposed to be here (e.g database access layer e.t.c). Examples to be added.
 
 ## Project Setup
 

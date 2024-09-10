@@ -11,8 +11,11 @@ import (
 
 func NewRootHandler(deps routes.Deps) http.Handler {
 	mux := http.NewServeMux()
+
+	// Routes registration
 	routes.MountHealthCheckRoutes(mux, deps)
 
+	// Router wire-up
 	chain := middleware.Chain(
 		middleware.NewTracingMiddleware(middleware.NewTracingMiddlewareCfg()),
 		sloghttp.NewWithConfig(deps.RootLogger, sloghttp.Config{
