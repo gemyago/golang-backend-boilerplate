@@ -15,7 +15,18 @@ To be added:
 * CI/CD (github actions)
 * Examples of APIs
 
-##  Project structure
+## Starting a new project
+
+* Clone the repo with a new name
+
+* Replace module name with desired one. Example:
+
+  ```bash
+  find . -name "*.go" -o -name "go.mod" | xargs sed -i 's|github.com/gemyago/golang-backend-boilerplate|<YOUR-MODULE-PATH>|g';
+  ```
+  Note: on osx you may have to install and use [gnu sed](https://formulae.brew.sh/formula/gnu-sed). In such case you may need to replace `sed` with `gsed` above.
+
+## Project structure
 
 * [cmd/server](./cmd/server) is a main entrypoint to start API server. Dependencies wire-up is happening here.
 * [pkg/api/http](./pkg/api/http) - includes http routes related stuff
