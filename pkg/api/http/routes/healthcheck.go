@@ -7,16 +7,20 @@ import (
 	"go.uber.org/dig"
 )
 
-type Deps struct {
+type HealthCheckDeps struct {
 	dig.In
 
 	RootLogger *slog.Logger
 }
 
-func MountHealthCheckRoutes(r router, deps Deps) {
-	log := deps.RootLogger.WithGroup("routes.healthCheck")
-	r.Handle("GET /health", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		WriteData(req, log, w, []byte("OK"))
-	}))
+func NewHealthCheckRoutesGroup(deps HealthCheckDeps) Group {
+	return Group{
+		Mount: MountFunc(func(r router) {
+			log := deps.RootLogger.WithGroup("routes.healthCheck")
+			r.Handle("GET /health", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				WriteData(req, log, w, []byte("OK"))
+			}))
+		}),
+	}
 }
