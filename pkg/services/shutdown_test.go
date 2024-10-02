@@ -18,14 +18,14 @@ func TestShutdownHooksRegistry(t *testing.T) {
 			MaxShutdownDuration: time.Duration(10+rand.IntN(1000)) * time.Second,
 		}
 	}
-	t.Run("RegisterShutdownHook", func(t *testing.T) {
+	t.Run("Register", func(t *testing.T) {
 		t.Run("should register hook", func(t *testing.T) {
 			deps := makeMockDeps()
 			registry := NewShutdownHooksRegistry(deps)
 			mockHook := NewMockShutdownHook(t)
-			registry.RegisterShutdownHook(mockHook)
+			registry.Register(mockHook)
 
-			registryImpl, _ := registry.(*shutdownHooksRegistry)
+			registryImpl, _ := registry.(*shutdownHooks)
 			assert.Len(t, registryImpl.hooks, 1)
 			assert.Equal(t, mockHook, registryImpl.hooks[0])
 		})
@@ -47,7 +47,7 @@ func TestShutdownHooksRegistry(t *testing.T) {
 			for _, hook := range hooks {
 				hook.EXPECT().Name().Return(faker.Word())
 				hook.EXPECT().Shutdown(ctx).Return(nil)
-				registry.RegisterShutdownHook(hook)
+				registry.Register(hook)
 			}
 
 			err := registry.PerformShutdown(ctx)

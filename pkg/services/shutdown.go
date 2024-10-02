@@ -19,22 +19,22 @@ type ShutdownHook interface {
 	Shutdown(ctx context.Context) error
 }
 
-type ShutdownHooksRegistry interface {
-	RegisterShutdownHook(hook ShutdownHook)
+type ShutdownHooks interface {
+	Register(hook ShutdownHook)
 	PerformShutdown(ctx context.Context) error
 }
 
-type shutdownHooksRegistry struct {
+type shutdownHooks struct {
 	logger *slog.Logger
 	hooks  []ShutdownHook
 	ShutdownHooksRegistryDeps
 }
 
-func (s *shutdownHooksRegistry) RegisterShutdownHook(hook ShutdownHook) {
+func (s *shutdownHooks) Register(hook ShutdownHook) {
 	s.hooks = append(s.hooks, hook)
 }
 
-func (s *shutdownHooksRegistry) PerformShutdown(ctx context.Context) error {
+func (s *shutdownHooks) PerformShutdown(ctx context.Context) error {
 	for _, hook := range s.hooks {
 		hookName := hook.Name()
 		s.logger.InfoContext(ctx, "Performing shutdown hook", slog.String("hook", hookName))
@@ -54,8 +54,8 @@ type ShutdownHooksRegistryDeps struct {
 	MaxShutdownDuration time.Duration `name:"config.shutdown.maxDuration"`
 }
 
-func NewShutdownHooksRegistry(deps ShutdownHooksRegistryDeps) ShutdownHooksRegistry {
-	return &shutdownHooksRegistry{
+func NewShutdownHooksRegistry(deps ShutdownHooksRegistryDeps) ShutdownHooks {
+	return &shutdownHooks{
 		logger: deps.RootLogger.WithGroup("shutdown"),
 	}
 }
