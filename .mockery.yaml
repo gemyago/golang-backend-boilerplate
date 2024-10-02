@@ -16,3 +16,4 @@ packages:
   github.com/gemyago/golang-backend-boilerplate/pkg/services:
     interfaces:
       ShutdownHook:
+      ShutdownHooks:
