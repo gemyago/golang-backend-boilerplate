@@ -1,0 +1,1568 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>server: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/gemyago/golang-backend-boilerplate/cmd/server/http_server.go (91.4%)</option>
+				
+				<option value="file1">github.com/gemyago/golang-backend-boilerplate/cmd/server/main.go (57.1%)</option>
+				
+				<option value="file2">github.com/gemyago/golang-backend-boilerplate/cmd/server/root.go (91.7%)</option>
+				
+				<option value="file3">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/middleware/chain.go (100.0%)</option>
+				
+				<option value="file4">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/middleware/recover.go (100.0%)</option>
+				
+				<option value="file5">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/middleware/tracing.go (100.0%)</option>
+				
+				<option value="file6">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes/healthcheck.go (100.0%)</option>
+				
+				<option value="file7">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes/routes.go (100.0%)</option>
+				
+				<option value="file8">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/server/handler.go (100.0%)</option>
+				
+				<option value="file9">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/server/server.go (100.0%)</option>
+				
+				<option value="file10">github.com/gemyago/golang-backend-boilerplate/pkg/app/register.go (100.0%)</option>
+				
+				<option value="file11">github.com/gemyago/golang-backend-boilerplate/pkg/di/dig.go (100.0%)</option>
+				
+				<option value="file12">github.com/gemyago/golang-backend-boilerplate/pkg/diag/attributes.go (100.0%)</option>
+				
+				<option value="file13">github.com/gemyago/golang-backend-boilerplate/pkg/diag/mock_slog_handler.go (34.7%)</option>
+				
+				<option value="file14">github.com/gemyago/golang-backend-boilerplate/pkg/diag/slog.go (93.1%)</option>
+				
+				<option value="file15">github.com/gemyago/golang-backend-boilerplate/pkg/diag/testing.go (75.0%)</option>
+				
+				<option value="file16">github.com/gemyago/golang-backend-boilerplate/pkg/services/mock_shutdown_hook.go (71.1%)</option>
+				
+				<option value="file17">github.com/gemyago/golang-backend-boilerplate/pkg/services/mock_shutdown_hooks.go (0.0%)</option>
+				
+				<option value="file18">github.com/gemyago/golang-backend-boilerplate/pkg/services/register.go (100.0%)</option>
+				
+				<option value="file19">github.com/gemyago/golang-backend-boilerplate/pkg/services/shutdown.go (100.0%)</option>
+				
+				<option value="file20">github.com/gemyago/golang-backend-boilerplate/pkg/services/testing.go (0.0%)</option>
+				
+				<option value="file21">github.com/gemyago/golang-backend-boilerplate/pkg/services/time.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "context"
+        "errors"
+        "log/slog"
+        "os/signal"
+        "time"
+
+        "github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes"
+        "github.com/gemyago/golang-backend-boilerplate/pkg/api/http/server"
+        "github.com/gemyago/golang-backend-boilerplate/pkg/di"
+        "github.com/gemyago/golang-backend-boilerplate/pkg/diag"
+        "github.com/gemyago/golang-backend-boilerplate/pkg/services"
+        "github.com/spf13/cobra"
+        "go.uber.org/dig"
+        "golang.org/x/sys/unix"
+)
+
+type runHTTPServerParams struct {
+        dig.In `ignore-unexported:"true"`
+
+        RootLogger *slog.Logger
+
+        HTTPServer *server.HTTPServer
+
+        services.ShutdownHooks
+
+        noop bool
+}
+
+func runHTTPServer(params runHTTPServerParams) error <span class="cov1" title="1">{
+        rootLogger := params.RootLogger
+        httpServer := params.HTTPServer
+        rootCtx := context.Background()
+
+        shutdown := func() error </span><span class="cov1" title="1">{
+                rootLogger.InfoContext(rootCtx, "Trying to shut down gracefully")
+                ts := time.Now()
+
+                err := params.ShutdownHooks.PerformShutdown(rootCtx)
+                if err != nil </span><span class="cov0" title="0">{
+                        rootLogger.ErrorContext(rootCtx, "Failed to shut down gracefully", diag.ErrAttr(err))
+                }</span>
+
+                <span class="cov1" title="1">rootLogger.InfoContext(rootCtx, "Service stopped",
+                        slog.Duration("duration", time.Since(ts)),
+                )
+                return err</span>
+        }
+
+        <span class="cov1" title="1">signalCtx, cancel := signal.NotifyContext(rootCtx, unix.SIGINT, unix.SIGTERM)
+        defer cancel()
+
+        startupErrors := make(chan error, 1)
+        go func() </span><span class="cov1" title="1">{
+                if params.noop </span><span class="cov1" title="1">{
+                        rootLogger.InfoContext(signalCtx, "NOOP: Starting http server")
+                        startupErrors &lt;- nil
+                        return
+                }</span>
+                <span class="cov0" title="0">startupErrors &lt;- httpServer.Start(signalCtx)</span>
+        }()
+
+        <span class="cov1" title="1">var startupErr error
+        select </span>{
+        case startupErr = &lt;-startupErrors:<span class="cov1" title="1">
+                if startupErr != nil </span><span class="cov0" title="0">{
+                        rootLogger.ErrorContext(rootCtx, "Server startup failed", "err", startupErr)
+                }</span>
+        case &lt;-signalCtx.Done():<span class="cov0" title="0"></span> // coverage-ignore
+                // We will attempt to shut down in both cases
+                // so doing it once on a next line
+        }
+        <span class="cov1" title="1">return errors.Join(startupErr, shutdown())</span>
+}
+
+func newHTTPServerCmd(container *dig.Container) *cobra.Command <span class="cov10" title="3">{
+        cmd := &amp;cobra.Command{
+                Use:   "http",
+                Short: "Command to start http server",
+        }
+        noop := false
+        cmd.Flags().BoolVar(
+                &amp;noop,
+                "noop",
+                false,
+                "Do not start. Just setup deps and exit. Useful for testing if setup is all working.",
+        )
+        cmd.PreRunE = func(_ *cobra.Command, _ []string) error </span><span class="cov1" title="1">{
+                return errors.Join(
+                        // http related dependencies
+                        routes.Register(container),
+                        di.ProvideAll(
+                                container,
+                                server.NewHTTPServer,
+                                server.NewRootHandler,
+                        ),
+                )
+        }</span>
+        <span class="cov10" title="3">cmd.RunE = func(_ *cobra.Command, _ []string) error </span><span class="cov1" title="1">{
+                return container.Invoke(func(params runHTTPServerParams) error </span><span class="cov1" title="1">{
+                        params.noop = noop
+                        return runHTTPServer(params)
+                }</span>)
+        }
+        <span class="cov10" title="3">return cmd</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
+
+import (
+        "os"
+
+        "github.com/spf13/cobra"
+        "go.uber.org/dig"
+)
+
+func setupCommands() *cobra.Command <span class="cov10" title="3">{
+        container := dig.New()
+        rootCmd := newRootCmd(container)
+        rootCmd.AddCommand(
+                newHTTPServerCmd(container),
+        )
+        return rootCmd
+}</span>
+
+func main() <span class="cov0" title="0">{ // coverage-ignore
+        rootCmd := setupCommands()
+        if err := rootCmd.Execute(); err != nil </span><span class="cov0" title="0">{
+                // cobra will print error to stdout
+                os.Exit(1)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package main
+
+import (
+        "errors"
+        "fmt"
+        "log/slog"
+
+        "github.com/gemyago/golang-backend-boilerplate/config"
+        "github.com/gemyago/golang-backend-boilerplate/pkg/app"
+        "github.com/gemyago/golang-backend-boilerplate/pkg/di"
+        "github.com/gemyago/golang-backend-boilerplate/pkg/diag"
+        "github.com/gemyago/golang-backend-boilerplate/pkg/services"
+        "github.com/spf13/cobra"
+        "go.uber.org/dig"
+)
+
+func newRootCmd(container *dig.Container) *cobra.Command <span class="cov10" title="3">{
+        logsOutputFile := ""
+        jsonLogs := false
+        env := ""
+
+        cmd := &amp;cobra.Command{
+                Use:   "server",
+                Short: "Command to start the server",
+        }
+        cmd.SilenceUsage = true
+        cmd.PersistentFlags().StringP("log-level", "l", "", "Produce logs with given level. Default is env specific.")
+        cmd.PersistentFlags().StringVar(
+                &amp;logsOutputFile,
+                "logs-file",
+                "",
+                "Produce logs to file instead of stdout. Used for tests only.",
+        )
+        cmd.PersistentFlags().BoolVar(
+                &amp;jsonLogs,
+                "json-logs",
+                false,
+                "Indicates if logs should be in JSON format or text (default)",
+        )
+        cmd.PersistentFlags().StringVarP(
+                &amp;env,
+                "env",
+                "e",
+                "",
+                "Env that the process is running in.",
+        )
+        cmd.PersistentPreRunE = func(_ *cobra.Command, _ []string) error </span><span class="cov10" title="3">{
+                cfg, err := config.Load(config.NewLoadOpts().WithEnv(env))
+                if err != nil </span><span class="cov1" title="1">{
+                        return err
+                }</span>
+
+                <span class="cov6" title="2">if err = cfg.BindPFlag("defaultLogLevel", cmd.PersistentFlags().Lookup("log-level")); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                <span class="cov6" title="2">var logLevel slog.Level
+                if err = logLevel.UnmarshalText([]byte(cfg.GetString("defaultLogLevel"))); err != nil </span><span class="cov1" title="1">{
+                        return err
+                }</span>
+
+                <span class="cov1" title="1">rootLogger := diag.SetupRootLogger(
+                        diag.NewRootLoggerOpts().
+                                WithJSONLogs(jsonLogs).
+                                WithLogLevel(logLevel).
+                                WithOptionalOutputFile(logsOutputFile),
+                )
+
+                err = errors.Join(
+                        config.Provide(container, cfg),
+
+                        // app layer
+                        app.Register(container),
+
+                        // services
+                        services.Register(container),
+
+                        di.ProvideAll(container,
+                                di.ProvideValue(rootLogger),
+                        ),
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to inject dependencies: %w", err)
+                }</span>
+
+                <span class="cov1" title="1">return nil</span>
+        }
+        <span class="cov10" title="3">return cmd</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package middleware
+
+import "net/http"
+
+type Middleware func(http.Handler) http.Handler
+
+func Chain(middlewares ...Middleware) func(http.Handler) http.Handler <span class="cov4" title="2">{
+        return func(h http.Handler) http.Handler </span><span class="cov4" title="2">{
+                for i := len(middlewares) - 1; i &gt;= 0; i-- </span><span class="cov10" title="6">{
+                        h = middlewares[i](h)
+                }</span>
+                <span class="cov4" title="2">return h</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package middleware
+
+import (
+        "errors"
+        "log/slog"
+        "net/http"
+        "runtime/debug"
+)
+
+// NewRecovererMiddleware creates a middleware that will handle panics
+// log them and respond with 500 to client. This should be the last in a chain.
+func NewRecovererMiddleware(rootLogger *slog.Logger) Middleware <span class="cov10" title="4">{
+        return func(next http.Handler) http.Handler </span><span class="cov10" title="4">{
+                fn := func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="3">{
+                        defer func() </span><span class="cov8" title="3">{
+                                if rvr := recover(); rvr != nil </span><span class="cov5" title="2">{
+                                        if err, ok := rvr.(error); ok &amp;&amp; errors.Is(err, http.ErrAbortHandler) </span><span class="cov1" title="1">{
+                                                rootLogger.InfoContext(r.Context(), "Request aborted")
+                                                return
+                                        }</span>
+                                        <span class="cov1" title="1">rootLogger.ErrorContext(
+                                                r.Context(),
+                                                "Unhandled panic",
+                                                slog.Any("panic", rvr),
+                                                slog.String("stack", string(debug.Stack())),
+                                        )
+                                        // TODO: Do not write header if already written
+                                        w.WriteHeader(http.StatusInternalServerError)</span>
+                                }
+                        }()
+
+                        <span class="cov8" title="3">next.ServeHTTP(w, r)</span>
+                }
+
+                <span class="cov10" title="4">return http.HandlerFunc(fn)</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package middleware
+
+import (
+        "log/slog"
+        "net/http"
+
+        "github.com/gemyago/golang-backend-boilerplate/pkg/diag"
+        "github.com/gofrs/uuid/v5"
+)
+
+type TracingMiddlewareCfg struct {
+        generateUUID func() string
+}
+
+func NewTracingMiddlewareCfg() *TracingMiddlewareCfg <span class="cov10" title="3">{
+        return &amp;TracingMiddlewareCfg{
+                generateUUID: func() string </span><span class="cov1" title="1">{
+                        return uuid.Must(uuid.NewV4()).String()
+                }</span>,
+        }
+}
+
+func NewTracingMiddleware(cfg *TracingMiddlewareCfg) Middleware <span class="cov10" title="3">{
+        generateUUID := cfg.generateUUID
+        return func(next http.Handler) http.Handler </span><span class="cov10" title="3">{
+                return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) </span><span class="cov6" title="2">{
+                        correlationID := req.Header.Get("x-correlation-id")
+                        if correlationID == "" </span><span class="cov1" title="1">{
+                                correlationID = generateUUID()
+                        }</span>
+                        <span class="cov6" title="2">logAttributes := diag.GetLogAttributesFromContext(req.Context())
+                        logAttributes.CorrelationID = slog.StringValue(correlationID)
+                        nextCtx := diag.SetLogAttributesToContext(req.Context(), logAttributes)
+                        next.ServeHTTP(w, req.WithContext(nextCtx))</span>
+                })
+        }
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package routes
+
+import (
+        "log/slog"
+        "net/http"
+
+        "go.uber.org/dig"
+)
+
+type HealthCheckDeps struct {
+        dig.In
+
+        RootLogger *slog.Logger
+}
+
+func NewHealthCheckRoutesGroup(deps HealthCheckDeps) Group <span class="cov10" title="2">{
+        return Group{
+                Mount: MountFunc(func(r router) </span><span class="cov10" title="2">{
+                        log := deps.RootLogger.WithGroup("routes.healthCheck")
+                        r.Handle("GET /health", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) </span><span class="cov1" title="1">{
+                                w.WriteHeader(http.StatusOK)
+                                WriteData(req, log, w, []byte("OK"))
+                        }</span>))
+                }),
+        }
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package routes
+
+import (
+        "io"
+        "log/slog"
+        "net/http"
+
+        "github.com/gemyago/golang-backend-boilerplate/pkg/di"
+        "github.com/gemyago/golang-backend-boilerplate/pkg/diag"
+        "go.uber.org/dig"
+)
+
+type router interface {
+        Handle(pattern string, handler http.Handler)
+}
+
+type Group struct {
+        dig.Out
+
+        Mount MountFunc `group:"server"`
+}
+
+type MountFunc func(r router)
+
+func WriteData(req *http.Request, log *slog.Logger, writer io.Writer, data []byte) <span class="cov10" title="3">{
+        if _, err := writer.Write(data); err != nil </span><span class="cov1" title="1">{
+                log.ErrorContext(req.Context(), "Failed to write response", diag.ErrAttr(err))
+        }</span>
+}
+
+func Register(container *dig.Container) error <span class="cov1" title="1">{
+        return di.ProvideAll(container,
+                // Register route groups here
+                NewHealthCheckRoutesGroup,
+        )
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package server
+
+import (
+        "log/slog"
+        "net/http"
+
+        "github.com/gemyago/golang-backend-boilerplate/pkg/api/http/middleware"
+        "github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes"
+        sloghttp "github.com/samber/slog-http"
+        "go.uber.org/dig"
+)
+
+type RootHandlerDeps struct {
+        dig.In
+
+        RootLogger *slog.Logger
+        Groups     []routes.MountFunc `group:"server"`
+}
+
+func NewRootHandler(deps RootHandlerDeps) http.Handler <span class="cov8" title="1">{
+        mux := http.NewServeMux()
+
+        for _, grp := range deps.Groups </span><span class="cov8" title="1">{
+                grp(mux)
+        }</span>
+
+        // Router wire-up
+        <span class="cov8" title="1">chain := middleware.Chain(
+                middleware.NewTracingMiddleware(middleware.NewTracingMiddlewareCfg()),
+                sloghttp.NewWithConfig(deps.RootLogger, sloghttp.Config{
+                        DefaultLevel:     slog.LevelInfo,
+                        ClientErrorLevel: slog.LevelWarn,
+                        ServerErrorLevel: slog.LevelError,
+
+                        WithUserAgent:      true,
+                        WithRequestID:      false, // We handle it ourselves (tracing middleware)
+                        WithRequestHeader:  true,
+                        WithResponseHeader: true,
+                        WithSpanID:         true,
+                        WithTraceID:        true,
+                }),
+                middleware.NewRecovererMiddleware(deps.RootLogger),
+        )
+        return chain(mux)</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package server
+
+import (
+        "context"
+        "fmt"
+        "log/slog"
+        "net/http"
+        "time"
+
+        "github.com/gemyago/golang-backend-boilerplate/pkg/services"
+        "go.uber.org/dig"
+)
+
+type HTTPServerDeps struct {
+        dig.In
+
+        RootLogger *slog.Logger
+
+        // config
+        Port              int           `name:"config.httpServer.port"`
+        IdleTimeout       time.Duration `name:"config.httpServer.idleTimeout"`
+        ReadHeaderTimeout time.Duration `name:"config.httpServer.readHeaderTimeout"`
+        ReadTimeout       time.Duration `name:"config.httpServer.readTimeout"`
+        WriteTimeout      time.Duration `name:"config.httpServer.writeTimeout"`
+
+        Handler http.Handler
+
+        // services
+        services.ShutdownHooks
+}
+
+type HTTPServer struct {
+        httpSrv *http.Server
+        deps    HTTPServerDeps
+        logger  *slog.Logger
+}
+
+func (srv *HTTPServer) Start(ctx context.Context) error <span class="cov1" title="1">{
+        srv.logger.InfoContext(ctx, "Starting http listener",
+                slog.String("addr", srv.httpSrv.Addr),
+                slog.String("idleTimeout", srv.deps.IdleTimeout.String()),
+                slog.String("readHeaderTimeout", srv.deps.ReadHeaderTimeout.String()),
+                slog.String("readTimeout", srv.deps.ReadTimeout.String()),
+                slog.String("writeTimeout", srv.deps.WriteTimeout.String()),
+        )
+        return srv.httpSrv.ListenAndServe()
+}</span>
+
+// NewHTTPServer constructor factory for general use *http.Server.
+func NewHTTPServer(deps HTTPServerDeps) *HTTPServer <span class="cov10" title="2">{
+        address := fmt.Sprintf("[::]:%d", deps.Port)
+        srv := &amp;http.Server{
+                Addr:              address,
+                IdleTimeout:       deps.IdleTimeout,
+                ReadHeaderTimeout: deps.ReadHeaderTimeout,
+                ReadTimeout:       deps.ReadTimeout,
+                WriteTimeout:      deps.WriteTimeout,
+                Handler:           deps.Handler,
+                ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
+        }
+
+        deps.ShutdownHooks.Register(
+                services.NewShutdownHookNoCtx("http-server", srv.Close),
+        )
+
+        return &amp;HTTPServer{
+                deps:    deps,
+                httpSrv: srv,
+                logger:  deps.RootLogger.WithGroup("http-server"),
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package app
+
+import (
+        "go.uber.org/dig"
+)
+
+func Register(_ *dig.Container) error <span class="cov8" title="1">{
+        // Nothing here yet
+        return nil
+}</span>
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package di
+
+import (
+        "fmt"
+
+        "go.uber.org/dig"
+)
+
+// Dig is used as DI toolkit https://pkg.go.dev/go.uber.org/dig
+// we are not creating any abstraction over it, but we do have a set of tools to make it easier to use
+
+type ConstructorWithOpts struct {
+        Constructor interface{}
+        Options     []dig.ProvideOption
+}
+
+func ProvideAll(container *dig.Container, providers ...interface{}) error <span class="cov7" title="11">{
+        for i, provider := range providers </span><span class="cov10" title="24">{
+                switch p := provider.(type) </span>{
+                case ConstructorWithOpts:<span class="cov8" title="13">
+                        if err := container.Provide(p.Constructor, p.Options...); err != nil </span><span class="cov1" title="1">{
+                                return fmt.Errorf("failed to provide %d-th dependency: %w", i, err)
+                        }</span>
+                default:<span class="cov7" title="11">
+                        if err := container.Provide(provider); err != nil </span><span class="cov1" title="1">{
+                                return fmt.Errorf("failed to provide %d-th dependency: %w", i, err)
+                        }</span>
+                }
+        }
+        <span class="cov7" title="9">return nil</span>
+}
+
+// ProvideValue will create a constructor (e.g func) from a given value.
+func ProvideValue[T any](val T, opts ...dig.ProvideOption) ConstructorWithOpts <span class="cov8" title="14">{
+        return ConstructorWithOpts{
+                Constructor: func() T </span><span class="cov7" title="11">{ return val }</span>,
+                Options:     opts,
+        }
+}
+
+// ProvideWithArg will create a constructor with a first arg explicitly provided
+// supposed return no error.
+func ProvideWithArg[
+        TArg any,
+        TConstructorArg any,
+        TRes any,
+](
+        arg TArg,
+        constructor func(arg TArg, cArg TConstructorArg) TRes,
+) func(TConstructorArg) TRes <span class="cov1" title="1">{
+        return func(cArg TConstructorArg) TRes </span><span class="cov1" title="1">{
+                return constructor(arg, cArg)
+        }</span>
+}
+
+// ProvideWithArgErr will create a constructor with a first arg explicitly provided
+// supposed return an error.
+func ProvideWithArgErr[
+        TArg any,
+        TConstructorArg any,
+        TDep any,
+](
+        arg TArg,
+        constructor func(arg TArg, cArg TConstructorArg) (TDep, error),
+) func(TConstructorArg) (TDep, error) <span class="cov1" title="1">{
+        return func(cArg TConstructorArg) (TDep, error) </span><span class="cov1" title="1">{
+                return constructor(arg, cArg)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package diag
+
+import "log/slog"
+
+func ErrAttr(err error) slog.Attr <span class="cov8" title="1">{
+        return slog.Any("err", err)
+}</span>
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">// Code generated by mockery. DO NOT EDIT.
+
+//go:build !release
+
+package diag
+
+import (
+        context "context"
+        slog "log/slog"
+
+        mock "github.com/stretchr/testify/mock"
+)
+
+// MockSlogHandler is an autogenerated mock type for the Handler type
+type MockSlogHandler struct {
+        mock.Mock
+}
+
+type MockSlogHandler_Expecter struct {
+        mock *mock.Mock
+}
+
+func (_m *MockSlogHandler) EXPECT() *MockSlogHandler_Expecter <span class="cov8" title="3">{
+        return &amp;MockSlogHandler_Expecter{mock: &amp;_m.Mock}
+}</span>
+
+// Enabled provides a mock function with given fields: _a0, _a1
+func (_m *MockSlogHandler) Enabled(_a0 context.Context, _a1 slog.Level) bool <span class="cov0" title="0">{
+        ret := _m.Called(_a0, _a1)
+
+        if len(ret) == 0 </span><span class="cov0" title="0">{
+                panic("no return value specified for Enabled")</span>
+        }
+
+        <span class="cov0" title="0">var r0 bool
+        if rf, ok := ret.Get(0).(func(context.Context, slog.Level) bool); ok </span><span class="cov0" title="0">{
+                r0 = rf(_a0, _a1)
+        }</span> else<span class="cov0" title="0"> {
+                r0 = ret.Get(0).(bool)
+        }</span>
+
+        <span class="cov0" title="0">return r0</span>
+}
+
+// MockSlogHandler_Enabled_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Enabled'
+type MockSlogHandler_Enabled_Call struct {
+        *mock.Call
+}
+
+// Enabled is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 slog.Level
+func (_e *MockSlogHandler_Expecter) Enabled(_a0 interface{}, _a1 interface{}) *MockSlogHandler_Enabled_Call <span class="cov0" title="0">{
+        return &amp;MockSlogHandler_Enabled_Call{Call: _e.mock.On("Enabled", _a0, _a1)}
+}</span>
+
+func (_c *MockSlogHandler_Enabled_Call) Run(run func(_a0 context.Context, _a1 slog.Level)) *MockSlogHandler_Enabled_Call <span class="cov0" title="0">{
+        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
+                run(args[0].(context.Context), args[1].(slog.Level))
+        }</span>)
+        <span class="cov0" title="0">return _c</span>
+}
+
+func (_c *MockSlogHandler_Enabled_Call) Return(_a0 bool) *MockSlogHandler_Enabled_Call <span class="cov0" title="0">{
+        _c.Call.Return(_a0)
+        return _c
+}</span>
+
+func (_c *MockSlogHandler_Enabled_Call) RunAndReturn(run func(context.Context, slog.Level) bool) *MockSlogHandler_Enabled_Call <span class="cov0" title="0">{
+        _c.Call.Return(run)
+        return _c
+}</span>
+
+// Handle provides a mock function with given fields: _a0, _a1
+func (_m *MockSlogHandler) Handle(_a0 context.Context, _a1 slog.Record) error <span class="cov5" title="2">{
+        ret := _m.Called(_a0, _a1)
+
+        if len(ret) == 0 </span><span class="cov0" title="0">{
+                panic("no return value specified for Handle")</span>
+        }
+
+        <span class="cov5" title="2">var r0 error
+        if rf, ok := ret.Get(0).(func(context.Context, slog.Record) error); ok </span><span class="cov0" title="0">{
+                r0 = rf(_a0, _a1)
+        }</span> else<span class="cov5" title="2"> {
+                r0 = ret.Error(0)
+        }</span>
+
+        <span class="cov5" title="2">return r0</span>
+}
+
+// MockSlogHandler_Handle_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Handle'
+type MockSlogHandler_Handle_Call struct {
+        *mock.Call
+}
+
+// Handle is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 slog.Record
+func (_e *MockSlogHandler_Expecter) Handle(_a0 interface{}, _a1 interface{}) *MockSlogHandler_Handle_Call <span class="cov5" title="2">{
+        return &amp;MockSlogHandler_Handle_Call{Call: _e.mock.On("Handle", _a0, _a1)}
+}</span>
+
+func (_c *MockSlogHandler_Handle_Call) Run(run func(_a0 context.Context, _a1 slog.Record)) *MockSlogHandler_Handle_Call <span class="cov0" title="0">{
+        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
+                run(args[0].(context.Context), args[1].(slog.Record))
+        }</span>)
+        <span class="cov0" title="0">return _c</span>
+}
+
+func (_c *MockSlogHandler_Handle_Call) Return(_a0 error) *MockSlogHandler_Handle_Call <span class="cov5" title="2">{
+        _c.Call.Return(_a0)
+        return _c
+}</span>
+
+func (_c *MockSlogHandler_Handle_Call) RunAndReturn(run func(context.Context, slog.Record) error) *MockSlogHandler_Handle_Call <span class="cov0" title="0">{
+        _c.Call.Return(run)
+        return _c
+}</span>
+
+// WithAttrs provides a mock function with given fields: attrs
+func (_m *MockSlogHandler) WithAttrs(attrs []slog.Attr) slog.Handler <span class="cov1" title="1">{
+        ret := _m.Called(attrs)
+
+        if len(ret) == 0 </span><span class="cov0" title="0">{
+                panic("no return value specified for WithAttrs")</span>
+        }
+
+        <span class="cov1" title="1">var r0 slog.Handler
+        if rf, ok := ret.Get(0).(func([]slog.Attr) slog.Handler); ok </span><span class="cov0" title="0">{
+                r0 = rf(attrs)
+        }</span> else<span class="cov1" title="1"> {
+                if ret.Get(0) != nil </span><span class="cov1" title="1">{
+                        r0 = ret.Get(0).(slog.Handler)
+                }</span>
+        }
+
+        <span class="cov1" title="1">return r0</span>
+}
+
+// MockSlogHandler_WithAttrs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithAttrs'
+type MockSlogHandler_WithAttrs_Call struct {
+        *mock.Call
+}
+
+// WithAttrs is a helper method to define mock.On call
+//   - attrs []slog.Attr
+func (_e *MockSlogHandler_Expecter) WithAttrs(attrs interface{}) *MockSlogHandler_WithAttrs_Call <span class="cov1" title="1">{
+        return &amp;MockSlogHandler_WithAttrs_Call{Call: _e.mock.On("WithAttrs", attrs)}
+}</span>
+
+func (_c *MockSlogHandler_WithAttrs_Call) Run(run func(attrs []slog.Attr)) *MockSlogHandler_WithAttrs_Call <span class="cov0" title="0">{
+        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
+                run(args[0].([]slog.Attr))
+        }</span>)
+        <span class="cov0" title="0">return _c</span>
+}
+
+func (_c *MockSlogHandler_WithAttrs_Call) Return(_a0 slog.Handler) *MockSlogHandler_WithAttrs_Call <span class="cov1" title="1">{
+        _c.Call.Return(_a0)
+        return _c
+}</span>
+
+func (_c *MockSlogHandler_WithAttrs_Call) RunAndReturn(run func([]slog.Attr) slog.Handler) *MockSlogHandler_WithAttrs_Call <span class="cov0" title="0">{
+        _c.Call.Return(run)
+        return _c
+}</span>
+
+// WithGroup provides a mock function with given fields: name
+func (_m *MockSlogHandler) WithGroup(name string) slog.Handler <span class="cov0" title="0">{
+        ret := _m.Called(name)
+
+        if len(ret) == 0 </span><span class="cov0" title="0">{
+                panic("no return value specified for WithGroup")</span>
+        }
+
+        <span class="cov0" title="0">var r0 slog.Handler
+        if rf, ok := ret.Get(0).(func(string) slog.Handler); ok </span><span class="cov0" title="0">{
+                r0 = rf(name)
+        }</span> else<span class="cov0" title="0"> {
+                if ret.Get(0) != nil </span><span class="cov0" title="0">{
+                        r0 = ret.Get(0).(slog.Handler)
+                }</span>
+        }
+
+        <span class="cov0" title="0">return r0</span>
+}
+
+// MockSlogHandler_WithGroup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithGroup'
+type MockSlogHandler_WithGroup_Call struct {
+        *mock.Call
+}
+
+// WithGroup is a helper method to define mock.On call
+//   - name string
+func (_e *MockSlogHandler_Expecter) WithGroup(name interface{}) *MockSlogHandler_WithGroup_Call <span class="cov0" title="0">{
+        return &amp;MockSlogHandler_WithGroup_Call{Call: _e.mock.On("WithGroup", name)}
+}</span>
+
+func (_c *MockSlogHandler_WithGroup_Call) Run(run func(name string)) *MockSlogHandler_WithGroup_Call <span class="cov0" title="0">{
+        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
+                run(args[0].(string))
+        }</span>)
+        <span class="cov0" title="0">return _c</span>
+}
+
+func (_c *MockSlogHandler_WithGroup_Call) Return(_a0 slog.Handler) *MockSlogHandler_WithGroup_Call <span class="cov0" title="0">{
+        _c.Call.Return(_a0)
+        return _c
+}</span>
+
+func (_c *MockSlogHandler_WithGroup_Call) RunAndReturn(run func(string) slog.Handler) *MockSlogHandler_WithGroup_Call <span class="cov0" title="0">{
+        _c.Call.Return(run)
+        return _c
+}</span>
+
+// NewMockSlogHandler creates a new instance of MockSlogHandler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewMockSlogHandler(t interface {
+        mock.TestingT
+        Cleanup(func())
+}) *MockSlogHandler <span class="cov10" title="4">{
+        mock := &amp;MockSlogHandler{}
+        mock.Mock.Test(t)
+
+        t.Cleanup(func() </span><span class="cov10" title="4">{ mock.AssertExpectations(t) }</span>)
+
+        <span class="cov10" title="4">return mock</span>
+}
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package diag
+
+import (
+        "context"
+        "io"
+        "log/slog"
+        "os"
+)
+
+type contextKey string
+
+const (
+        contextDiagAttrs = contextKey("diag.context-key.log-attribs")
+)
+
+type LogAttributes struct {
+        CorrelationID slog.Value
+}
+
+func GetLogAttributesFromContext(ctx context.Context) LogAttributes <span class="cov6" title="7">{
+        res, _ := ctx.Value(contextDiagAttrs).(LogAttributes)
+        return res
+}</span>
+
+func SetLogAttributesToContext(ctx context.Context, attributes LogAttributes) context.Context <span class="cov5" title="4">{
+        return context.WithValue(ctx, contextDiagAttrs, attributes)
+}</span>
+
+type diagLogHandler struct {
+        target slog.Handler
+}
+
+func (h *diagLogHandler) Enabled(ctx context.Context, lvl slog.Level) bool <span class="cov9" title="18">{
+        return h.target.Enabled(ctx, lvl)
+}</span>
+
+func (h *diagLogHandler) Handle(ctx context.Context, rec slog.Record) error <span class="cov10" title="20">{
+        if diagAttributes, ok := ctx.Value(contextDiagAttrs).(LogAttributes); ok </span><span class="cov1" title="1">{
+                rec.AddAttrs(
+                        slog.Attr{Key: "correlationId", Value: diagAttributes.CorrelationID},
+                )
+        }</span>
+
+        <span class="cov10" title="20">return h.target.Handle(ctx, rec)</span>
+}
+
+func (h *diagLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler <span class="cov8" title="11">{
+        return &amp;diagLogHandler{target: h.target.WithAttrs(attrs)}
+}</span>
+
+func (h *diagLogHandler) WithGroup(name string) slog.Handler <span class="cov7" title="10">{
+        // Using WithAttrs here since group will nest all the attributes
+        // inside of it (including correlationId), which makes it harder to
+        // filter logs by the correlationId.
+        // Consumers can use slog.Group if some attributes needs to be grouped
+        return h.WithAttrs([]slog.Attr{slog.String("group", name)})
+}</span>
+
+var _ slog.Handler = &amp;diagLogHandler{}
+
+type RootLoggerOpts struct {
+        output io.Writer
+
+        jsonLogs bool
+
+        // Info is default (zero)
+        logLevel slog.Level
+}
+
+func (opts *RootLoggerOpts) WithJSONLogs(value bool) *RootLoggerOpts <span class="cov3" title="2">{
+        opts.jsonLogs = value
+        return opts
+}</span>
+
+func (opts *RootLoggerOpts) WithLogLevel(logLevel slog.Level) *RootLoggerOpts <span class="cov3" title="2">{
+        opts.logLevel = logLevel
+        return opts
+}</span>
+
+func (opts *RootLoggerOpts) WithOutput(output io.Writer) *RootLoggerOpts <span class="cov7" title="10">{
+        opts.output = output
+        return opts
+}</span>
+
+func (opts *RootLoggerOpts) WithOptionalOutputFile(outputFile string) *RootLoggerOpts <span class="cov1" title="1">{
+        if outputFile == "" </span><span class="cov0" title="0">{
+                return opts
+        }</span>
+        <span class="cov1" title="1">f, err := os.OpenFile(outputFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o666)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov1" title="1">opts.output = f
+        return opts</span>
+}
+
+func NewRootLoggerOpts() *RootLoggerOpts <span class="cov8" title="13">{
+        return &amp;RootLoggerOpts{
+                output: os.Stdout,
+        }
+}</span>
+
+func SetupRootLogger(opts *RootLoggerOpts) *slog.Logger <span class="cov8" title="13">{
+        logHandlerOpts := &amp;slog.HandlerOptions{Level: opts.logLevel}
+        var logHandler slog.Handler
+        if opts.jsonLogs </span><span class="cov1" title="1">{
+                logHandler = slog.NewJSONHandler(opts.output, logHandlerOpts)
+        }</span> else<span class="cov8" title="12"> {
+                logHandler = slog.NewTextHandler(opts.output, logHandlerOpts)
+        }</span>
+        <span class="cov8" title="13">return slog.New(&amp;diagLogHandler{target: logHandler})</span>
+}
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">//go:build !release
+
+// TODO: generated code should include "//go:build !release" tags
+//go:generate mockgen -typed -package diag -destination mock_slog_handler_test.go log/slog Handler
+
+package diag
+
+import (
+        "fmt"
+        "log/slog"
+        "os"
+        "path/filepath"
+        "runtime"
+)
+
+// openTestLogFile will open a log file in a project root directory.
+func openTestLogFile() *os.File <span class="cov8" title="6">{
+        _, filename, _, _ := runtime.Caller(0) // Will be current file
+        testFilePath := filepath.Join(filename, "..", "..", "..", "test.log")
+        f, err := os.OpenFile(testFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o666)
+        if err != nil </span><span class="cov0" title="0">{
+                err = fmt.Errorf("fail to open log file %q for test logging: %w", testFilePath, err)
+                panic(err)</span>
+        }
+        <span class="cov8" title="6">return f</span>
+}
+
+var testOutput = openTestLogFile() //nolint:gochecknoglobals //it's ok for tests
+
+func RootTestLogger() *slog.Logger <span class="cov10" title="10">{
+        return SetupRootLogger(
+                NewRootLoggerOpts().WithOutput(testOutput),
+        )
+}</span>
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">// Code generated by mockery. DO NOT EDIT.
+
+//go:build !release
+
+package services
+
+import (
+        context "context"
+
+        mock "github.com/stretchr/testify/mock"
+)
+
+// MockShutdownHook is an autogenerated mock type for the ShutdownHook type
+type MockShutdownHook struct {
+        mock.Mock
+}
+
+type MockShutdownHook_Expecter struct {
+        mock *mock.Mock
+}
+
+func (_m *MockShutdownHook) EXPECT() *MockShutdownHook_Expecter <span class="cov10" title="18">{
+        return &amp;MockShutdownHook_Expecter{mock: &amp;_m.Mock}
+}</span>
+
+// Name provides a mock function with given fields:
+func (_m *MockShutdownHook) Name() string <span class="cov7" title="9">{
+        ret := _m.Called()
+
+        if len(ret) == 0 </span><span class="cov0" title="0">{
+                panic("no return value specified for Name")</span>
+        }
+
+        <span class="cov7" title="9">var r0 string
+        if rf, ok := ret.Get(0).(func() string); ok </span><span class="cov0" title="0">{
+                r0 = rf()
+        }</span> else<span class="cov7" title="9"> {
+                r0 = ret.Get(0).(string)
+        }</span>
+
+        <span class="cov7" title="9">return r0</span>
+}
+
+// MockShutdownHook_Name_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Name'
+type MockShutdownHook_Name_Call struct {
+        *mock.Call
+}
+
+// Name is a helper method to define mock.On call
+func (_e *MockShutdownHook_Expecter) Name() *MockShutdownHook_Name_Call <span class="cov7" title="9">{
+        return &amp;MockShutdownHook_Name_Call{Call: _e.mock.On("Name")}
+}</span>
+
+func (_c *MockShutdownHook_Name_Call) Run(run func()) *MockShutdownHook_Name_Call <span class="cov0" title="0">{
+        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
+                run()
+        }</span>)
+        <span class="cov0" title="0">return _c</span>
+}
+
+func (_c *MockShutdownHook_Name_Call) Return(_a0 string) *MockShutdownHook_Name_Call <span class="cov7" title="9">{
+        _c.Call.Return(_a0)
+        return _c
+}</span>
+
+func (_c *MockShutdownHook_Name_Call) RunAndReturn(run func() string) *MockShutdownHook_Name_Call <span class="cov0" title="0">{
+        _c.Call.Return(run)
+        return _c
+}</span>
+
+// Shutdown provides a mock function with given fields: ctx
+func (_m *MockShutdownHook) Shutdown(ctx context.Context) error <span class="cov7" title="9">{
+        ret := _m.Called(ctx)
+
+        if len(ret) == 0 </span><span class="cov0" title="0">{
+                panic("no return value specified for Shutdown")</span>
+        }
+
+        <span class="cov7" title="9">var r0 error
+        if rf, ok := ret.Get(0).(func(context.Context) error); ok </span><span class="cov4" title="3">{
+                r0 = rf(ctx)
+        }</span> else<span class="cov6" title="6"> {
+                r0 = ret.Error(0)
+        }</span>
+
+        <span class="cov6" title="6">return r0</span>
+}
+
+// MockShutdownHook_Shutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Shutdown'
+type MockShutdownHook_Shutdown_Call struct {
+        *mock.Call
+}
+
+// Shutdown is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockShutdownHook_Expecter) Shutdown(ctx interface{}) *MockShutdownHook_Shutdown_Call <span class="cov7" title="9">{
+        return &amp;MockShutdownHook_Shutdown_Call{Call: _e.mock.On("Shutdown", ctx)}
+}</span>
+
+func (_c *MockShutdownHook_Shutdown_Call) Run(run func(ctx context.Context)) *MockShutdownHook_Shutdown_Call <span class="cov0" title="0">{
+        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
+                run(args[0].(context.Context))
+        }</span>)
+        <span class="cov0" title="0">return _c</span>
+}
+
+func (_c *MockShutdownHook_Shutdown_Call) Return(_a0 error) *MockShutdownHook_Shutdown_Call <span class="cov6" title="6">{
+        _c.Call.Return(_a0)
+        return _c
+}</span>
+
+func (_c *MockShutdownHook_Shutdown_Call) RunAndReturn(run func(context.Context) error) *MockShutdownHook_Shutdown_Call <span class="cov4" title="3">{
+        _c.Call.Return(run)
+        return _c
+}</span>
+
+// NewMockShutdownHook creates a new instance of MockShutdownHook. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewMockShutdownHook(t interface {
+        mock.TestingT
+        Cleanup(func())
+}) *MockShutdownHook <span class="cov8" title="10">{
+        mock := &amp;MockShutdownHook{}
+        mock.Mock.Test(t)
+
+        t.Cleanup(func() </span><span class="cov8" title="10">{ mock.AssertExpectations(t) }</span>)
+
+        <span class="cov8" title="10">return mock</span>
+}
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">// Code generated by mockery. DO NOT EDIT.
+
+//go:build !release
+
+package services
+
+import (
+        context "context"
+
+        mock "github.com/stretchr/testify/mock"
+)
+
+// MockShutdownHooks is an autogenerated mock type for the ShutdownHooks type
+type MockShutdownHooks struct {
+        mock.Mock
+}
+
+type MockShutdownHooks_Expecter struct {
+        mock *mock.Mock
+}
+
+func (_m *MockShutdownHooks) EXPECT() *MockShutdownHooks_Expecter <span class="cov0" title="0">{
+        return &amp;MockShutdownHooks_Expecter{mock: &amp;_m.Mock}
+}</span>
+
+// PerformShutdown provides a mock function with given fields: ctx
+func (_m *MockShutdownHooks) PerformShutdown(ctx context.Context) error <span class="cov0" title="0">{
+        ret := _m.Called(ctx)
+
+        if len(ret) == 0 </span><span class="cov0" title="0">{
+                panic("no return value specified for PerformShutdown")</span>
+        }
+
+        <span class="cov0" title="0">var r0 error
+        if rf, ok := ret.Get(0).(func(context.Context) error); ok </span><span class="cov0" title="0">{
+                r0 = rf(ctx)
+        }</span> else<span class="cov0" title="0"> {
+                r0 = ret.Error(0)
+        }</span>
+
+        <span class="cov0" title="0">return r0</span>
+}
+
+// MockShutdownHooks_PerformShutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PerformShutdown'
+type MockShutdownHooks_PerformShutdown_Call struct {
+        *mock.Call
+}
+
+// PerformShutdown is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockShutdownHooks_Expecter) PerformShutdown(ctx interface{}) *MockShutdownHooks_PerformShutdown_Call <span class="cov0" title="0">{
+        return &amp;MockShutdownHooks_PerformShutdown_Call{Call: _e.mock.On("PerformShutdown", ctx)}
+}</span>
+
+func (_c *MockShutdownHooks_PerformShutdown_Call) Run(run func(ctx context.Context)) *MockShutdownHooks_PerformShutdown_Call <span class="cov0" title="0">{
+        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
+                run(args[0].(context.Context))
+        }</span>)
+        <span class="cov0" title="0">return _c</span>
+}
+
+func (_c *MockShutdownHooks_PerformShutdown_Call) Return(_a0 error) *MockShutdownHooks_PerformShutdown_Call <span class="cov0" title="0">{
+        _c.Call.Return(_a0)
+        return _c
+}</span>
+
+func (_c *MockShutdownHooks_PerformShutdown_Call) RunAndReturn(run func(context.Context) error) *MockShutdownHooks_PerformShutdown_Call <span class="cov0" title="0">{
+        _c.Call.Return(run)
+        return _c
+}</span>
+
+// Register provides a mock function with given fields: hook
+func (_m *MockShutdownHooks) Register(hook ShutdownHook) <span class="cov0" title="0">{
+        _m.Called(hook)
+}</span>
+
+// MockShutdownHooks_Register_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Register'
+type MockShutdownHooks_Register_Call struct {
+        *mock.Call
+}
+
+// Register is a helper method to define mock.On call
+//   - hook ShutdownHook
+func (_e *MockShutdownHooks_Expecter) Register(hook interface{}) *MockShutdownHooks_Register_Call <span class="cov0" title="0">{
+        return &amp;MockShutdownHooks_Register_Call{Call: _e.mock.On("Register", hook)}
+}</span>
+
+func (_c *MockShutdownHooks_Register_Call) Run(run func(hook ShutdownHook)) *MockShutdownHooks_Register_Call <span class="cov0" title="0">{
+        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
+                run(args[0].(ShutdownHook))
+        }</span>)
+        <span class="cov0" title="0">return _c</span>
+}
+
+func (_c *MockShutdownHooks_Register_Call) Return() *MockShutdownHooks_Register_Call <span class="cov0" title="0">{
+        _c.Call.Return()
+        return _c
+}</span>
+
+func (_c *MockShutdownHooks_Register_Call) RunAndReturn(run func(ShutdownHook)) *MockShutdownHooks_Register_Call <span class="cov0" title="0">{
+        _c.Call.Return(run)
+        return _c
+}</span>
+
+// NewMockShutdownHooks creates a new instance of MockShutdownHooks. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewMockShutdownHooks(t interface {
+        mock.TestingT
+        Cleanup(func())
+}) *MockShutdownHooks <span class="cov0" title="0">{
+        mock := &amp;MockShutdownHooks{}
+        mock.Mock.Test(t)
+
+        t.Cleanup(func() </span><span class="cov0" title="0">{ mock.AssertExpectations(t) }</span>)
+
+        <span class="cov0" title="0">return mock</span>
+}
+</pre>
+		
+		<pre class="file" id="file18" style="display: none">package services
+
+import (
+        "time"
+
+        "github.com/gemyago/golang-backend-boilerplate/pkg/di"
+        "go.uber.org/dig"
+)
+
+func Register(container *dig.Container) error <span class="cov8" title="1">{
+        return di.ProvideAll(container,
+                NewTimeProvider,
+                di.ProvideValue(time.NewTicker),
+                NewShutdownHooks,
+        )
+}</span>
+</pre>
+		
+		<pre class="file" id="file19" style="display: none">// Components in this packages are used to implement a graceful shutdown
+// of the application. This may include closing database connections, flushing pending
+// events to the queue, shutting down the http server, etc.
+
+package services
+
+import (
+        "context"
+        "fmt"
+        "log/slog"
+        "time"
+
+        "go.uber.org/dig"
+        "golang.org/x/sync/errgroup"
+)
+
+type ShutdownHook interface {
+        // Name returns the name of the shutdown hook
+        // for logging purposes
+        Name() string
+
+        // Shutdown is the function that will perform the cleanup
+        // on shutdown of the process
+        Shutdown(ctx context.Context) error
+}
+
+type shutdownHook struct {
+        name     string
+        shutdown func(ctx context.Context) error
+}
+
+func (s *shutdownHook) Name() string <span class="cov4" title="3">{
+        return s.name
+}</span>
+
+func (s *shutdownHook) Shutdown(ctx context.Context) error <span class="cov4" title="3">{
+        return s.shutdown(ctx)
+}</span>
+
+func NewShutdownHookNoCtx(name string, shutdown func() error) ShutdownHook <span class="cov4" title="3">{
+        return &amp;shutdownHook{
+                name: name,
+                shutdown: func(_ context.Context) error </span><span class="cov4" title="3">{
+                        return shutdown()
+                }</span>,
+        }
+}
+
+type ShutdownHooks interface {
+        Register(hook ShutdownHook)
+        PerformShutdown(ctx context.Context) error
+}
+
+type shutdownHooks struct {
+        logger *slog.Logger
+        hooks  []ShutdownHook
+        ShutdownHooksRegistryDeps
+}
+
+func (s *shutdownHooks) Register(hook ShutdownHook) <span class="cov10" title="12">{
+        s.hooks = append(s.hooks, hook)
+}</span>
+
+func (s *shutdownHooks) PerformShutdown(ctx context.Context) error <span class="cov6" title="5">{
+        ctx, cancel := context.WithTimeout(ctx, s.GracefulShutdownTimeout)
+        defer cancel()
+
+        errGrp := errgroup.Group{}
+        for _, hook := range s.hooks </span><span class="cov9" title="11">{
+                errGrp.Go(func() error </span><span class="cov9" title="11">{
+                        hookName := hook.Name()
+                        s.logger.InfoContext(ctx, fmt.Sprintf("Shutting down %s", hookName))
+                        if err := hook.Shutdown(ctx); err != nil </span><span class="cov4" title="3">{
+                                return fmt.Errorf("failed to perform shutdown hook %s: %w", hookName, err)
+                        }</span>
+                        <span class="cov6" title="5">return nil</span>
+                })
+        }
+
+        <span class="cov6" title="5">done := make(chan error)
+        go func() </span><span class="cov6" title="5">{
+                done &lt;- errGrp.Wait()
+        }</span>()
+
+        <span class="cov6" title="5">select </span>{
+        case err := &lt;-done:<span class="cov6" title="4">
+                return err</span>
+        case &lt;-ctx.Done():<span class="cov1" title="1">
+                return ctx.Err()</span>
+        }
+}
+
+type ShutdownHooksRegistryDeps struct {
+        dig.In
+
+        RootLogger *slog.Logger
+
+        // config
+        GracefulShutdownTimeout time.Duration `name:"config.gracefulShutdownTimeout"`
+}
+
+func NewShutdownHooks(deps ShutdownHooksRegistryDeps) ShutdownHooks <span class="cov7" title="6">{
+        return &amp;shutdownHooks{
+                logger:                    deps.RootLogger.WithGroup("shutdown"),
+                ShutdownHooksRegistryDeps: deps,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file20" style="display: none">//go:build !release
+
+package services
+
+import (
+        "time"
+
+        "github.com/go-faker/faker/v4"
+)
+
+type MockNow struct {
+        value time.Time
+}
+
+var _ TimeProvider = &amp;MockNow{}
+
+func (m *MockNow) SetValue(t time.Time) <span class="cov0" title="0">{
+        m.value = t
+}</span>
+
+func (m *MockNow) Now() time.Time <span class="cov0" title="0">{
+        return m.value
+}</span>
+
+func NewMockNow() *MockNow <span class="cov0" title="0">{
+        return &amp;MockNow{
+                value: time.UnixMilli(faker.RandomUnixTime()),
+        }
+}</span>
+
+func MockNowValue(p TimeProvider) time.Time <span class="cov0" title="0">{
+        mp, ok := p.(*MockNow)
+        if !ok </span><span class="cov0" title="0">{
+                panic("provided TimeProvider is not a MockNow")</span>
+        }
+        <span class="cov0" title="0">return mp.value</span>
+}
+</pre>
+		
+		<pre class="file" id="file21" style="display: none">package services
+
+import "time"
+
+type TimeProvider interface {
+        Now() time.Time
+}
+
+type timeProviderFn func() time.Time
+
+func (fn timeProviderFn) Now() time.Time <span class="cov8" title="1">{
+        return fn()
+}</span>
+
+func NewTimeProvider() TimeProvider <span class="cov8" title="1">{
+        return timeProviderFn(time.Now)
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
