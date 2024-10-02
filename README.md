@@ -1,5 +1,8 @@
 # golang-backend-boilerplate
 
+[![Test](https://github.com/gemyago/golang-backend-boilerplate/actions/workflows/run-tests.yml/badge.svg)](https://github.com/gemyago/golang-backend-boilerplate/actions/workflows/run-tests.yml)
+[![Coverage](https://raw.githubusercontent.com/gemyago/golang-backend-boilerplate/test-artifacts/coverage/golang-coverage.svg)](https://htmlpreview.github.io/?https://raw.githubusercontent.com/gemyago/golang-backend-boilerplate/test-artifacts/coverage/golang-coverage.html)
+
 Basic golang boilerplate for backend projects.
 
 Key features:
