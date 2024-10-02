@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"math/rand/v2"
 	"testing"
 	"time"
@@ -11,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestShutdownHooksRegistry(t *testing.T) {
+func TestShutdownHooks(t *testing.T) {
 	makeMockDeps := func() ShutdownHooksRegistryDeps {
 		return ShutdownHooksRegistryDeps{
 			RootLogger:          diag.RootTestLogger(),
@@ -52,6 +53,30 @@ func TestShutdownHooksRegistry(t *testing.T) {
 
 			err := registry.PerformShutdown(ctx)
 			assert.NoError(t, err)
+		})
+
+		t.Run("should return error if hook fails", func(t *testing.T) {
+			deps := makeMockDeps()
+			registry := NewShutdownHooksRegistry(deps)
+
+			hooks := []*MockShutdownHook{
+				NewMockShutdownHook(t),
+				NewMockShutdownHook(t),
+				NewMockShutdownHook(t),
+			}
+
+			ctx := context.Background()
+
+			wantErr := errors.New(faker.Sentence())
+
+			for _, hook := range hooks {
+				hook.EXPECT().Name().Return(faker.Word())
+				hook.EXPECT().Shutdown(ctx).Return(wantErr)
+				registry.Register(hook)
+			}
+
+			err := registry.PerformShutdown(ctx)
+			assert.ErrorIs(t, err, wantErr)
 		})
 	})
 }

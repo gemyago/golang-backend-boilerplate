@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.uber.org/dig"
+	"golang.org/x/sync/errgroup"
 )
 
 type ShutdownHook interface {
@@ -35,14 +36,18 @@ func (s *shutdownHooks) Register(hook ShutdownHook) {
 }
 
 func (s *shutdownHooks) PerformShutdown(ctx context.Context) error {
+	errGrp := errgroup.Group{}
 	for _, hook := range s.hooks {
-		hookName := hook.Name()
-		s.logger.InfoContext(ctx, "Performing shutdown hook", slog.String("hook", hookName))
-		if err := hook.Shutdown(ctx); err != nil {
-			return fmt.Errorf("failed to perform shutdown hook %s: %w", hookName, err)
-		}
+		errGrp.Go(func() error {
+			hookName := hook.Name()
+			s.logger.InfoContext(ctx, "Performing shutdown hook", slog.String("hook", hookName))
+			if err := hook.Shutdown(ctx); err != nil {
+				return fmt.Errorf("failed to perform shutdown hook %s: %w", hookName, err)
+			}
+			return nil
+		})
 	}
-	return nil
+	return errGrp.Wait()
 }
 
 type ShutdownHooksRegistryDeps struct {
