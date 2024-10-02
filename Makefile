@@ -40,12 +40,15 @@ test: $(go-test-coverage) $(cover_profile)
 	@echo "Test coverage report: $(shell realpath $(cover_html))"
 	$(go-test-coverage) --badge-file-name $(cover_dir)/coverage.svg --config .testcoverage.yaml --profile $(cover_profile)
 
-$(cover_dir)/coverage.%.blob-sha:
-	@gh api \
+$(cover_dir)/repo-name-with-owner.txt:
+	gh repo view --json nameWithOwner -q .nameWithOwner > $@
+
+$(cover_dir)/coverage.%.blob-sha: $(cover_dir)/repo-name-with-owner.txt
+	gh api \
 		--method GET \
 		-H "Accept: application/vnd.github+json" \
 		-H "X-GitHub-Api-Version: 2022-11-28" \
-		/repos/gemyago/word-of-wisdom-go/contents/coverage/golang-coverage.$*?ref=test-artifacts \
+		/repos/$(shell cat $(cover_dir)/repo-name-with-owner.txt)/contents/coverage/golang-coverage.$*?ref=test-artifacts \
 		| jq -jr '.sha' > $@
 
 $(cover_dir)/coverage.%.gh-cli-body.json: $(cover_dir)/coverage.% $(cover_dir)/coverage.%.blob-sha
@@ -68,16 +71,16 @@ $(cover_dir)/coverage.%.gh-cli-body.json: $(cover_dir)/coverage.% $(cover_dir)/c
 # git commit -m 'init'
 # git push origin test-artifacts
 .PHONY: push-test-artifacts
-push-test-artifacts: $(cover_dir)/coverage.svg.gh-cli-body.json $(cover_dir)/coverage.html.gh-cli-body.json
+push-test-artifacts: $(cover_dir)/coverage.svg.gh-cli-body.json $(cover_dir)/coverage.html.gh-cli-body.json $(cover_dir)/repo-name-with-owner.txt
 	@gh api \
 		--method PUT \
 		-H "Accept: application/vnd.github+json" \
 		-H "X-GitHub-Api-Version: 2022-11-28" \
-		/repos/gemyago/word-of-wisdom-go/contents/coverage/golang-coverage.svg \
+		/repos/$(shell cat $(cover_dir)/repo-name-with-owner.txt)/contents/coverage/golang-coverage.svg \
 		--input $(cover_dir)/coverage.svg.gh-cli-body.json
 	@gh api \
 		--method PUT \
 		-H "Accept: application/vnd.github+json" \
 		-H "X-GitHub-Api-Version: 2022-11-28" \
-		/repos/gemyago/word-of-wisdom-go/contents/coverage/golang-coverage.html \
+		/repos/$(shell cat $(cover_dir)/repo-name-with-owner.txt)/contents/coverage/golang-coverage.html \
 		--input $(cover_dir)/coverage.html.gh-cli-body.json
