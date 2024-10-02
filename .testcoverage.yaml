@@ -8,7 +8,7 @@ local-prefix: "github.com/gemyago/golang-backend-boilerplate"
 threshold:
   # (optional; default 0) 
   # The minimum coverage that each file should have
-  # file: 0
+  file: 90
 
   # (optional; default 0) 
   # The minimum coverage that each package should have

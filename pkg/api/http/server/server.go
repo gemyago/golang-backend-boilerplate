@@ -1,39 +1,71 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/gemyago/golang-backend-boilerplate/pkg/services"
 	"go.uber.org/dig"
 )
 
-type HTTPServerParams struct {
+type HTTPServerDeps struct {
 	dig.In
 
 	RootLogger *slog.Logger
 
 	// config
-	Port              int           `name:"config/http-server/port"`
-	IdleTimeout       time.Duration `name:"config/http-server/idle-timeout"`
-	ReadHeaderTimeout time.Duration `name:"config/http-server/read-header-timeout"`
-	ReadTimeout       time.Duration `name:"config/http-server/read-timeout"`
-	WriteTimeout      time.Duration `name:"config/http-server/write-timeout"`
+	Port              int           `name:"config.httpServer.port"`
+	IdleTimeout       time.Duration `name:"config.httpServer.idleTimeout"`
+	ReadHeaderTimeout time.Duration `name:"config.httpServer.readHeaderTimeout"`
+	ReadTimeout       time.Duration `name:"config.httpServer.readTimeout"`
+	WriteTimeout      time.Duration `name:"config.httpServer.writeTimeout"`
 
 	Handler http.Handler
+
+	// services
+	services.ShutdownHooks
+}
+
+type HTTPServer struct {
+	httpSrv *http.Server
+	deps    HTTPServerDeps
+	logger  *slog.Logger
+}
+
+func (srv *HTTPServer) Start(ctx context.Context) error {
+	srv.logger.InfoContext(ctx, "Starting http listener",
+		slog.String("addr", srv.httpSrv.Addr),
+		slog.String("idleTimeout", srv.deps.IdleTimeout.String()),
+		slog.String("readHeaderTimeout", srv.deps.ReadHeaderTimeout.String()),
+		slog.String("readTimeout", srv.deps.ReadTimeout.String()),
+		slog.String("writeTimeout", srv.deps.WriteTimeout.String()),
+	)
+	return srv.httpSrv.ListenAndServe()
 }
 
 // NewHTTPServer constructor factory for general use *http.Server.
-func NewHTTPServer(params HTTPServerParams) *http.Server {
-	address := fmt.Sprintf("[::]:%d", params.Port)
-	return &http.Server{
+func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
+	address := fmt.Sprintf("[::]:%d", deps.Port)
+	srv := &http.Server{
 		Addr:              address,
-		IdleTimeout:       params.IdleTimeout,
-		ReadHeaderTimeout: params.ReadHeaderTimeout,
-		ReadTimeout:       params.ReadTimeout,
-		WriteTimeout:      params.WriteTimeout,
-		Handler:           params.Handler,
-		ErrorLog:          slog.NewLogLogger(params.RootLogger.Handler(), slog.LevelError),
+		IdleTimeout:       deps.IdleTimeout,
+		ReadHeaderTimeout: deps.ReadHeaderTimeout,
+		ReadTimeout:       deps.ReadTimeout,
+		WriteTimeout:      deps.WriteTimeout,
+		Handler:           deps.Handler,
+		ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
+	}
+
+	deps.ShutdownHooks.Register(
+		services.NewShutdownHookNoCtx("http-server", srv.Close),
+	)
+
+	return &HTTPServer{
+		deps:    deps,
+		httpSrv: srv,
+		logger:  deps.RootLogger.WithGroup("http-server"),
 	}
 }

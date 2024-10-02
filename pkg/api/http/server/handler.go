@@ -7,13 +7,22 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/pkg/api/http/middleware"
 	"github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes"
 	sloghttp "github.com/samber/slog-http"
+	"go.uber.org/dig"
 )
 
-func NewRootHandler(deps routes.Deps) http.Handler {
+type RootHandlerDeps struct {
+	dig.In
+
+	RootLogger *slog.Logger
+	Groups     []routes.MountFunc `group:"server"`
+}
+
+func NewRootHandler(deps RootHandlerDeps) http.Handler {
 	mux := http.NewServeMux()
 
-	// Routes registration
-	routes.MountHealthCheckRoutes(mux, deps)
+	for _, grp := range deps.Groups {
+		grp(mux)
+	}
 
 	// Router wire-up
 	chain := middleware.Chain(

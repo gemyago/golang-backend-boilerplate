@@ -13,7 +13,7 @@ import (
 
 func TestGetLogAttributesFromContext(t *testing.T) {
 	t.Run("return empty value if no attributes", func(t *testing.T) {
-		got := GetLogAttributesFromContext(context.TODO())
+		got := GetLogAttributesFromContext(context.Background())
 		assert.Equal(t, LogAttributes{}, got)
 	})
 	t.Run("return actual value", func(t *testing.T) {
@@ -40,7 +40,10 @@ func TestDiagSlogHandler(t *testing.T) {
 			attrs := []slog.Attr{slog.String(faker.Word(), faker.Word())}
 
 			target.EXPECT().WithAttrs(attrs).Return(mockResult)
-			assert.Equal(t, mockResult, handler.WithAttrs(attrs))
+			got, ok := handler.WithAttrs(attrs).(*diagLogHandler)
+			assert.True(t, ok)
+
+			assert.Equal(t, mockResult, got.target)
 		})
 	})
 	t.Run("Handle", func(t *testing.T) {

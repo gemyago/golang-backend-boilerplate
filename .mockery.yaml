@@ -13,3 +13,7 @@ packages:
           dir: 'pkg/diag'
           filename: "mock_slog_handler.go"
           mockname: MockSlogHandler
+  github.com/gemyago/golang-backend-boilerplate/pkg/services:
+    interfaces:
+      ShutdownHook:
+      ShutdownHooks:

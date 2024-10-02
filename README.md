@@ -1,5 +1,8 @@
 # golang-backend-boilerplate
 
+[![Tests](https://github.com/gemyago/golang-backend-boilerplate/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/gemyago/golang-backend-boilerplate/actions/workflows/run-tests.yml)
+[![Coverage](https://raw.githubusercontent.com/gemyago/golang-backend-boilerplate/test-artifacts/coverage/golang-coverage.svg)](https://htmlpreview.github.io/?https://raw.githubusercontent.com/gemyago/golang-backend-boilerplate/test-artifacts/coverage/golang-coverage.html)
+
 Basic golang boilerplate for backend projects.
 
 Key features:
@@ -61,21 +64,21 @@ make test
 Run specific tests:
 ```bash
 # Run once
-go test -v ./service/pkg/api/http/v1controllers/ --run TestHealthCheckController
+go test -v ./pkg/api/http/routes/ --run TestHealthCheckRoutes
 
 # Run same test multiple times
 # This is useful for tests that are flaky
-go test -v -count=5 ./service/pkg/api/http/v1controllers/ --run TestHealthCheckController
+go test -v -count=5 ./pkg/api/http/routes/ --run TestHealthCheckRoutes
 
 # Run and watch
-gow test -v ./service/pkg/api/http/v1controllers/ --run TestHealthCheckController
+gow test -v ./pkg/api/http/routes/ --run TestHealthCheckRoutes
 ```
 ### Run local API server:
 
 ```bash
 # Regular mode
-go run ./cmd/service/
+go run ./cmd/server/
 
 # Watch mode (double ^C to stop)
-gow run ./cmd/service/
+gow run ./cmd/server/
 ```

@@ -11,17 +11,17 @@ import (
 
 func TestHealthCheckRoutes(t *testing.T) {
 	type mockDeps struct {
-		Deps
+		HealthCheckDeps
 		Mux *http.ServeMux
 	}
 	makeDeps := func() mockDeps {
 		mux := http.NewServeMux()
-		deps := Deps{
+		deps := HealthCheckDeps{
 			RootLogger: diag.RootTestLogger(),
 		}
 		return mockDeps{
-			Deps: deps,
-			Mux:  mux,
+			HealthCheckDeps: deps,
+			Mux:             mux,
 		}
 	}
 
@@ -30,7 +30,7 @@ func TestHealthCheckRoutes(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
 			w := httptest.NewRecorder()
 			deps := makeDeps()
-			MountHealthCheckRoutes(deps.Mux, deps.Deps)
+			NewHealthCheckRoutesGroup(deps.HealthCheckDeps).Mount(deps.Mux)
 			deps.Mux.ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusOK, w.Code)
