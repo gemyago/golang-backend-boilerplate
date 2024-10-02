@@ -39,6 +39,8 @@ func (p configValueProvider) asDuration() di.ConstructorWithOpts {
 
 func Provide(container *dig.Container, cfg *viper.Viper) error {
 	return di.ProvideAll(container,
+		provideConfigValue(cfg, "gracefulShutdownTimeout").asDuration(),
+
 		// http server config
 		provideConfigValue(cfg, "httpServer.port").asInt(),
 		provideConfigValue(cfg, "httpServer.idleTimeout").asDuration(),

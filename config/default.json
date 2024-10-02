@@ -1,5 +1,6 @@
 {
   "defaultLogLevel": "INFO",
+  "gracefulShutdownTimeout": "10s",
   "httpServer": {
     "port": 8080,
     "idleTimeout": "60s",

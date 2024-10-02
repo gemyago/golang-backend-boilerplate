@@ -1,16 +1,17 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/pkg/di"
+	"github.com/gemyago/golang-backend-boilerplate/pkg/services"
 	"go.uber.org/dig"
 )
 
-type HTTPServerParams struct {
+type HTTPServerDeps struct {
 	dig.In
 
 	RootLogger *slog.Logger
@@ -23,30 +24,48 @@ type HTTPServerParams struct {
 	WriteTimeout      time.Duration `name:"config.httpServer.writeTimeout"`
 
 	Handler http.Handler
+
+	// services
+	services.ShutdownHooks
 }
 
-type HTTPServerOut struct {
-	dig.Out
+type HTTPServer struct {
+	httpSrv *http.Server
+	deps    HTTPServerDeps
+	logger  *slog.Logger
+}
 
-	Server          *http.Server
-	ShutdownHandler di.ProcessShutdownHandler `group:"shutdown-handlers"`
+func (srv *HTTPServer) Start(ctx context.Context) error {
+	srv.logger.InfoContext(ctx, "Starting http listener",
+		slog.String("addr", srv.httpSrv.Addr),
+		slog.String("idleTimeout", srv.deps.IdleTimeout.String()),
+		slog.String("readHeaderTimeout", srv.deps.ReadHeaderTimeout.String()),
+		slog.String("readTimeout", srv.deps.ReadTimeout.String()),
+		slog.String("writeTimeout", srv.deps.WriteTimeout.String()),
+	)
+	return srv.httpSrv.ListenAndServe()
 }
 
 // NewHTTPServer constructor factory for general use *http.Server.
-func NewHTTPServer(params HTTPServerParams) HTTPServerOut {
-	address := fmt.Sprintf("[::]:%d", params.Port)
+func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
+	address := fmt.Sprintf("[::]:%d", deps.Port)
 	srv := &http.Server{
 		Addr:              address,
-		IdleTimeout:       params.IdleTimeout,
-		ReadHeaderTimeout: params.ReadHeaderTimeout,
-		ReadTimeout:       params.ReadTimeout,
-		WriteTimeout:      params.WriteTimeout,
-		Handler:           params.Handler,
-		ErrorLog:          slog.NewLogLogger(params.RootLogger.Handler(), slog.LevelError),
+		IdleTimeout:       deps.IdleTimeout,
+		ReadHeaderTimeout: deps.ReadHeaderTimeout,
+		ReadTimeout:       deps.ReadTimeout,
+		WriteTimeout:      deps.WriteTimeout,
+		Handler:           deps.Handler,
+		ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
 	}
 
-	return HTTPServerOut{
-		Server:          srv,
-		ShutdownHandler: di.MakeProcessShutdownHandler("HTTP Server", srv.Shutdown),
+	deps.ShutdownHooks.Register(
+		services.NewShutdownHookNoCtx("http-server", srv.Close),
+	)
+
+	return &HTTPServer{
+		deps:    deps,
+		httpSrv: srv,
+		logger:  deps.RootLogger.WithGroup("http-server"),
 	}
 }

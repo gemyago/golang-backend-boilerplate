@@ -17,14 +17,30 @@ import (
 func TestShutdownHooks(t *testing.T) {
 	makeMockDeps := func() ShutdownHooksRegistryDeps {
 		return ShutdownHooksRegistryDeps{
-			RootLogger:          diag.RootTestLogger(),
-			MaxShutdownDuration: time.Duration(10+rand.IntN(1000)) * time.Second,
+			RootLogger:              diag.RootTestLogger(),
+			GracefulShutdownTimeout: time.Duration(10+rand.IntN(1000)) * time.Second,
 		}
 	}
+	t.Run("NewShutdownHookNoCtx", func(t *testing.T) {
+		t.Run("should support a function without ctx", func(t *testing.T) {
+			wantErr := errors.New(faker.Sentence())
+			hookPerformed := false
+			wantName := faker.Word()
+			hook := NewShutdownHookNoCtx(wantName, func() error {
+				hookPerformed = true
+				return wantErr
+			})
+			gotRes := hook.Shutdown(context.Background())
+			assert.Equal(t, wantName, hook.Name())
+			assert.True(t, hookPerformed)
+			assert.Equal(t, wantErr, gotRes)
+		})
+	})
+
 	t.Run("Register", func(t *testing.T) {
 		t.Run("should register hook", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewShutdownHooksRegistry(deps)
+			registry := NewShutdownHooks(deps)
 			mockHook := NewMockShutdownHook(t)
 			registry.Register(mockHook)
 
@@ -37,7 +53,7 @@ func TestShutdownHooks(t *testing.T) {
 	t.Run("PerformShutdown", func(t *testing.T) {
 		t.Run("should call all hooks", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewShutdownHooksRegistry(deps)
+			registry := NewShutdownHooks(deps)
 
 			hooks := []*MockShutdownHook{
 				NewMockShutdownHook(t),
@@ -59,7 +75,7 @@ func TestShutdownHooks(t *testing.T) {
 
 		t.Run("should return error if hook fails", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewShutdownHooksRegistry(deps)
+			registry := NewShutdownHooks(deps)
 
 			hooks := []*MockShutdownHook{
 				NewMockShutdownHook(t),
@@ -83,8 +99,8 @@ func TestShutdownHooks(t *testing.T) {
 
 		t.Run("should with deadline", func(t *testing.T) {
 			deps := makeMockDeps()
-			deps.MaxShutdownDuration = 100 * time.Millisecond
-			registry := NewShutdownHooksRegistry(deps)
+			deps.GracefulShutdownTimeout = 100 * time.Millisecond
+			registry := NewShutdownHooks(deps)
 
 			hooks := []*MockShutdownHook{
 				NewMockShutdownHook(t),
@@ -99,7 +115,7 @@ func TestShutdownHooks(t *testing.T) {
 				hook.EXPECT().Name().Return(faker.Word())
 				hook.EXPECT().Shutdown(mock.AnythingOfType("*context.timerCtx")).RunAndReturn(
 					func(context.Context) error {
-						time.Sleep(deps.MaxShutdownDuration * 3)
+						time.Sleep(deps.GracefulShutdownTimeout * 3)
 						hookExitCount++
 						return nil
 					},

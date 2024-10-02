@@ -3,18 +3,17 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"os/signal"
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes"
 	"github.com/gemyago/golang-backend-boilerplate/pkg/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/pkg/di"
+	"github.com/gemyago/golang-backend-boilerplate/pkg/diag"
+	"github.com/gemyago/golang-backend-boilerplate/pkg/services"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
-	"golang.org/x/sync/errgroup"
 	"golang.org/x/sys/unix"
 )
 
@@ -23,9 +22,9 @@ type runHTTPServerParams struct {
 
 	RootLogger *slog.Logger
 
-	HTTPServer *http.Server
+	HTTPServer *server.HTTPServer
 
-	ShutdownHandlers []di.ProcessShutdownHandler `group:"shutdown-handlers"`
+	services.ShutdownHooks
 
 	noop bool
 }
@@ -35,26 +34,19 @@ func runHTTPServer(params runHTTPServerParams) error {
 	httpServer := params.HTTPServer
 	rootCtx := context.Background()
 
-	shutdown := func() {
+	shutdown := func() error {
 		rootLogger.InfoContext(rootCtx, "Trying to shut down gracefully")
 		ts := time.Now()
 
-		grp := errgroup.Group{}
-		for _, h := range params.ShutdownHandlers {
-			grp.Go(func() error {
-				rootLogger.InfoContext(rootCtx, fmt.Sprintf("Shutting down %s", h.Name))
-				return h.Shutdown(rootCtx)
-			})
-		}
-
-		// Not much we can do at this stage, so just logging
-		if err := grp.Wait(); err != nil {
-			rootLogger.ErrorContext(rootCtx, "Graceful shutdown failed", "err", err)
+		err := params.ShutdownHooks.PerformShutdown(rootCtx)
+		if err != nil {
+			rootLogger.ErrorContext(rootCtx, "Failed to shut down gracefully", diag.ErrAttr(err))
 		}
 
 		rootLogger.InfoContext(rootCtx, "Service stopped",
 			slog.Duration("duration", time.Since(ts)),
 		)
+		return err
 	}
 
 	signalCtx, cancel := signal.NotifyContext(rootCtx, unix.SIGINT, unix.SIGTERM)
@@ -62,34 +54,25 @@ func runHTTPServer(params runHTTPServerParams) error {
 
 	startupErrors := make(chan error, 1)
 	go func() {
-		rootLogger.InfoContext(signalCtx, "Starting http listener",
-			slog.String("addr", httpServer.Addr),
-			slog.String("idleTimeout", httpServer.IdleTimeout.String()),
-			slog.String("readHeaderTimeout", httpServer.ReadHeaderTimeout.String()),
-			slog.String("readTimeout", httpServer.ReadTimeout.String()),
-			slog.String("writeTimeout", httpServer.WriteTimeout.String()),
-		)
 		if params.noop {
-			rootLogger.InfoContext(signalCtx, "NOOP: Exiting now")
+			rootLogger.InfoContext(signalCtx, "NOOP: Starting http server")
 			startupErrors <- nil
 			return
 		}
-		startupErrors <- httpServer.ListenAndServe()
+		startupErrors <- httpServer.Start(signalCtx)
 	}()
 
 	var startupErr error
 	select {
 	case startupErr = <-startupErrors:
 		if startupErr != nil {
-			rootLogger.ErrorContext(rootCtx, "Server error", "err", startupErr)
-		} else {
-			rootLogger.InfoContext(rootCtx, "Server stopped")
+			rootLogger.ErrorContext(rootCtx, "Server startup failed", "err", startupErr)
 		}
-		shutdown()
 	case <-signalCtx.Done(): // coverage-ignore
-		shutdown()
+		// We will attempt to shut down in both cases
+		// so doing it once on a next line
 	}
-	return startupErr
+	return errors.Join(startupErr, shutdown())
 }
 
 func newHTTPServerCmd(container *dig.Container) *cobra.Command {
