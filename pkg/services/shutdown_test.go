@@ -10,6 +10,8 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/pkg/diag"
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestShutdownHooks(t *testing.T) {
@@ -47,7 +49,7 @@ func TestShutdownHooks(t *testing.T) {
 
 			for _, hook := range hooks {
 				hook.EXPECT().Name().Return(faker.Word())
-				hook.EXPECT().Shutdown(ctx).Return(nil)
+				hook.EXPECT().Shutdown(mock.AnythingOfType("*context.timerCtx")).Return(nil)
 				registry.Register(hook)
 			}
 
@@ -71,12 +73,43 @@ func TestShutdownHooks(t *testing.T) {
 
 			for _, hook := range hooks {
 				hook.EXPECT().Name().Return(faker.Word())
-				hook.EXPECT().Shutdown(ctx).Return(wantErr)
+				hook.EXPECT().Shutdown(mock.AnythingOfType("*context.timerCtx")).Return(wantErr)
 				registry.Register(hook)
 			}
 
 			err := registry.PerformShutdown(ctx)
 			assert.ErrorIs(t, err, wantErr)
+		})
+
+		t.Run("should with deadline", func(t *testing.T) {
+			deps := makeMockDeps()
+			deps.MaxShutdownDuration = 100 * time.Millisecond
+			registry := NewShutdownHooksRegistry(deps)
+
+			hooks := []*MockShutdownHook{
+				NewMockShutdownHook(t),
+				NewMockShutdownHook(t),
+				NewMockShutdownHook(t),
+			}
+
+			ctx := context.Background()
+
+			hookExitCount := 0
+			for _, hook := range hooks {
+				hook.EXPECT().Name().Return(faker.Word())
+				hook.EXPECT().Shutdown(mock.AnythingOfType("*context.timerCtx")).RunAndReturn(
+					func(context.Context) error {
+						time.Sleep(deps.MaxShutdownDuration * 3)
+						hookExitCount++
+						return nil
+					},
+				)
+				registry.Register(hook)
+			}
+
+			err := registry.PerformShutdown(ctx)
+			require.ErrorIs(t, err, context.DeadlineExceeded)
+			assert.Equal(t, 0, hookExitCount)
 		})
 	})
 }

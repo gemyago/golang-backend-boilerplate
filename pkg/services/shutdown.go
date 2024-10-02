@@ -36,6 +36,9 @@ func (s *shutdownHooks) Register(hook ShutdownHook) {
 }
 
 func (s *shutdownHooks) PerformShutdown(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, s.MaxShutdownDuration)
+	defer cancel()
+
 	errGrp := errgroup.Group{}
 	for _, hook := range s.hooks {
 		errGrp.Go(func() error {
@@ -47,7 +50,18 @@ func (s *shutdownHooks) PerformShutdown(ctx context.Context) error {
 			return nil
 		})
 	}
-	return errGrp.Wait()
+
+	done := make(chan error)
+	go func() {
+		done <- errGrp.Wait()
+	}()
+
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 type ShutdownHooksRegistryDeps struct {
@@ -61,6 +75,7 @@ type ShutdownHooksRegistryDeps struct {
 
 func NewShutdownHooksRegistry(deps ShutdownHooksRegistryDeps) ShutdownHooks {
 	return &shutdownHooks{
-		logger: deps.RootLogger.WithGroup("shutdown"),
+		logger:                    deps.RootLogger.WithGroup("shutdown"),
+		ShutdownHooksRegistryDeps: deps,
 	}
 }
