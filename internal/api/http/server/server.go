@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/pkg/services"
+	"github.com/gemyago/golang-backend-boilerplate/internal/services"
 	"go.uber.org/dig"
 )
 

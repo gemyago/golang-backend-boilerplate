@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/pkg/diag"
-	"github.com/gemyago/golang-backend-boilerplate/pkg/services"
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

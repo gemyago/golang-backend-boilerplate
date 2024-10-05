@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/gemyago/golang-backend-boilerplate/config"
-	"github.com/gemyago/golang-backend-boilerplate/pkg/app"
-	"github.com/gemyago/golang-backend-boilerplate/pkg/di"
-	"github.com/gemyago/golang-backend-boilerplate/pkg/diag"
-	"github.com/gemyago/golang-backend-boilerplate/pkg/services"
+	"github.com/gemyago/golang-backend-boilerplate/internal/app"
+	"github.com/gemyago/golang-backend-boilerplate/internal/config"
+	"github.com/gemyago/golang-backend-boilerplate/internal/di"
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/services"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
 )
