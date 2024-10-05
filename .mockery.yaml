@@ -10,7 +10,7 @@ packages:
         config:
           inpackage: false
           outpkg: 'diag'
-          dir: 'pkg/diag'
+          dir: 'internal/diag'
           filename: "mock_slog_handler.go"
           mockname: MockSlogHandler
   github.com/gemyago/golang-backend-boilerplate/internal/services:
