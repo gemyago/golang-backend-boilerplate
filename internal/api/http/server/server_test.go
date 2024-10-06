@@ -16,9 +16,7 @@ import (
 func TestHTTPServer(t *testing.T) {
 	t.Run("Startup/Shutdown", func(t *testing.T) {
 		t.Run("should start and stop the server", func(t *testing.T) {
-			hooks := services.NewShutdownHooks(services.ShutdownHooksRegistryDeps{
-				RootLogger: diag.RootTestLogger(),
-			})
+			hooks := services.NewTestShutdownHooks()
 			srv := NewHTTPServer(HTTPServerDeps{
 				RootLogger:    diag.RootTestLogger(),
 				Port:          50000 + rand.IntN(15000),

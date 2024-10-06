@@ -24,7 +24,7 @@ type runHTTPServerParams struct {
 
 	HTTPServer *server.HTTPServer
 
-	services.ShutdownHooks
+	*services.ShutdownHooks
 
 	noop bool
 }
