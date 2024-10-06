@@ -24,7 +24,8 @@ func mergeResourceCfg(cfg *viper.Viper, resourceName string) error {
 }
 
 type LoadOpts struct {
-	env string
+	env                   string
+	defaultConfigFileName string
 }
 
 func (opts *LoadOpts) WithEnv(val string) *LoadOpts {
@@ -36,7 +37,8 @@ func (opts *LoadOpts) WithEnv(val string) *LoadOpts {
 
 func NewLoadOpts() *LoadOpts {
 	return &LoadOpts{
-		env: "local",
+		env:                   "local",
+		defaultConfigFileName: "default.json",
 	}
 }
 
@@ -44,7 +46,7 @@ func Load(opts *LoadOpts) (*viper.Viper, error) {
 	cfg := viper.New()
 	cfg.SetConfigType("json")
 
-	if err := mergeResourceCfg(cfg, "default.json"); err != nil {
+	if err := mergeResourceCfg(cfg, opts.defaultConfigFileName); err != nil {
 		return nil, err
 	}
 
