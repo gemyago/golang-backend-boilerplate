@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"time"
 
 	"go.uber.org/dig"
@@ -26,11 +27,11 @@ type ShutdownHooks struct {
 }
 
 // HasHook checks if a shutdown hook with the given name is registered.
-// Typical usage is in tests.
-func (h *ShutdownHooks) HasHook(name string) bool {
+// Typical usage is in tests and must be carefully considered for production scenarios.
+func (h *ShutdownHooks) HasHook(name string, method any) bool {
 	for _, hook := range h.hooks {
 		if hook.name == name {
-			return true
+			return reflect.ValueOf(hook.shutdownFn).Pointer() == reflect.ValueOf(method).Pointer()
 		}
 	}
 	return false

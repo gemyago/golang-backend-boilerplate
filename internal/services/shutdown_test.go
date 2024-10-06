@@ -42,9 +42,11 @@ func TestShutdownHooks(t *testing.T) {
 			deps := makeMockDeps()
 			registry := NewShutdownHooks(deps)
 			hookName := faker.Word()
-			assert.False(t, registry.HasHook(hookName))
-			registry.Register(hookName, func(_ context.Context) error { return nil })
-			require.True(t, registry.HasHook(hookName))
+			fn := func(_ context.Context) error { return nil }
+			assert.False(t, registry.HasHook(hookName, fn))
+			registry.Register(hookName, fn)
+			require.True(t, registry.HasHook(hookName, fn))
+			assert.False(t, registry.HasHook(faker.Word(), func(_ context.Context) error { return nil }))
 		})
 	})
 
