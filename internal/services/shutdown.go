@@ -25,6 +25,17 @@ type ShutdownHooks struct {
 	deps   ShutdownHooksRegistryDeps
 }
 
+// HasHook checks if a shutdown hook with the given name is registered.
+// Typical usage is in tests.
+func (h *ShutdownHooks) HasHook(name string) bool {
+	for _, hook := range h.hooks {
+		if hook.name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (h *ShutdownHooks) Register(name string, shutdown func(ctx context.Context) error) {
 	h.hooks = append(h.hooks, shutdownHook{name: name, shutdownFn: shutdown})
 }

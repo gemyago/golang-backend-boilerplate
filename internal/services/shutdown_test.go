@@ -9,6 +9,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/go-faker/faker/v4"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +20,12 @@ type mockShutdownHook struct {
 }
 
 func (m *mockShutdownHook) shutdown(ctx context.Context) error {
-	ret := m.Called(ctx)
+	ret := m.MethodCalled("shutdown", ctx)
+	return ret.Error(0)
+}
+
+func (m *mockShutdownHook) shutdownNoCtx() error {
+	ret := m.MethodCalled("shutdownNoCtx")
 	return ret.Error(0)
 }
 
@@ -30,6 +36,17 @@ func TestShutdownHooks(t *testing.T) {
 			GracefulShutdownTimeout: time.Duration(10+rand.IntN(1000)) * time.Second,
 		}
 	}
+
+	t.Run("HasHook", func(t *testing.T) {
+		t.Run("should return true if such hook has been registered", func(t *testing.T) {
+			deps := makeMockDeps()
+			registry := NewShutdownHooks(deps)
+			hookName := faker.Word()
+			assert.False(t, registry.HasHook(hookName))
+			registry.Register(hookName, func(_ context.Context) error { return nil })
+			require.True(t, registry.HasHook(hookName))
+		})
+	})
 
 	t.Run("PerformShutdown", func(t *testing.T) {
 		t.Run("should call all hooks", func(t *testing.T) {
@@ -57,7 +74,7 @@ func TestShutdownHooks(t *testing.T) {
 			}
 		})
 
-		t.Run("should return error if any hook fails", func(t *testing.T) {
+		t.Run("should call hooks without context", func(t *testing.T) {
 			deps := makeMockDeps()
 			registry := NewShutdownHooks(deps)
 
@@ -69,8 +86,35 @@ func TestShutdownHooks(t *testing.T) {
 
 			ctx := context.Background()
 
+			for _, hook := range hooks {
+				hook.On("shutdownNoCtx").Return(nil)
+				registry.RegisterNoCtx(hook.name, hook.shutdownNoCtx)
+			}
+
+			err := registry.PerformShutdown(ctx)
+			require.NoError(t, err)
+
+			for _, hook := range hooks {
+				hook.AssertExpectations(t)
+			}
+		})
+
+		t.Run("should return error if any hook fails", func(t *testing.T) {
+			deps := makeMockDeps()
+			registry := NewShutdownHooks(deps)
+
+			hooks := []*mockShutdownHook{
+				{name: faker.Word()},
+				{name: faker.Word()},
+				{name: "should-fail-" + faker.Word()},
+			}
+
+			ctx := context.Background()
+
 			wantErr := errors.New(faker.Sentence())
-			hooks[len(hooks)-1].On("shutdown", mock.AnythingOfType("*context.timerCtx")).Return(wantErr)
+			lastHook := hooks[len(hooks)-1]
+			lastHook.On("shutdown", mock.AnythingOfType("*context.timerCtx")).Return(wantErr)
+			registry.Register(lastHook.name, lastHook.shutdown)
 
 			for _, hook := range hooks[:len(hooks)-1] {
 				hook.On("shutdown", mock.AnythingOfType("*context.timerCtx")).Return(nil)
