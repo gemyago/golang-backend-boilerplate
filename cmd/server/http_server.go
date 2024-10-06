@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes"
-	"github.com/gemyago/golang-backend-boilerplate/pkg/api/http/server"
-	"github.com/gemyago/golang-backend-boilerplate/pkg/di"
-	"github.com/gemyago/golang-backend-boilerplate/pkg/diag"
-	"github.com/gemyago/golang-backend-boilerplate/pkg/services"
+	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/routes"
+	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
+	"github.com/gemyago/golang-backend-boilerplate/internal/di"
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/services"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
 	"golang.org/x/sys/unix"
@@ -24,7 +24,7 @@ type runHTTPServerParams struct {
 
 	HTTPServer *server.HTTPServer
 
-	services.ShutdownHooks
+	*services.ShutdownHooks
 
 	noop bool
 }

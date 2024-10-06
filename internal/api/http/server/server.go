@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/pkg/services"
+	"github.com/gemyago/golang-backend-boilerplate/internal/services"
 	"go.uber.org/dig"
 )
 
@@ -26,7 +26,7 @@ type HTTPServerDeps struct {
 	Handler http.Handler
 
 	// services
-	services.ShutdownHooks
+	*services.ShutdownHooks
 }
 
 type HTTPServer struct {
@@ -59,9 +59,7 @@ func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
 		ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
 	}
 
-	deps.ShutdownHooks.Register(
-		services.NewShutdownHookNoCtx("http-server", srv.Close),
-	)
+	deps.ShutdownHooks.Register("http-server", srv.Shutdown)
 
 	return &HTTPServer{
 		deps:    deps,

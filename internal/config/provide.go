@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/gemyago/golang-backend-boilerplate/pkg/di"
+	"github.com/gemyago/golang-backend-boilerplate/internal/di"
 	"github.com/spf13/viper"
 	"go.uber.org/dig"
 )
@@ -25,13 +25,13 @@ func (p configValueProvider) asInt() di.ConstructorWithOpts {
 	return di.ProvideValue(p.cfg.GetInt(p.configPath), dig.Name(p.diPath))
 }
 
-// func (p configValueProvider) asString() di.ConstructorWithOpts {
-// 	return di.ProvideValue(p.cfg.GetString(p.configPath), dig.Name(p.diPath))
-// }
+func (p configValueProvider) asString() di.ConstructorWithOpts {
+	return di.ProvideValue(p.cfg.GetString(p.configPath), dig.Name(p.diPath))
+}
 
-// func (p configValueProvider) asBool() di.ConstructorWithOpts {
-// 	return di.ProvideValue(p.cfg.GetBool(p.configPath), dig.Name(p.diPath))
-// }
+func (p configValueProvider) asBool() di.ConstructorWithOpts {
+	return di.ProvideValue(p.cfg.GetBool(p.configPath), dig.Name(p.diPath))
+}
 
 func (p configValueProvider) asDuration() di.ConstructorWithOpts {
 	return di.ProvideValue(p.cfg.GetDuration(p.configPath), dig.Name(p.diPath))

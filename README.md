@@ -6,8 +6,11 @@
 Basic golang boilerplate for backend projects.
 
 Key features:
+* [cobra](github.com/spf13/cobra) - CLI interactions
+* [viper](github.com/spf13/viper) - Configuration management
 * http.ServeMux is used as router (pluggable)
 * uber [dig](go.uber.org/dig) is used as DI framework
+  * for small projects it may make sense to setup dependencies manually
 * `slog` is used for logs
 * [slog-http](github.com/samber/slog-http) is used to produce access logs
 * [testify](github.com/stretchr/testify) and [mockery](github.com/vektra/mockery) are used for tests
@@ -15,7 +18,6 @@ Key features:
 
 To be added:
 * Docker
-* CI/CD (github actions)
 * Examples of APIs
 
 ## Starting a new project
@@ -31,11 +33,11 @@ To be added:
 
 ## Project structure
 
-* [cmd/server](./cmd/server) is a main entrypoint to start API server. Dependencies wire-up is happening here.
-* [pkg/api/http](./pkg/api/http) - includes http routes related stuff
-  * [pkg/api/http/routes](./pkg/api/http/routes) - add new routes here and register in [handler.go](./pkg/api/http/server/handler.go)
-* `pkg/app` - is assumed to include application layer code (e.g business logic). Examples to be added.
-* `pkg/services` - lower level components are supposed to be here (e.g database access layer e.t.c). Examples to be added.
+* [cmd/server](./cmd/server) is a main entrypoint to start API server
+* [internal/api/http](./internal/api/http) - includes http routes related stuff
+  * [internal/api/http/routes](./internal/api/http/routes) - add new routes here and register in [handler.go](./internal/api/http/server/handler.go)
+* `internal/app` - is assumed to include application layer code (e.g business logic). Examples to be added.
+* `internal/services` - lower level components are supposed to be here (e.g database access layer e.t.c). Examples to be added.
 
 ## Project Setup
 
@@ -64,14 +66,14 @@ make test
 Run specific tests:
 ```bash
 # Run once
-go test -v ./pkg/api/http/routes/ --run TestHealthCheckRoutes
+go test -v ./internal/api/http/routes/ --run TestHealthCheckRoutes
 
 # Run same test multiple times
 # This is useful for tests that are flaky
-go test -v -count=5 ./pkg/api/http/routes/ --run TestHealthCheckRoutes
+go test -v -count=5 ./internal/api/http/routes/ --run TestHealthCheckRoutes
 
 # Run and watch
-gow test -v ./pkg/api/http/routes/ --run TestHealthCheckRoutes
+gow test -v ./internal/api/http/routes/ --run TestHealthCheckRoutes
 ```
 ### Run local API server:
 

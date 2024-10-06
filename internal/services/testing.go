@@ -5,6 +5,7 @@ package services
 import (
 	"time"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/go-faker/faker/v4"
 )
 
@@ -34,4 +35,13 @@ func MockNowValue(p TimeProvider) time.Time {
 		panic("provided TimeProvider is not a MockNow")
 	}
 	return mp.value
+}
+
+const defaultTestShutdownTimeout = 30 * time.Second
+
+func NewTestShutdownHooks() *ShutdownHooks {
+	return NewShutdownHooks(ShutdownHooksRegistryDeps{
+		RootLogger:              diag.RootTestLogger(),
+		GracefulShutdownTimeout: defaultTestShutdownTimeout,
+	})
 }
