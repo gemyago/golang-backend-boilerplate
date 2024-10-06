@@ -1,4 +1,4 @@
-// Components in this packages are used to implement a graceful shutdown
+// ShutdownHooks are used to implement a graceful shutdown
 // of the application. This may include closing database connections, flushing pending
 // events to the queue, shutting down the http server, etc.
 
@@ -14,63 +14,37 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type ShutdownHook interface {
-	// Name returns the name of the shutdown hook
-	// for logging purposes
-	Name() string
-
-	// Shutdown is the function that will perform the cleanup
-	// on shutdown of the process
-	Shutdown(ctx context.Context) error
-}
-
 type shutdownHook struct {
-	name     string
-	shutdown func(ctx context.Context) error
+	name       string
+	shutdownFn func(ctx context.Context) error
 }
 
-func (s *shutdownHook) Name() string {
-	return s.name
-}
-
-func (s *shutdownHook) Shutdown(ctx context.Context) error {
-	return s.shutdown(ctx)
-}
-
-func NewShutdownHookNoCtx(name string, shutdown func() error) ShutdownHook {
-	return &shutdownHook{
-		name: name,
-		shutdown: func(_ context.Context) error {
-			return shutdown()
-		},
-	}
-}
-
-type ShutdownHooks interface {
-	Register(hook ShutdownHook)
-	PerformShutdown(ctx context.Context) error
-}
-
-type shutdownHooks struct {
+type ShutdownHooks struct {
 	logger *slog.Logger
-	hooks  []ShutdownHook
-	ShutdownHooksRegistryDeps
+	hooks  []shutdownHook
+	deps   ShutdownHooksRegistryDeps
 }
 
-func (s *shutdownHooks) Register(hook ShutdownHook) {
-	s.hooks = append(s.hooks, hook)
+func (h *ShutdownHooks) Register(name string, shutdown func(ctx context.Context) error) {
+	h.hooks = append(h.hooks, shutdownHook{name: name, shutdownFn: shutdown})
 }
 
-func (s *shutdownHooks) PerformShutdown(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, s.GracefulShutdownTimeout)
+func (h *ShutdownHooks) RegisterNoCtx(name string, shutdown func() error) {
+	h.Register(name, func(_ context.Context) error {
+		return shutdown()
+	})
+}
+
+func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, h.deps.GracefulShutdownTimeout)
 	defer cancel()
 
 	errGrp := errgroup.Group{}
-	for _, hook := range s.hooks {
+	for _, hook := range h.hooks {
 		errGrp.Go(func() error {
-			hookName := hook.Name()
-			s.logger.InfoContext(ctx, fmt.Sprintf("Shutting down %s", hookName))
-			if err := hook.Shutdown(ctx); err != nil {
+			hookName := hook.name
+			h.logger.InfoContext(ctx, fmt.Sprintf("Shutting down %s", hookName))
+			if err := hook.shutdownFn(ctx); err != nil {
 				return fmt.Errorf("failed to perform shutdown hook %s: %w", hookName, err)
 			}
 			return nil
@@ -99,9 +73,9 @@ type ShutdownHooksRegistryDeps struct {
 	GracefulShutdownTimeout time.Duration `name:"config.gracefulShutdownTimeout"`
 }
 
-func NewShutdownHooks(deps ShutdownHooksRegistryDeps) ShutdownHooks {
-	return &shutdownHooks{
-		logger:                    deps.RootLogger.WithGroup("shutdown"),
-		ShutdownHooksRegistryDeps: deps,
+func NewShutdownHooks(deps ShutdownHooksRegistryDeps) *ShutdownHooks {
+	return &ShutdownHooks{
+		logger: deps.RootLogger.WithGroup("shutdown"),
+		deps:   deps,
 	}
 }
