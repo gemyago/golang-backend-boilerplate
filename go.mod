@@ -5,6 +5,7 @@ go 1.23
 require (
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/gofrs/uuid/v5 v5.3.0
+	github.com/samber/lo v1.47.0
 	github.com/samber/slog-http v1.4.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
