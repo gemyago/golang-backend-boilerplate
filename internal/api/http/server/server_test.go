@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"syscall"
 	"testing"
-	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/services"
@@ -18,8 +17,7 @@ func TestHTTPServer(t *testing.T) {
 	t.Run("Startup/Shutdown", func(t *testing.T) {
 		t.Run("should start and stop the server", func(t *testing.T) {
 			hooks := services.NewShutdownHooks(services.ShutdownHooksRegistryDeps{
-				RootLogger:              diag.RootTestLogger(),
-				GracefulShutdownTimeout: 10 * time.Second,
+				RootLogger: diag.RootTestLogger(),
 			})
 			srv := NewHTTPServer(HTTPServerDeps{
 				RootLogger:    diag.RootTestLogger(),
@@ -29,6 +27,8 @@ func TestHTTPServer(t *testing.T) {
 					w.WriteHeader(http.StatusOK)
 				}),
 			})
+			assert.True(t, hooks.HasHook("http-server", srv.httpSrv.Shutdown))
+
 			stopCh := make(chan error)
 			startedSignal := make(chan struct{})
 			ctx := context.Background()
@@ -41,8 +41,7 @@ func TestHTTPServer(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, http.StatusOK, res.StatusCode)
 
-			err = hooks.PerformShutdown(ctx)
-			require.NoError(t, err)
+			require.NoError(t, srv.httpSrv.Shutdown(ctx))
 
 			_, err = http.Get("http://" + srv.httpSrv.Addr)
 			require.Error(t, err)
