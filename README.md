@@ -6,8 +6,11 @@
 Basic golang boilerplate for backend projects.
 
 Key features:
+* [cobra](github.com/spf13/cobra) - CLI interactions
+* [viper](github.com/spf13/viper) - Configuration management
 * http.ServeMux is used as router (pluggable)
 * uber [dig](go.uber.org/dig) is used as DI framework
+  * for small projects it may make sense to setup dependencies manually
 * `slog` is used for logs
 * [slog-http](github.com/samber/slog-http) is used to produce access logs
 * [testify](github.com/stretchr/testify) and [mockery](github.com/vektra/mockery) are used for tests
@@ -15,7 +18,6 @@ Key features:
 
 To be added:
 * Docker
-* CI/CD (github actions)
 * Examples of APIs
 
 ## Starting a new project
