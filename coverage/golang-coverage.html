@@ -61,43 +61,43 @@
 				
 				<option value="file2">github.com/gemyago/golang-backend-boilerplate/cmd/server/root.go (91.7%)</option>
 				
-				<option value="file3">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/middleware/chain.go (100.0%)</option>
+				<option value="file3">github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware/chain.go (100.0%)</option>
 				
-				<option value="file4">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/middleware/recover.go (100.0%)</option>
+				<option value="file4">github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware/recover.go (100.0%)</option>
 				
-				<option value="file5">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/middleware/tracing.go (100.0%)</option>
+				<option value="file5">github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware/tracing.go (100.0%)</option>
 				
-				<option value="file6">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes/healthcheck.go (100.0%)</option>
+				<option value="file6">github.com/gemyago/golang-backend-boilerplate/internal/api/http/routes/healthcheck.go (100.0%)</option>
 				
-				<option value="file7">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes/routes.go (100.0%)</option>
+				<option value="file7">github.com/gemyago/golang-backend-boilerplate/internal/api/http/routes/routes.go (100.0%)</option>
 				
-				<option value="file8">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/server/handler.go (100.0%)</option>
+				<option value="file8">github.com/gemyago/golang-backend-boilerplate/internal/api/http/server/handler.go (100.0%)</option>
 				
-				<option value="file9">github.com/gemyago/golang-backend-boilerplate/pkg/api/http/server/server.go (100.0%)</option>
+				<option value="file9">github.com/gemyago/golang-backend-boilerplate/internal/api/http/server/server.go (100.0%)</option>
 				
-				<option value="file10">github.com/gemyago/golang-backend-boilerplate/pkg/app/register.go (100.0%)</option>
+				<option value="file10">github.com/gemyago/golang-backend-boilerplate/internal/app/register.go (100.0%)</option>
 				
-				<option value="file11">github.com/gemyago/golang-backend-boilerplate/pkg/di/dig.go (100.0%)</option>
+				<option value="file11">github.com/gemyago/golang-backend-boilerplate/internal/config/load.go (94.4%)</option>
 				
-				<option value="file12">github.com/gemyago/golang-backend-boilerplate/pkg/diag/attributes.go (100.0%)</option>
+				<option value="file12">github.com/gemyago/golang-backend-boilerplate/internal/config/provide.go (100.0%)</option>
 				
-				<option value="file13">github.com/gemyago/golang-backend-boilerplate/pkg/diag/mock_slog_handler.go (34.7%)</option>
+				<option value="file13">github.com/gemyago/golang-backend-boilerplate/internal/di/dig.go (100.0%)</option>
 				
-				<option value="file14">github.com/gemyago/golang-backend-boilerplate/pkg/diag/slog.go (93.1%)</option>
+				<option value="file14">github.com/gemyago/golang-backend-boilerplate/internal/diag/attributes.go (100.0%)</option>
 				
-				<option value="file15">github.com/gemyago/golang-backend-boilerplate/pkg/diag/testing.go (75.0%)</option>
+				<option value="file15">github.com/gemyago/golang-backend-boilerplate/internal/diag/mock_slog_handler.go (34.7%)</option>
 				
-				<option value="file16">github.com/gemyago/golang-backend-boilerplate/pkg/services/mock_shutdown_hook.go (71.1%)</option>
+				<option value="file16">github.com/gemyago/golang-backend-boilerplate/internal/diag/slog.go (93.1%)</option>
 				
-				<option value="file17">github.com/gemyago/golang-backend-boilerplate/pkg/services/mock_shutdown_hooks.go (0.0%)</option>
+				<option value="file17">github.com/gemyago/golang-backend-boilerplate/internal/diag/testing.go (75.0%)</option>
 				
-				<option value="file18">github.com/gemyago/golang-backend-boilerplate/pkg/services/register.go (100.0%)</option>
+				<option value="file18">github.com/gemyago/golang-backend-boilerplate/internal/services/register.go (100.0%)</option>
 				
-				<option value="file19">github.com/gemyago/golang-backend-boilerplate/pkg/services/shutdown.go (100.0%)</option>
+				<option value="file19">github.com/gemyago/golang-backend-boilerplate/internal/services/shutdown.go (95.8%)</option>
 				
-				<option value="file20">github.com/gemyago/golang-backend-boilerplate/pkg/services/testing.go (0.0%)</option>
+				<option value="file20">github.com/gemyago/golang-backend-boilerplate/internal/services/testing.go (12.5%)</option>
 				
-				<option value="file21">github.com/gemyago/golang-backend-boilerplate/pkg/services/time.go (100.0%)</option>
+				<option value="file21">github.com/gemyago/golang-backend-boilerplate/internal/services/time.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -129,11 +129,11 @@ import (
         "os/signal"
         "time"
 
-        "github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes"
-        "github.com/gemyago/golang-backend-boilerplate/pkg/api/http/server"
-        "github.com/gemyago/golang-backend-boilerplate/pkg/di"
-        "github.com/gemyago/golang-backend-boilerplate/pkg/diag"
-        "github.com/gemyago/golang-backend-boilerplate/pkg/services"
+        "github.com/gemyago/golang-backend-boilerplate/internal/api/http/routes"
+        "github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
+        "github.com/gemyago/golang-backend-boilerplate/internal/di"
+        "github.com/gemyago/golang-backend-boilerplate/internal/diag"
+        "github.com/gemyago/golang-backend-boilerplate/internal/services"
         "github.com/spf13/cobra"
         "go.uber.org/dig"
         "golang.org/x/sys/unix"
@@ -146,7 +146,7 @@ type runHTTPServerParams struct {
 
         HTTPServer *server.HTTPServer
 
-        services.ShutdownHooks
+        *services.ShutdownHooks
 
         noop bool
 }
@@ -264,11 +264,11 @@ import (
         "fmt"
         "log/slog"
 
-        "github.com/gemyago/golang-backend-boilerplate/config"
-        "github.com/gemyago/golang-backend-boilerplate/pkg/app"
-        "github.com/gemyago/golang-backend-boilerplate/pkg/di"
-        "github.com/gemyago/golang-backend-boilerplate/pkg/diag"
-        "github.com/gemyago/golang-backend-boilerplate/pkg/services"
+        "github.com/gemyago/golang-backend-boilerplate/internal/app"
+        "github.com/gemyago/golang-backend-boilerplate/internal/config"
+        "github.com/gemyago/golang-backend-boilerplate/internal/di"
+        "github.com/gemyago/golang-backend-boilerplate/internal/diag"
+        "github.com/gemyago/golang-backend-boilerplate/internal/services"
         "github.com/spf13/cobra"
         "go.uber.org/dig"
 )
@@ -409,7 +409,7 @@ import (
         "log/slog"
         "net/http"
 
-        "github.com/gemyago/golang-backend-boilerplate/pkg/diag"
+        "github.com/gemyago/golang-backend-boilerplate/internal/diag"
         "github.com/gofrs/uuid/v5"
 )
 
@@ -477,8 +477,8 @@ import (
         "log/slog"
         "net/http"
 
-        "github.com/gemyago/golang-backend-boilerplate/pkg/di"
-        "github.com/gemyago/golang-backend-boilerplate/pkg/diag"
+        "github.com/gemyago/golang-backend-boilerplate/internal/di"
+        "github.com/gemyago/golang-backend-boilerplate/internal/diag"
         "go.uber.org/dig"
 )
 
@@ -514,8 +514,8 @@ import (
         "log/slog"
         "net/http"
 
-        "github.com/gemyago/golang-backend-boilerplate/pkg/api/http/middleware"
-        "github.com/gemyago/golang-backend-boilerplate/pkg/api/http/routes"
+        "github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware"
+        "github.com/gemyago/golang-backend-boilerplate/internal/api/http/routes"
         sloghttp "github.com/samber/slog-http"
         "go.uber.org/dig"
 )
@@ -564,7 +564,7 @@ import (
         "net/http"
         "time"
 
-        "github.com/gemyago/golang-backend-boilerplate/pkg/services"
+        "github.com/gemyago/golang-backend-boilerplate/internal/services"
         "go.uber.org/dig"
 )
 
@@ -583,7 +583,7 @@ type HTTPServerDeps struct {
         Handler http.Handler
 
         // services
-        services.ShutdownHooks
+        *services.ShutdownHooks
 }
 
 type HTTPServer struct {
@@ -616,9 +616,7 @@ func NewHTTPServer(deps HTTPServerDeps) *HTTPServer <span class="cov10" title="2
                 ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
         }
 
-        deps.ShutdownHooks.Register(
-                services.NewShutdownHookNoCtx("http-server", srv.Close),
-        )
+        deps.ShutdownHooks.Register("http-server", srv.Shutdown)
 
         return &amp;HTTPServer{
                 deps:    deps,
@@ -640,7 +638,120 @@ func Register(_ *dig.Container) error <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file11" style="display: none">package di
+		<pre class="file" id="file11" style="display: none">package config
+
+import (
+        "embed"
+        "fmt"
+
+        "github.com/spf13/viper"
+)
+
+//go:embed *.json
+var resources embed.FS
+
+func mergeResourceCfg(cfg *viper.Viper, resourceName string) error <span class="cov10" title="13">{
+        resourceStream, err := resources.Open(resourceName)
+        if err != nil </span><span class="cov4" title="3">{
+                return fmt.Errorf("failed to read config %v: %w", resourceName, err)
+        }</span>
+        <span class="cov9" title="10">defer resourceStream.Close()
+
+        if err = cfg.MergeConfig(resourceStream); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to load config %v: %w", resourceName, err)
+        }</span>
+        <span class="cov9" title="10">return nil</span>
+}
+
+type LoadOpts struct {
+        env                   string
+        defaultConfigFileName string
+}
+
+func (opts *LoadOpts) WithEnv(val string) *LoadOpts <span class="cov6" title="5">{
+        if val != "" </span><span class="cov4" title="3">{
+                opts.env = val
+        }</span>
+        <span class="cov6" title="5">return opts</span>
+}
+
+func NewLoadOpts() *LoadOpts <span class="cov7" title="7">{
+        return &amp;LoadOpts{
+                env:                   "local",
+                defaultConfigFileName: "default.json",
+        }
+}</span>
+
+func Load(opts *LoadOpts) (*viper.Viper, error) <span class="cov7" title="7">{
+        cfg := viper.New()
+        cfg.SetConfigType("json")
+
+        if err := mergeResourceCfg(cfg, opts.defaultConfigFileName); err != nil </span><span class="cov1" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov7" title="6">if err := mergeResourceCfg(cfg, opts.env+".json"); err != nil </span><span class="cov3" title="2">{
+                return nil, err
+        }</span>
+
+        <span class="cov5" title="4">return cfg, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package config
+
+import (
+        "fmt"
+
+        "github.com/gemyago/golang-backend-boilerplate/internal/di"
+        "github.com/spf13/viper"
+        "go.uber.org/dig"
+)
+
+type configValueProvider struct {
+        cfg        *viper.Viper
+        configPath string
+        diPath     string
+}
+
+func provideConfigValue(cfg *viper.Viper, path string) configValueProvider <span class="cov10" title="11">{
+        if !cfg.IsSet(path) </span><span class="cov1" title="1">{
+                panic(fmt.Errorf("config key not found: %s", path))</span>
+        }
+        <span class="cov9" title="10">return configValueProvider{cfg, path, "config." + path}</span>
+}
+
+func (p configValueProvider) asInt() di.ConstructorWithOpts <span class="cov3" title="2">{
+        return di.ProvideValue(p.cfg.GetInt(p.configPath), dig.Name(p.diPath))
+}</span>
+
+func (p configValueProvider) asString() di.ConstructorWithOpts <span class="cov1" title="1">{
+        return di.ProvideValue(p.cfg.GetString(p.configPath), dig.Name(p.diPath))
+}</span>
+
+func (p configValueProvider) asBool() di.ConstructorWithOpts <span class="cov1" title="1">{
+        return di.ProvideValue(p.cfg.GetBool(p.configPath), dig.Name(p.diPath))
+}</span>
+
+func (p configValueProvider) asDuration() di.ConstructorWithOpts <span class="cov7" title="6">{
+        return di.ProvideValue(p.cfg.GetDuration(p.configPath), dig.Name(p.diPath))
+}</span>
+
+func Provide(container *dig.Container, cfg *viper.Viper) error <span class="cov1" title="1">{
+        return di.ProvideAll(container,
+                provideConfigValue(cfg, "gracefulShutdownTimeout").asDuration(),
+
+                // http server config
+                provideConfigValue(cfg, "httpServer.port").asInt(),
+                provideConfigValue(cfg, "httpServer.idleTimeout").asDuration(),
+                provideConfigValue(cfg, "httpServer.readHeaderTimeout").asDuration(),
+                provideConfigValue(cfg, "httpServer.readTimeout").asDuration(),
+                provideConfigValue(cfg, "httpServer.writeTimeout").asDuration(),
+        )
+}</span>
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package di
 
 import (
         "fmt"
@@ -656,10 +767,10 @@ type ConstructorWithOpts struct {
         Options     []dig.ProvideOption
 }
 
-func ProvideAll(container *dig.Container, providers ...interface{}) error <span class="cov7" title="11">{
-        for i, provider := range providers </span><span class="cov10" title="24">{
+func ProvideAll(container *dig.Container, providers ...interface{}) error <span class="cov8" title="15">{
+        for i, provider := range providers </span><span class="cov10" title="28">{
                 switch p := provider.(type) </span>{
-                case ConstructorWithOpts:<span class="cov8" title="13">
+                case ConstructorWithOpts:<span class="cov8" title="17">
                         if err := container.Provide(p.Constructor, p.Options...); err != nil </span><span class="cov1" title="1">{
                                 return fmt.Errorf("failed to provide %d-th dependency: %w", i, err)
                         }</span>
@@ -669,13 +780,13 @@ func ProvideAll(container *dig.Container, providers ...interface{}) error <span 
                         }</span>
                 }
         }
-        <span class="cov7" title="9">return nil</span>
+        <span class="cov7" title="13">return nil</span>
 }
 
 // ProvideValue will create a constructor (e.g func) from a given value.
-func ProvideValue[T any](val T, opts ...dig.ProvideOption) ConstructorWithOpts <span class="cov8" title="14">{
+func ProvideValue[T any](val T, opts ...dig.ProvideOption) ConstructorWithOpts <span class="cov8" title="18">{
         return ConstructorWithOpts{
-                Constructor: func() T </span><span class="cov7" title="11">{ return val }</span>,
+                Constructor: func() T </span><span class="cov8" title="15">{ return val }</span>,
                 Options:     opts,
         }
 }
@@ -711,7 +822,7 @@ func ProvideWithArgErr[
 }
 </pre>
 		
-		<pre class="file" id="file12" style="display: none">package diag
+		<pre class="file" id="file14" style="display: none">package diag
 
 import "log/slog"
 
@@ -720,7 +831,7 @@ func ErrAttr(err error) slog.Attr <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file13" style="display: none">// Code generated by mockery. DO NOT EDIT.
+		<pre class="file" id="file15" style="display: none">// Code generated by mockery. DO NOT EDIT.
 
 //go:build !release
 
@@ -951,7 +1062,7 @@ func NewMockSlogHandler(t interface {
 }
 </pre>
 		
-		<pre class="file" id="file14" style="display: none">package diag
+		<pre class="file" id="file16" style="display: none">package diag
 
 import (
         "context"
@@ -983,25 +1094,25 @@ type diagLogHandler struct {
         target slog.Handler
 }
 
-func (h *diagLogHandler) Enabled(ctx context.Context, lvl slog.Level) bool <span class="cov9" title="18">{
+func (h *diagLogHandler) Enabled(ctx context.Context, lvl slog.Level) bool <span class="cov9" title="17">{
         return h.target.Enabled(ctx, lvl)
 }</span>
 
-func (h *diagLogHandler) Handle(ctx context.Context, rec slog.Record) error <span class="cov10" title="20">{
+func (h *diagLogHandler) Handle(ctx context.Context, rec slog.Record) error <span class="cov10" title="19">{
         if diagAttributes, ok := ctx.Value(contextDiagAttrs).(LogAttributes); ok </span><span class="cov1" title="1">{
                 rec.AddAttrs(
                         slog.Attr{Key: "correlationId", Value: diagAttributes.CorrelationID},
                 )
         }</span>
 
-        <span class="cov10" title="20">return h.target.Handle(ctx, rec)</span>
+        <span class="cov10" title="19">return h.target.Handle(ctx, rec)</span>
 }
 
 func (h *diagLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler <span class="cov8" title="11">{
         return &amp;diagLogHandler{target: h.target.WithAttrs(attrs)}
 }</span>
 
-func (h *diagLogHandler) WithGroup(name string) slog.Handler <span class="cov7" title="10">{
+func (h *diagLogHandler) WithGroup(name string) slog.Handler <span class="cov8" title="10">{
         // Using WithAttrs here since group will nest all the attributes
         // inside of it (including correlationId), which makes it harder to
         // filter logs by the correlationId.
@@ -1030,7 +1141,7 @@ func (opts *RootLoggerOpts) WithLogLevel(logLevel slog.Level) *RootLoggerOpts <s
         return opts
 }</span>
 
-func (opts *RootLoggerOpts) WithOutput(output io.Writer) *RootLoggerOpts <span class="cov7" title="10">{
+func (opts *RootLoggerOpts) WithOutput(output io.Writer) *RootLoggerOpts <span class="cov8" title="10">{
         opts.output = output
         return opts
 }</span>
@@ -1065,7 +1176,7 @@ func SetupRootLogger(opts *RootLoggerOpts) *slog.Logger <span class="cov8" title
 }
 </pre>
 		
-		<pre class="file" id="file15" style="display: none">//go:build !release
+		<pre class="file" id="file17" style="display: none">//go:build !release
 
 // TODO: generated code should include "//go:build !release" tags
 //go:generate mockgen -typed -package diag -destination mock_slog_handler_test.go log/slog Handler
@@ -1101,262 +1212,12 @@ func RootTestLogger() *slog.Logger <span class="cov10" title="10">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file16" style="display: none">// Code generated by mockery. DO NOT EDIT.
-
-//go:build !release
-
-package services
-
-import (
-        context "context"
-
-        mock "github.com/stretchr/testify/mock"
-)
-
-// MockShutdownHook is an autogenerated mock type for the ShutdownHook type
-type MockShutdownHook struct {
-        mock.Mock
-}
-
-type MockShutdownHook_Expecter struct {
-        mock *mock.Mock
-}
-
-func (_m *MockShutdownHook) EXPECT() *MockShutdownHook_Expecter <span class="cov10" title="18">{
-        return &amp;MockShutdownHook_Expecter{mock: &amp;_m.Mock}
-}</span>
-
-// Name provides a mock function with given fields:
-func (_m *MockShutdownHook) Name() string <span class="cov7" title="9">{
-        ret := _m.Called()
-
-        if len(ret) == 0 </span><span class="cov0" title="0">{
-                panic("no return value specified for Name")</span>
-        }
-
-        <span class="cov7" title="9">var r0 string
-        if rf, ok := ret.Get(0).(func() string); ok </span><span class="cov0" title="0">{
-                r0 = rf()
-        }</span> else<span class="cov7" title="9"> {
-                r0 = ret.Get(0).(string)
-        }</span>
-
-        <span class="cov7" title="9">return r0</span>
-}
-
-// MockShutdownHook_Name_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Name'
-type MockShutdownHook_Name_Call struct {
-        *mock.Call
-}
-
-// Name is a helper method to define mock.On call
-func (_e *MockShutdownHook_Expecter) Name() *MockShutdownHook_Name_Call <span class="cov7" title="9">{
-        return &amp;MockShutdownHook_Name_Call{Call: _e.mock.On("Name")}
-}</span>
-
-func (_c *MockShutdownHook_Name_Call) Run(run func()) *MockShutdownHook_Name_Call <span class="cov0" title="0">{
-        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
-                run()
-        }</span>)
-        <span class="cov0" title="0">return _c</span>
-}
-
-func (_c *MockShutdownHook_Name_Call) Return(_a0 string) *MockShutdownHook_Name_Call <span class="cov7" title="9">{
-        _c.Call.Return(_a0)
-        return _c
-}</span>
-
-func (_c *MockShutdownHook_Name_Call) RunAndReturn(run func() string) *MockShutdownHook_Name_Call <span class="cov0" title="0">{
-        _c.Call.Return(run)
-        return _c
-}</span>
-
-// Shutdown provides a mock function with given fields: ctx
-func (_m *MockShutdownHook) Shutdown(ctx context.Context) error <span class="cov7" title="9">{
-        ret := _m.Called(ctx)
-
-        if len(ret) == 0 </span><span class="cov0" title="0">{
-                panic("no return value specified for Shutdown")</span>
-        }
-
-        <span class="cov7" title="9">var r0 error
-        if rf, ok := ret.Get(0).(func(context.Context) error); ok </span><span class="cov4" title="3">{
-                r0 = rf(ctx)
-        }</span> else<span class="cov6" title="6"> {
-                r0 = ret.Error(0)
-        }</span>
-
-        <span class="cov6" title="6">return r0</span>
-}
-
-// MockShutdownHook_Shutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Shutdown'
-type MockShutdownHook_Shutdown_Call struct {
-        *mock.Call
-}
-
-// Shutdown is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockShutdownHook_Expecter) Shutdown(ctx interface{}) *MockShutdownHook_Shutdown_Call <span class="cov7" title="9">{
-        return &amp;MockShutdownHook_Shutdown_Call{Call: _e.mock.On("Shutdown", ctx)}
-}</span>
-
-func (_c *MockShutdownHook_Shutdown_Call) Run(run func(ctx context.Context)) *MockShutdownHook_Shutdown_Call <span class="cov0" title="0">{
-        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
-                run(args[0].(context.Context))
-        }</span>)
-        <span class="cov0" title="0">return _c</span>
-}
-
-func (_c *MockShutdownHook_Shutdown_Call) Return(_a0 error) *MockShutdownHook_Shutdown_Call <span class="cov6" title="6">{
-        _c.Call.Return(_a0)
-        return _c
-}</span>
-
-func (_c *MockShutdownHook_Shutdown_Call) RunAndReturn(run func(context.Context) error) *MockShutdownHook_Shutdown_Call <span class="cov4" title="3">{
-        _c.Call.Return(run)
-        return _c
-}</span>
-
-// NewMockShutdownHook creates a new instance of MockShutdownHook. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewMockShutdownHook(t interface {
-        mock.TestingT
-        Cleanup(func())
-}) *MockShutdownHook <span class="cov8" title="10">{
-        mock := &amp;MockShutdownHook{}
-        mock.Mock.Test(t)
-
-        t.Cleanup(func() </span><span class="cov8" title="10">{ mock.AssertExpectations(t) }</span>)
-
-        <span class="cov8" title="10">return mock</span>
-}
-</pre>
-		
-		<pre class="file" id="file17" style="display: none">// Code generated by mockery. DO NOT EDIT.
-
-//go:build !release
-
-package services
-
-import (
-        context "context"
-
-        mock "github.com/stretchr/testify/mock"
-)
-
-// MockShutdownHooks is an autogenerated mock type for the ShutdownHooks type
-type MockShutdownHooks struct {
-        mock.Mock
-}
-
-type MockShutdownHooks_Expecter struct {
-        mock *mock.Mock
-}
-
-func (_m *MockShutdownHooks) EXPECT() *MockShutdownHooks_Expecter <span class="cov0" title="0">{
-        return &amp;MockShutdownHooks_Expecter{mock: &amp;_m.Mock}
-}</span>
-
-// PerformShutdown provides a mock function with given fields: ctx
-func (_m *MockShutdownHooks) PerformShutdown(ctx context.Context) error <span class="cov0" title="0">{
-        ret := _m.Called(ctx)
-
-        if len(ret) == 0 </span><span class="cov0" title="0">{
-                panic("no return value specified for PerformShutdown")</span>
-        }
-
-        <span class="cov0" title="0">var r0 error
-        if rf, ok := ret.Get(0).(func(context.Context) error); ok </span><span class="cov0" title="0">{
-                r0 = rf(ctx)
-        }</span> else<span class="cov0" title="0"> {
-                r0 = ret.Error(0)
-        }</span>
-
-        <span class="cov0" title="0">return r0</span>
-}
-
-// MockShutdownHooks_PerformShutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PerformShutdown'
-type MockShutdownHooks_PerformShutdown_Call struct {
-        *mock.Call
-}
-
-// PerformShutdown is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockShutdownHooks_Expecter) PerformShutdown(ctx interface{}) *MockShutdownHooks_PerformShutdown_Call <span class="cov0" title="0">{
-        return &amp;MockShutdownHooks_PerformShutdown_Call{Call: _e.mock.On("PerformShutdown", ctx)}
-}</span>
-
-func (_c *MockShutdownHooks_PerformShutdown_Call) Run(run func(ctx context.Context)) *MockShutdownHooks_PerformShutdown_Call <span class="cov0" title="0">{
-        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
-                run(args[0].(context.Context))
-        }</span>)
-        <span class="cov0" title="0">return _c</span>
-}
-
-func (_c *MockShutdownHooks_PerformShutdown_Call) Return(_a0 error) *MockShutdownHooks_PerformShutdown_Call <span class="cov0" title="0">{
-        _c.Call.Return(_a0)
-        return _c
-}</span>
-
-func (_c *MockShutdownHooks_PerformShutdown_Call) RunAndReturn(run func(context.Context) error) *MockShutdownHooks_PerformShutdown_Call <span class="cov0" title="0">{
-        _c.Call.Return(run)
-        return _c
-}</span>
-
-// Register provides a mock function with given fields: hook
-func (_m *MockShutdownHooks) Register(hook ShutdownHook) <span class="cov0" title="0">{
-        _m.Called(hook)
-}</span>
-
-// MockShutdownHooks_Register_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Register'
-type MockShutdownHooks_Register_Call struct {
-        *mock.Call
-}
-
-// Register is a helper method to define mock.On call
-//   - hook ShutdownHook
-func (_e *MockShutdownHooks_Expecter) Register(hook interface{}) *MockShutdownHooks_Register_Call <span class="cov0" title="0">{
-        return &amp;MockShutdownHooks_Register_Call{Call: _e.mock.On("Register", hook)}
-}</span>
-
-func (_c *MockShutdownHooks_Register_Call) Run(run func(hook ShutdownHook)) *MockShutdownHooks_Register_Call <span class="cov0" title="0">{
-        _c.Call.Run(func(args mock.Arguments) </span><span class="cov0" title="0">{
-                run(args[0].(ShutdownHook))
-        }</span>)
-        <span class="cov0" title="0">return _c</span>
-}
-
-func (_c *MockShutdownHooks_Register_Call) Return() *MockShutdownHooks_Register_Call <span class="cov0" title="0">{
-        _c.Call.Return()
-        return _c
-}</span>
-
-func (_c *MockShutdownHooks_Register_Call) RunAndReturn(run func(ShutdownHook)) *MockShutdownHooks_Register_Call <span class="cov0" title="0">{
-        _c.Call.Return(run)
-        return _c
-}</span>
-
-// NewMockShutdownHooks creates a new instance of MockShutdownHooks. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewMockShutdownHooks(t interface {
-        mock.TestingT
-        Cleanup(func())
-}) *MockShutdownHooks <span class="cov0" title="0">{
-        mock := &amp;MockShutdownHooks{}
-        mock.Mock.Test(t)
-
-        t.Cleanup(func() </span><span class="cov0" title="0">{ mock.AssertExpectations(t) }</span>)
-
-        <span class="cov0" title="0">return mock</span>
-}
-</pre>
-		
 		<pre class="file" id="file18" style="display: none">package services
 
 import (
         "time"
 
-        "github.com/gemyago/golang-backend-boilerplate/pkg/di"
+        "github.com/gemyago/golang-backend-boilerplate/internal/di"
         "go.uber.org/dig"
 )
 
@@ -1369,7 +1230,7 @@ func Register(container *dig.Container) error <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file19" style="display: none">// Components in this packages are used to implement a graceful shutdown
+		<pre class="file" id="file19" style="display: none">// ShutdownHooks are used to implement a graceful shutdown
 // of the application. This may include closing database connections, flushing pending
 // events to the queue, shutting down the http server, etc.
 
@@ -1379,84 +1240,70 @@ import (
         "context"
         "fmt"
         "log/slog"
+        "reflect"
         "time"
 
         "go.uber.org/dig"
         "golang.org/x/sync/errgroup"
 )
 
-type ShutdownHook interface {
-        // Name returns the name of the shutdown hook
-        // for logging purposes
-        Name() string
-
-        // Shutdown is the function that will perform the cleanup
-        // on shutdown of the process
-        Shutdown(ctx context.Context) error
-}
-
 type shutdownHook struct {
-        name     string
-        shutdown func(ctx context.Context) error
+        name       string
+        shutdownFn func(ctx context.Context) error
 }
 
-func (s *shutdownHook) Name() string <span class="cov4" title="3">{
-        return s.name
-}</span>
-
-func (s *shutdownHook) Shutdown(ctx context.Context) error <span class="cov4" title="3">{
-        return s.shutdown(ctx)
-}</span>
-
-func NewShutdownHookNoCtx(name string, shutdown func() error) ShutdownHook <span class="cov4" title="3">{
-        return &amp;shutdownHook{
-                name: name,
-                shutdown: func(_ context.Context) error </span><span class="cov4" title="3">{
-                        return shutdown()
-                }</span>,
-        }
-}
-
-type ShutdownHooks interface {
-        Register(hook ShutdownHook)
-        PerformShutdown(ctx context.Context) error
-}
-
-type shutdownHooks struct {
+type ShutdownHooks struct {
         logger *slog.Logger
-        hooks  []ShutdownHook
-        ShutdownHooksRegistryDeps
+        hooks  []shutdownHook
+        deps   ShutdownHooksRegistryDeps
 }
 
-func (s *shutdownHooks) Register(hook ShutdownHook) <span class="cov10" title="12">{
-        s.hooks = append(s.hooks, hook)
+// HasHook checks if a shutdown hook with the given name is registered.
+// Typical usage is in tests and must be carefully considered for production scenarios.
+func (h *ShutdownHooks) HasHook(name string, method any) bool <span class="cov6" title="4">{
+        for _, hook := range h.hooks </span><span class="cov4" title="3">{
+                if hook.name == name </span><span class="cov3" title="2">{
+                        return reflect.ValueOf(hook.shutdownFn).Pointer() == reflect.ValueOf(method).Pointer()
+                }</span>
+        }
+        <span class="cov3" title="2">return false</span>
+}
+
+func (h *ShutdownHooks) Register(name string, shutdown func(ctx context.Context) error) <span class="cov10" title="12">{
+        h.hooks = append(h.hooks, shutdownHook{name: name, shutdownFn: shutdown})
 }</span>
 
-func (s *shutdownHooks) PerformShutdown(ctx context.Context) error <span class="cov6" title="5">{
-        ctx, cancel := context.WithTimeout(ctx, s.GracefulShutdownTimeout)
+func (h *ShutdownHooks) RegisterNoCtx(name string, shutdown func() error) <span class="cov4" title="3">{
+        h.Register(name, func(_ context.Context) error </span><span class="cov4" title="3">{
+                return shutdown()
+        }</span>)
+}
+
+func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error <span class="cov6" title="4">{
+        ctx, cancel := context.WithTimeout(ctx, h.deps.GracefulShutdownTimeout)
         defer cancel()
 
         errGrp := errgroup.Group{}
-        for _, hook := range s.hooks </span><span class="cov9" title="11">{
-                errGrp.Go(func() error </span><span class="cov9" title="11">{
-                        hookName := hook.Name()
-                        s.logger.InfoContext(ctx, fmt.Sprintf("Shutting down %s", hookName))
-                        if err := hook.Shutdown(ctx); err != nil </span><span class="cov4" title="3">{
+        for _, hook := range h.hooks </span><span class="cov9" title="10">{
+                errGrp.Go(func() error </span><span class="cov9" title="10">{
+                        hookName := hook.name
+                        h.logger.InfoContext(ctx, fmt.Sprintf("Shutting down %s", hookName))
+                        if err := hook.shutdownFn(ctx); err != nil </span><span class="cov1" title="1">{
                                 return fmt.Errorf("failed to perform shutdown hook %s: %w", hookName, err)
                         }</span>
-                        <span class="cov6" title="5">return nil</span>
+                        <span class="cov8" title="9">return nil</span>
                 })
         }
 
-        <span class="cov6" title="5">done := make(chan error)
-        go func() </span><span class="cov6" title="5">{
+        <span class="cov6" title="4">done := make(chan error)
+        go func() </span><span class="cov6" title="4">{
                 done &lt;- errGrp.Wait()
         }</span>()
 
-        <span class="cov6" title="5">select </span>{
+        <span class="cov6" title="4">select </span>{
         case err := &lt;-done:<span class="cov6" title="4">
                 return err</span>
-        case &lt;-ctx.Done():<span class="cov1" title="1">
+        case &lt;-ctx.Done():<span class="cov0" title="0">
                 return ctx.Err()</span>
         }
 }
@@ -1470,10 +1317,10 @@ type ShutdownHooksRegistryDeps struct {
         GracefulShutdownTimeout time.Duration `name:"config.gracefulShutdownTimeout"`
 }
 
-func NewShutdownHooks(deps ShutdownHooksRegistryDeps) ShutdownHooks <span class="cov7" title="6">{
-        return &amp;shutdownHooks{
-                logger:                    deps.RootLogger.WithGroup("shutdown"),
-                ShutdownHooksRegistryDeps: deps,
+func NewShutdownHooks(deps ShutdownHooksRegistryDeps) *ShutdownHooks <span class="cov7" title="6">{
+        return &amp;ShutdownHooks{
+                logger: deps.RootLogger.WithGroup("shutdown"),
+                deps:   deps,
         }
 }</span>
 </pre>
@@ -1485,6 +1332,7 @@ package services
 import (
         "time"
 
+        "github.com/gemyago/golang-backend-boilerplate/internal/diag"
         "github.com/go-faker/faker/v4"
 )
 
@@ -1515,6 +1363,15 @@ func MockNowValue(p TimeProvider) time.Time <span class="cov0" title="0">{
         }
         <span class="cov0" title="0">return mp.value</span>
 }
+
+const defaultTestShutdownTimeout = 30 * time.Second
+
+func NewTestShutdownHooks() *ShutdownHooks <span class="cov8" title="1">{
+        return NewShutdownHooks(ShutdownHooksRegistryDeps{
+                RootLogger:              diag.RootTestLogger(),
+                GracefulShutdownTimeout: defaultTestShutdownTimeout,
+        })
+}</span>
 </pre>
 		
 		<pre class="file" id="file21" style="display: none">package services
