@@ -20,6 +20,7 @@ $(cover_dir):
 tools:
 	go install github.com/mitranim/gow@latest
 	go install github.com/vektra/mockery/v2@v2.50.0
+	go install github.com/gemyago/apigen@latest
 
 dist/bin: 
 	go build \
