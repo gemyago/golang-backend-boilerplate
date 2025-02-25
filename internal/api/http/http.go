@@ -1,13 +1,11 @@
 package http
 
 import (
-	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
-	"github.com/gemyago/golang-backend-boilerplate/internal/di"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"go.uber.org/dig"
 )
@@ -35,11 +33,12 @@ func NewV1RoutesApp(deps V1RoutesAppDeps) *handlers.HTTPApp { // coverage-ignore
 }
 
 func Register(container *dig.Container) error {
-	return errors.Join(
-		v1controllers.Register(container),
-		di.ProvideAll(container,
-			NewV1RoutesApp,
-			server.MakeHandlersGroupFactory(handlers.RegisterMessagesRoutes),
-		),
-	)
+	panic("not implemented")
+	// return errors.Join(
+	// 	v1controllers.Register(container),
+	// 	di.ProvideAll(container,
+	// 		NewV1RoutesApp,
+	// 		server.MakeHandlersGroupFactory(handlers.RegisterMessagesRoutes),
+	// 	),
+	// )
 }

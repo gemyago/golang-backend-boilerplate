@@ -49,7 +49,6 @@ Install/Update dependencies:
 ```sh
 # Install
 go mod download
-make tools
 
 # Update:
 go get -u ./... && go mod tidy
