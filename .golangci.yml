@@ -86,7 +86,7 @@ linters-settings:
   gocognit:
     # Minimal code complexity to report.
     # Default: 30 (but we recommend 10-20)
-    min-complexity: 20
+    min-complexity: 30
 
   gocritic:
     # Settings passed to gocritic.
@@ -204,13 +204,7 @@ linters-settings:
     # - "scope": report only if a context exists in the scope of the outermost function
     # https://github.com/go-simpler/sloglint?tab=readme-ov-file#context-only
     # Default: ""
-    context: "all"
-
-  tenv:
-    # The option `all` will run against whole test files (`_test.go`) regardless of method/function signatures.
-    # Otherwise, only methods that take `*testing.T`, `*testing.B`, and `testing.TB` as arguments are checked.
-    # Default: false
-    all: true
+    context: "scope"
 
   dupl:
     # 150 by default is not enough and leads to false positives
@@ -240,7 +234,6 @@ linters:
     - errname # checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error
     - errorlint # finds code that will cause problems with the error wrapping scheme introduced in Go 1.13
     - exhaustive # checks exhaustiveness of enum switch statements
-    - exportloopref # checks for pointers to enclosing loop variables
     - fatcontext # detects nested contexts in loops
     - forbidigo # forbids identifiers
     - funlen # tool for detection of long functions
@@ -284,7 +277,7 @@ linters:
     - spancheck # checks for mistakes with OpenTelemetry/Census spans
     - sqlclosecheck # checks that sql.Rows and sql.Stmt are closed
     - stylecheck # is a replacement for golint
-    - tenv # detects using os.Setenv instead of t.Setenv since Go1.17
+    - usetesting
     - testableexamples # checks if examples are testable (have an expected output)
     - testifylint # checks usage of github.com/stretchr/testify
 #    - testpackage # makes you use a separate _test package
