@@ -25,12 +25,12 @@ type healthControllerBuilder struct {
 	//
 	// Request type: none
 	//
-	// Response type: none
+	// Response type: HealthResponsePayload
 	HealthCheck genericHandlerBuilder[
 		void,
-		void,
-		handlerActionFuncNoParamsNoResponse[void, void],
-		httpHandlerActionFuncNoParamsNoResponse[void, void],
+		*HealthResponsePayload,
+		handlerActionFuncNoParams[void, *HealthResponsePayload],
+		httpHandlerActionFuncNoParams[void, *HealthResponsePayload],
 	]
 }
 
@@ -39,20 +39,19 @@ func newHealthControllerBuilder(app *RootHandler) *healthControllerBuilder {
 		// GET /health
 		HealthCheck: newGenericHandlerBuilder(
 			app,
-			newHandlerAdapterNoParamsNoResponse[
+			newHandlerAdapterNoParams[
 				void,
-				void,
+				*HealthResponsePayload,
 			](),
-			newHTTPHandlerAdapterNoParamsNoResponse[
+			newHTTPHandlerAdapterNoParams[
 				void,
-				void,
+				*HealthResponsePayload,
 			](),
 			makeActionBuilderParams[
 				void,
-				void,
+				*HealthResponsePayload,
 			]{
-				defaultStatus: 204,
-				voidResult:    true,
+				defaultStatus: 200,
 				paramsParser:  makeVoidParamsParser(app),
 			},
 		),
@@ -64,8 +63,10 @@ type HealthController interface {
 	//
 	// Request type: none
 	//
-	// Response type: none
-	HealthCheck(NoParamsNoResponseHandlerBuilder) http.Handler
+	// Response type: HealthResponsePayload
+	HealthCheck(NoParamsHandlerBuilder[
+		*HealthResponsePayload,
+	]) http.Handler
 }
 
 // RegisterHealthRoutes will attach the following routes to the root handler:

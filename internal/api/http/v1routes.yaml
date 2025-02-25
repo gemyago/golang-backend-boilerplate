@@ -17,8 +17,12 @@ paths:
       tags:
         - health
       responses:
-        '204':
+        '200':
           description: Request succeeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponsePayload"
         default:
           description: unexpected error
           content:
@@ -52,6 +56,15 @@ paths:
                 $ref: "#/components/schemas/Error"
 components:
   schemas:
+    HealthResponsePayload:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - OK
     EchoRequestPayload:
       type: object
       required:
