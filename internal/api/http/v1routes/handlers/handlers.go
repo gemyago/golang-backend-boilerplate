@@ -18,212 +18,142 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+type trackedResponseWriter interface {
+	// HeaderWritten returns true if headers were written.
+	HeaderWritten() bool
+
+	// BodyWritten returns true if body was written.
+	BodyWritten() bool
+}
+
 type httpRouter interface {
 	// PathValue returns a named path parameter of a given name
 	PathValue(r *http.Request, paramName string) string
 
 	// HandleRoute register a given handler function to handle given route
 	HandleRoute(method, pathPattern string, h http.Handler)
+
+	// ServeHTTP is a standard http.Handler method
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
-// ParsingErrorHandler will process errors during parsing and validation stages
-// The default implementation will respond with 400 status code and standard
-// serialization of ParsingError type.
-type ParsingErrorHandler func(r *http.Request, w http.ResponseWriter, err error)
+type errorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 
-// ActionErrorHandler will process errors produced by controller actions
-// The default implementation will respond with 500 and no output.
-type ActionErrorHandler func(r *http.Request, w http.ResponseWriter, err error)
-
-// ResponseErrorHandler will process errors that may occur while writing response
-// At this stage either logging or panic is possible.
-type ResponseErrorHandler func(r *http.Request, err error)
-
-// SlogLogger is a fully compatible with slog and used to allow injecting the instance.
-type SlogLogger interface {
+// slogLogger is a fully compatible with slog and used to allow injecting the instance.
+type slogLogger interface {
 	Log(ctx context.Context, level slog.Level, msg string, args ...any)
 	LogAttrs(ctx context.Context, level slog.Level, msg string, attrs ...slog.Attr)
 }
 
-type HTTPApp struct {
+// RootHandler is a central point of the generated HTTP server. It is responsible for
+// registering routes and customizing router behavior.
+// The RootHandler implements http.Handler interface and can be used as a standard
+// http.Handler in any context that expects it.
+type RootHandler struct {
 	router               httpRouter
-	handleParsingErrors  ParsingErrorHandler
-	handleActionErrors   ActionErrorHandler
-	handleResponseErrors ResponseErrorHandler
+	handleParsingErrors  errorHandlerFunc
+	handleActionErrors   errorHandlerFunc
+	handleResponseErrors errorHandlerFunc
 	knownParsers         *knownParsersDef
-	logger               SlogLogger
+	logger               slogLogger
 }
 
-type HTTPAppOpt func(app *HTTPApp)
+type RootHandlerOpt func(*RootHandler)
 
-func WithParsingErrorHandler(handler ParsingErrorHandler) HTTPAppOpt {
-	return func(app *HTTPApp) {
-		app.handleParsingErrors = handler
+// WithLogger allows to set custom logger for the root handler.
+// The default logger is slog.Default().
+func WithLogger(logger slogLogger) RootHandlerOpt {
+	return func(r *RootHandler) {
+		r.logger = logger
 	}
 }
 
-func WithActionErrorHandler(handler ActionErrorHandler) HTTPAppOpt {
-	return func(app *HTTPApp) {
-		app.handleActionErrors = handler
+// WithParsingErrorHandler allows to set custom handler for parsing errors.
+// Parsing errors are errors that occur during request parsing and validation.
+// The default implementation will respond with 400 status code and validation
+// errors serialized as JSON. No sensitive information is exposed, just field names.
+// The default implementation will also log the error using configured logger.
+func WithParsingErrorHandler(handler errorHandlerFunc) RootHandlerOpt {
+	return func(h *RootHandler) {
+		h.handleParsingErrors = handler
 	}
 }
 
-func WithResponseErrorHandler(handler ResponseErrorHandler) HTTPAppOpt {
-	return func(app *HTTPApp) {
-		app.handleResponseErrors = handler
+// WithActionErrorHandler allows to set custom handler for action errors.
+// Action errors are errors that occur during controller action execution.
+// The default implementation will respond with 500 status code and no output.
+// The default implementation will also log the error using configured logger.
+func WithActionErrorHandler(handler errorHandlerFunc) RootHandlerOpt {
+	return func(h *RootHandler) {
+		h.handleActionErrors = handler
 	}
 }
 
-func WithLogger(logger SlogLogger) HTTPAppOpt {
-	return func(app *HTTPApp) {
-		app.logger = logger
+// WithResponseErrorHandler allows to set custom handler for response errors.
+// Response errors are errors that occur while writing response.
+// The default implementation will attempt to respond with 500 status code and no output.
+// The default implementation will also log the error using configured logger.
+func WithResponseErrorHandler(handler errorHandlerFunc) RootHandlerOpt {
+	return func(h *RootHandler) {
+		h.handleResponseErrors = handler
 	}
 }
 
-func NewHTTPApp(router httpRouter, opts ...HTTPAppOpt) *HTTPApp {
-	app := &HTTPApp{
+// NewRootHandler creates a new instance of the root handler.
+func NewRootHandler(router httpRouter, opts ...RootHandlerOpt) *RootHandler {
+	rootHandler := &RootHandler{
 		router:       router,
 		logger:       slog.Default(),
 		knownParsers: newKnownParsers(),
 	}
-	app.handleResponseErrors = func(r *http.Request, err error) {
-		app.logger.LogAttrs(r.Context(), slog.LevelError, "Failed to write response", slog.Any("err", err))
+	rootHandler.handleActionErrors = func(w http.ResponseWriter, r *http.Request, err error) {
+		rootHandler.logger.LogAttrs(r.Context(), slog.LevelError, "Failed to process request", slog.Any("error", err))
+		if tw, ok := w.(trackedResponseWriter); ok && !tw.HeaderWritten() {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
-	app.handleParsingErrors = func(r *http.Request, w http.ResponseWriter, err error) {
-		w.Header().Add("content-type", "application/json; charset=utf-8")
+	rootHandler.handleResponseErrors = func(w http.ResponseWriter, r *http.Request, err error) {
+		rootHandler.logger.LogAttrs(r.Context(), slog.LevelError, "Failed to write response", slog.Any("err", err))
+		if tw, ok := w.(trackedResponseWriter); ok && !tw.HeaderWritten() {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}
+	rootHandler.handleParsingErrors = func(w http.ResponseWriter, r *http.Request, err error) {
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
-		app.logger.LogAttrs(r.Context(), slog.LevelWarn, "Failed to parse request", slog.Any("err", err))
+		rootHandler.logger.LogAttrs(r.Context(), slog.LevelWarn, "Failed to parse request", slog.Any("err", err))
 		var aggregatedErr internal.AggregatedBindingError
 		if ok := errors.As(err, &aggregatedErr); ok {
 			if writeErr := json.NewEncoder(w).Encode(aggregatedErr); writeErr != nil {
-				app.handleResponseErrors(r, writeErr)
+				rootHandler.handleResponseErrors(w, r, writeErr)
 			}
 			return
 		}
 	}
 	for _, opt := range opts {
-		opt(app)
+		opt(rootHandler)
 	}
-	return app
+	return rootHandler
 }
 
-type voidValue *int
+func (rootHandler *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	rootHandler.router.ServeHTTP(w, r)
+}
 
-type httpHandlerFactory func(app *HTTPApp) http.Handler
 type paramsParser[TReqParams any] interface {
 	parse(router httpRouter, req *http.Request) (TReqParams, error)
 }
-type paramsParserFactory[TReqParams any] func(app *HTTPApp) paramsParser[TReqParams]
+
+type void *int
 
 type voidParamsParser struct{}
 
-func (p voidParamsParser) parse(_ httpRouter, _ *http.Request) (voidValue, error) {
-	return voidValue(nil), nil
+func (p voidParamsParser) parse(_ httpRouter, _ *http.Request) (void, error) {
+	return void(nil), nil
 }
 
-func makeVoidParamsParser(_ *HTTPApp) paramsParser[voidValue] {
+func makeVoidParamsParser(_ *RootHandler) paramsParser[void] {
 	return voidParamsParser{}
-}
-
-type handlerFactoryParams[TReqParams any, TResData any] struct {
-	defaultStatus       int
-	voidResult          bool
-	paramsParserFactory func(app *HTTPApp) paramsParser[TReqParams]
-	handler             func(context.Context, TReqParams) (TResData, error)
-}
-
-func mustInitializeAction(actionName string, handlerFactory httpHandlerFactory) httpHandlerFactory {
-	if handlerFactory == nil {
-		panic(fmt.Errorf("%s action has not been initialized", actionName))
-	}
-	return handlerFactory
-}
-
-func createHandlerFactory[TReqParams any, TResData any](
-	factoryParams handlerFactoryParams[TReqParams, TResData],
-) httpHandlerFactory {
-	return func(app *HTTPApp) http.Handler {
-		paramsParser := factoryParams.paramsParserFactory(app)
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			params, err := paramsParser.parse(app.router, r)
-			if err != nil {
-				app.handleParsingErrors(r, w, err)
-				return
-			}
-
-			resData, err := factoryParams.handler(r.Context(), params)
-			if err != nil {
-				app.handleActionErrors(r, w, err)
-				return
-			}
-			if factoryParams.voidResult {
-				w.WriteHeader(factoryParams.defaultStatus)
-				return
-			}
-
-			w.Header().Add("Content-Type", "application/json; charset=utf-8")
-			w.WriteHeader(factoryParams.defaultStatus)
-			if encodingErr := json.NewEncoder(w).Encode(resData); encodingErr != nil {
-				app.handleResponseErrors(r, encodingErr)
-			}
-		})
-	}
-}
-
-type actionBuilder[TControllerBuilder any, TReqParams any, TResData any] struct {
-	defaultStatusCode   int
-	voidResult          bool
-	httpHandlerFactory  func(app *HTTPApp) http.Handler
-	paramsParserFactory paramsParserFactory[TReqParams]
-	controllerBuilder   TControllerBuilder
-}
-
-func (ab *actionBuilder[TControllerBuilder, TReqParams, TResData]) With(
-	handler func(context.Context, TReqParams) (TResData, error),
-) TControllerBuilder {
-	ab.httpHandlerFactory = createHandlerFactory(handlerFactoryParams[TReqParams, TResData]{
-		defaultStatus:       ab.defaultStatusCode,
-		voidResult:          ab.voidResult,
-		paramsParserFactory: ab.paramsParserFactory,
-		handler:             handler,
-	})
-	return ab.controllerBuilder
-}
-
-type actionBuilderVoidResult[TControllerBuilder any, TReqParams any] struct {
-	actionBuilder[TControllerBuilder, TReqParams, voidValue]
-}
-
-func (ab *actionBuilderVoidResult[TControllerBuilder, TReqParams]) With(
-	handler func(context.Context, TReqParams) error,
-) TControllerBuilder {
-	return ab.actionBuilder.With(func(ctx context.Context, tp TReqParams) (voidValue, error) {
-		return nil, handler(ctx, tp)
-	})
-}
-
-type actionBuilderNoParams[TControllerBuilder any, TResData any] struct {
-	actionBuilder[TControllerBuilder, voidValue, TResData]
-}
-
-func (ab *actionBuilderNoParams[TControllerBuilder, TResData]) With(
-	handler func(context.Context) (TResData, error),
-) TControllerBuilder {
-	return ab.actionBuilder.With(func(ctx context.Context, _ voidValue) (TResData, error) {
-		return handler(ctx)
-	})
-}
-
-type actionBuilderNoParamsVoidResult[TControllerBuilder any] struct {
-	actionBuilder[TControllerBuilder, voidValue, voidValue]
-}
-
-func (ab *actionBuilderNoParamsVoidResult[TControllerBuilder]) With(
-	handler func(context.Context) error,
-) TControllerBuilder {
-	return ab.actionBuilder.With(func(ctx context.Context, _ voidValue) (voidValue, error) {
-		return nil, handler(ctx)
-	})
 }
 
 func readPathValue(key string, router httpRouter, req *http.Request) internal.OptionalVal[string] {
@@ -435,5 +365,451 @@ func newRequestParamBinder[TRawVal any, TTargetVal any](
 			return
 		}
 		params.validateValue(bindingCtx, *receiver)
+	}
+}
+
+type universalActionHandlerFunc[
+	TReq any,
+	TRes any,
+] func(http.ResponseWriter, *http.Request, TReq) (TRes, error)
+
+// action handlers without http context exposed.
+type handlerActionFunc[TReq any, TRes any] = func(context.Context, TReq) (TRes, error)
+type handlerActionFuncNoParams[TReq void, TRes any] = func(context.Context) (TRes, error)
+type handlerActionFuncNoResponse[TReq any, TRes void] = func(context.Context, TReq) error
+type handlerActionFuncNoParamsNoResponse[TReq void, TRes void] = func(context.Context) error
+
+// action handlers with http context exposed.
+type httpHandlerActionFunc[TReq any, TRes any] = func(http.ResponseWriter, *http.Request, TReq) (TRes, error)
+type httpHandlerActionFuncNoParams[TReq void, TRes any] = func(http.ResponseWriter, *http.Request) (TRes, error)
+type httpHandlerActionFuncNoResponse[TReq any, TRes void] = func(http.ResponseWriter, *http.Request, TReq) error
+type httpHandlerActionFuncNoParamsNoResponse[TReq void, TRes void] = func(http.ResponseWriter, *http.Request) error
+
+// handlerActionFuncConstraint represents possible combination of handler action functions.
+// Each function can be with or without parameters and with or without response.
+// Additionally each function can have access to http objects for possible direct manipulation.
+type handlerActionFuncConstraint[TReq any, TRes any] interface {
+	handlerActionFunc[TReq, TRes] |
+		handlerActionFuncNoParams[void, TRes] |
+		handlerActionFuncNoResponse[TReq, void] |
+		handlerActionFuncNoParamsNoResponse[void, void] |
+
+		httpHandlerActionFunc[TReq, TRes] |
+		httpHandlerActionFuncNoParams[void, TRes] |
+		httpHandlerActionFuncNoResponse[TReq, void] |
+		httpHandlerActionFuncNoParamsNoResponse[void, void]
+}
+
+type handlerRequestTransformer[TReq any, TAppReq any] interface {
+	TransformRequest(*http.Request, TReq) (TAppReq, error)
+}
+
+type handlerResponseTransformer[TRes any, TAppRes any] interface {
+	TransformResponse(context.Context, TAppRes) (TRes, error)
+}
+
+type handlerTransformer[TReq any, TRes any, TAppReq any, TAppRes any] interface {
+	handlerRequestTransformer[TReq, TAppReq]
+	handlerResponseTransformer[TRes, TAppRes]
+}
+
+// TransformAction can be used to transform generated action handler to satisfy
+// application layer implementation. Use it to reduce boilerplate code in the
+// controller layer and keep controller slim and declarative.
+//
+// Errors produced during request or response transformation will be handled with
+// action error handler. You can customize error handling using WithActionErrorHandler option
+// when initializing RootHandler with NewRootHandler method.
+//
+// Please note that the TransformAction is tightly coupled with the generated code
+// and should not be used outside of the controller layer.
+func TransformAction[
+	TReqGenerated any,
+	TReqApplication any,
+	TResGenerated any,
+	TResApplication any,
+	TActionGenerated handlerActionFunc[TReqGenerated, TResGenerated],
+	TActionApplication handlerActionFunc[TReqApplication, TResApplication],
+](
+	appAction TActionApplication,
+	transformer handlerTransformer[TReqGenerated, TResGenerated, TReqApplication, TResApplication],
+) TActionGenerated {
+	return func(ctx context.Context, rec TReqGenerated) (TResGenerated, error) {
+		var emptyRes TResGenerated
+		contextualReq, ok := ctx.(contextualRequest)
+		if !ok {
+			return emptyRes, errors.New("could not obtain http.Request during request params transformation")
+		}
+
+		req, err := transformer.TransformRequest(contextualReq.req, rec)
+		if err != nil {
+			return emptyRes, err
+		}
+		res, err := appAction(ctx, req)
+		if err != nil {
+			return emptyRes, err
+		}
+		return transformer.TransformResponse(ctx, res)
+	}
+}
+
+// TransformNoParamsAction is a variation of TransformAction for actions without parameters.
+// Please see the TransformAction for more details.
+func TransformNoParamsAction[
+	TResGenerated any,
+	TResApplication any,
+	TActionGenerated handlerActionFuncNoParams[void, TResGenerated],
+	TActionApplication handlerActionFuncNoParams[void, TResApplication],
+](
+	appAction TActionApplication,
+	transformer handlerResponseTransformer[TResGenerated, TResApplication],
+) TActionGenerated {
+	return func(ctx context.Context) (TResGenerated, error) {
+		var emptyRes TResGenerated
+		res, err := appAction(ctx)
+		if err != nil {
+			return emptyRes, err
+		}
+		return transformer.TransformResponse(ctx, res)
+	}
+}
+
+// TransformNoResponseAction is a variation of TransformAction for actions without response body.
+// Please see the TransformAction for more details.
+func TransformNoResponseAction[
+	TReqGenerated any,
+	TReqApplication any,
+	TActionGenerated handlerActionFuncNoResponse[TReqGenerated, void],
+	TActionApplication handlerActionFuncNoResponse[TReqApplication, void],
+](
+	appAction TActionApplication,
+	transformer handlerRequestTransformer[TReqGenerated, TReqApplication],
+) TActionGenerated {
+	return func(ctx context.Context, rec TReqGenerated) error {
+		contextualReq, ok := ctx.(contextualRequest)
+		if !ok {
+			return errors.New("could not obtain http.Request during request params transformation")
+		}
+
+		req, err := transformer.TransformRequest(contextualReq.req, rec)
+		if err != nil {
+			return err
+		}
+		return appAction(ctx, req)
+	}
+}
+
+type genericHandlerBuilder[
+	TReq any,
+	TRes any,
+	TPlainHandler handlerActionFuncConstraint[TReq, TRes],
+	THttpHandler handlerActionFuncConstraint[TReq, TRes],
+] interface {
+	// HandleWith creates a new http.Handler from a given func.
+	//
+	// The action handler is not supposed to have access to http objects and
+	// in most scenarios can just delegate the work to the application logic layer.
+	// If you need access to http objects use HandleWithHTTP
+	HandleWith(TPlainHandler) http.Handler
+
+	// HandleWithHTTP creates a new http.Handler from a given func.
+	//
+	// The action handler allows direct access to http.ResponseWriter and *http.Request.
+	// It also provides parsed request parameters and allows sending structured response.
+	// If you need fully customized behavior, feel free not to use the builder and
+	// return the handler directly.
+	HandleWithHTTP(THttpHandler) http.Handler
+}
+
+type HandlerBuilder[TReq any, TRes any] genericHandlerBuilder[
+	TReq,
+	TRes,
+	handlerActionFunc[TReq, TRes],
+	httpHandlerActionFunc[TReq, TRes],
+]
+
+type NoParamsHandlerBuilder[TRes any] genericHandlerBuilder[
+	void,
+	TRes,
+	handlerActionFuncNoParams[void, TRes],
+	httpHandlerActionFuncNoParams[void, TRes],
+]
+
+type NoResponseHandlerBuilder[TReq any] genericHandlerBuilder[
+	TReq,
+	void,
+	handlerActionFuncNoResponse[TReq, void],
+	httpHandlerActionFuncNoResponse[TReq, void],
+]
+
+type NoParamsNoResponseHandlerBuilder genericHandlerBuilder[
+	void,
+	void,
+	handlerActionFuncNoParamsNoResponse[void, void],
+	httpHandlerActionFuncNoParamsNoResponse[void, void],
+]
+
+type makeActionBuilderParams[
+	TReqParams any,
+	TResData any,
+] struct {
+	defaultStatus int
+	voidResult    bool
+	paramsParser  paramsParser[TReqParams]
+}
+
+type actionBuilderHandlerAdapter[
+	TReq any,
+	TRes any,
+	THandler handlerActionFuncConstraint[TReq, TRes],
+] func(THandler) universalActionHandlerFunc[TReq, TRes]
+
+// Allows accessing underlying http.Request in certain scenarios (transformers)
+// where just context is available but http.Request is needed.
+type contextualRequest struct{ req *http.Request }
+
+func (cr contextualRequest) Deadline() (time.Time, bool) {
+	return cr.req.Context().Deadline()
+}
+
+func (cr contextualRequest) Done() <-chan struct{} {
+	return cr.req.Context().Done()
+}
+
+func (cr contextualRequest) Err() error {
+	return cr.req.Context().Err()
+}
+
+func (cr contextualRequest) Value(key any) any {
+	return cr.req.Context().Value(key)
+}
+
+var _ context.Context = (*contextualRequest)(nil)
+
+func newHandlerAdapter[
+	TReq any,
+	TRes any,
+	THandler handlerActionFunc[TReq, TRes],
+]() actionBuilderHandlerAdapter[TReq, TRes, THandler] {
+	return func(t THandler) universalActionHandlerFunc[TReq, TRes] {
+		return func(_ http.ResponseWriter, httpReq *http.Request, req TReq) (TRes, error) {
+			return t(contextualRequest{req: httpReq}, req)
+		}
+	}
+}
+
+func newHandlerAdapterNoParams[
+	TReq any,
+	TRes any,
+	THandler handlerActionFuncNoParams[void, TRes],
+]() actionBuilderHandlerAdapter[TReq, TRes, THandler] {
+	return func(t THandler) universalActionHandlerFunc[TReq, TRes] {
+		return func(_ http.ResponseWriter, r *http.Request, _ TReq) (TRes, error) {
+			return t(r.Context())
+		}
+	}
+}
+
+func newHandlerAdapterNoResponse[
+	TReq any,
+	TRes any,
+	THandler handlerActionFuncNoResponse[TReq, void],
+]() actionBuilderHandlerAdapter[TReq, TRes, THandler] {
+	return func(t THandler) universalActionHandlerFunc[TReq, TRes] {
+		return func(_ http.ResponseWriter, r *http.Request, req TReq) (TRes, error) {
+			var emptyRes TRes
+			if err := t(contextualRequest{req: r}, req); err != nil {
+				return emptyRes, err
+			}
+			return emptyRes, nil
+		}
+	}
+}
+
+func newHandlerAdapterNoParamsNoResponse[
+	TReq any,
+	TRes any,
+	THandler handlerActionFuncNoParamsNoResponse[void, void],
+]() actionBuilderHandlerAdapter[TReq, TRes, THandler] {
+	return func(t THandler) universalActionHandlerFunc[TReq, TRes] {
+		return func(_ http.ResponseWriter, r *http.Request, _ TReq) (TRes, error) {
+			var emptyRes TRes
+			return emptyRes, t(r.Context())
+		}
+	}
+}
+
+func newHTTPHandlerAdapter[
+	TReq any,
+	TRes any,
+	THandler httpHandlerActionFunc[TReq, TRes],
+]() actionBuilderHandlerAdapter[TReq, TRes, THandler] {
+	return func(t THandler) universalActionHandlerFunc[TReq, TRes] {
+		return func(w http.ResponseWriter, r *http.Request, req TReq) (TRes, error) {
+			return t(w, r, req)
+		}
+	}
+}
+
+func newHTTPHandlerAdapterNoParams[
+	TReq any,
+	TRes any,
+	THandler httpHandlerActionFuncNoParams[void, TRes],
+]() actionBuilderHandlerAdapter[TReq, TRes, THandler] {
+	return func(t THandler) universalActionHandlerFunc[TReq, TRes] {
+		return func(w http.ResponseWriter, r *http.Request, _ TReq) (TRes, error) {
+			return t(w, r)
+		}
+	}
+}
+
+func newHTTPHandlerAdapterNoResponse[
+	TReq any,
+	TRes any,
+	THandler httpHandlerActionFuncNoResponse[TReq, void],
+]() actionBuilderHandlerAdapter[TReq, TRes, THandler] {
+	return func(t THandler) universalActionHandlerFunc[TReq, TRes] {
+		return func(w http.ResponseWriter, r *http.Request, req TReq) (TRes, error) {
+			var emptyRes TRes
+			if err := t(w, r, req); err != nil {
+				return emptyRes, err
+			}
+			return emptyRes, nil
+		}
+	}
+}
+
+func newHTTPHandlerAdapterNoParamsNoResponse[
+	TReq any,
+	TRes any,
+	THandler httpHandlerActionFuncNoParamsNoResponse[void, void],
+]() actionBuilderHandlerAdapter[TReq, TRes, THandler] {
+	return func(t THandler) universalActionHandlerFunc[TReq, TRes] {
+		return func(w http.ResponseWriter, r *http.Request, _ TReq) (TRes, error) {
+			var emptyRes TRes
+			return emptyRes, t(w, r)
+		}
+	}
+}
+
+type actionsResponseWriter struct {
+	targetWriter  http.ResponseWriter
+	headerWritten bool
+	bodyWritten   bool
+	defaultStatus int
+}
+
+func (w *actionsResponseWriter) HeaderWritten() bool {
+	return w.headerWritten
+}
+
+func (w *actionsResponseWriter) BodyWritten() bool {
+	return w.bodyWritten
+}
+
+func (w *actionsResponseWriter) Header() http.Header {
+	return w.targetWriter.Header()
+}
+
+func (w *actionsResponseWriter) WriteHeader(statusCode int) {
+	w.headerWritten = true
+	w.targetWriter.WriteHeader(statusCode)
+}
+
+func (w *actionsResponseWriter) Write(data []byte) (int, error) {
+	if !w.headerWritten {
+		w.WriteHeader(w.defaultStatus)
+	}
+	w.bodyWritten = true
+	return w.targetWriter.Write(data)
+}
+
+var _ trackedResponseWriter = &actionsResponseWriter{}
+var _ http.ResponseWriter = &actionsResponseWriter{}
+
+type genericHandlerBuilderImpl[
+	TReq any,
+	TRes any,
+	TPlainHandler handlerActionFuncConstraint[TReq, TRes],
+	THttpHandler handlerActionFuncConstraint[TReq, TRes],
+] struct {
+	rootHandler        *RootHandler
+	handlerAdapter     actionBuilderHandlerAdapter[TReq, TRes, TPlainHandler]
+	httpHandlerAdapter actionBuilderHandlerAdapter[TReq, TRes, THttpHandler]
+	params             makeActionBuilderParams[TReq, TRes]
+}
+
+func (ab genericHandlerBuilderImpl[TReq, TRes, TPlainHandler, THttpHandler]) createHandler(
+	handler universalActionHandlerFunc[TReq, TRes],
+) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		aw := &actionsResponseWriter{
+			targetWriter:  w,
+			defaultStatus: ab.params.defaultStatus,
+		}
+
+		reqParams, err := ab.params.paramsParser.parse(ab.rootHandler.router, r)
+		if err != nil {
+			ab.rootHandler.handleParsingErrors(aw, r, err)
+			return
+		}
+
+		resData, err := handler(aw, r, reqParams)
+		if err != nil {
+			ab.rootHandler.handleActionErrors(aw, r, err)
+			return
+		}
+
+		if ab.params.voidResult {
+			// Do not write header twice
+			if !aw.HeaderWritten() {
+				aw.WriteHeader(ab.params.defaultStatus)
+			}
+			return
+		}
+
+		// This means the action handler has written the response itself.
+		if aw.BodyWritten() {
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		// Not sending the status here. The action writer will send it in case of
+		// success. If error has happened while encoding, then the error handler will have
+		// a chance to set the status.
+		if encodingErr := json.NewEncoder(aw).Encode(resData); encodingErr != nil {
+			ab.rootHandler.handleResponseErrors(aw, r, encodingErr)
+		}
+	})
+}
+
+func (ab genericHandlerBuilderImpl[TReq, TRes, TPlainHandler, THttpHandler]) HandleWith(
+	inputHandler TPlainHandler,
+) http.Handler {
+	return ab.createHandler(ab.handlerAdapter(inputHandler))
+}
+
+func (ab genericHandlerBuilderImpl[TReq, TRes, TPlainHandler, THttpHandler]) HandleWithHTTP(
+	handler THttpHandler,
+) http.Handler {
+	return ab.createHandler(ab.httpHandlerAdapter(handler))
+}
+
+func newGenericHandlerBuilder[
+	TReq any,
+	TRes any,
+	TPlainHandler handlerActionFuncConstraint[TReq, TRes],
+	THttpHandler handlerActionFuncConstraint[TReq, TRes],
+](
+	rootHandler *RootHandler,
+	handlerAdapter actionBuilderHandlerAdapter[TReq, TRes, TPlainHandler],
+	httpHandlerAdapter actionBuilderHandlerAdapter[TReq, TRes, THttpHandler],
+	params makeActionBuilderParams[TReq, TRes],
+) genericHandlerBuilder[TReq, TRes, TPlainHandler, THttpHandler] {
+	return genericHandlerBuilderImpl[TReq, TRes, TPlainHandler, THttpHandler]{
+		rootHandler:        rootHandler,
+		handlerAdapter:     handlerAdapter,
+		httpHandlerAdapter: httpHandlerAdapter,
+		params:             params,
 	}
 }

@@ -28,7 +28,7 @@ func (p *paramsParserEchoSendEcho) parse(router httpRouter, req *http.Request) (
 	return reqParams, bindingCtx.AggregatedError()
 }
 
-func newParamsParserEchoSendEcho(app *HTTPApp) paramsParser[*EchoSendEchoRequest] {
+func newParamsParserEchoSendEcho(rootHandler *RootHandler) paramsParser[*EchoSendEchoRequest] {
 	return &paramsParserEchoSendEcho{
 		bindPayload: newRequestParamBinder(binderParams[*http.Request, *EchoRequestPayload]{
 			required: true,

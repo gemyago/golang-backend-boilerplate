@@ -5,12 +5,14 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	. "github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
 )
 
 // Below is to workaround unused imports.
+var _ = http.MethodGet
 var _ = time.Time{}
 var _ = json.Unmarshal
 var _ = fmt.Sprint
@@ -24,41 +26,63 @@ type EchoSendEchoRequest struct {
 	Payload *EchoRequestPayload
 }
 
-type EchoController struct {
+type echoControllerBuilder struct {
 	// POST /echo
 	//
 	// Request type: EchoSendEchoRequest,
 	//
 	// Response type: EchoResponsePayload
-	SendEcho httpHandlerFactory
+	SendEcho genericHandlerBuilder[
+		*EchoSendEchoRequest,
+		*EchoResponsePayload,
+		handlerActionFunc[*EchoSendEchoRequest, *EchoResponsePayload],
+		httpHandlerActionFunc[*EchoSendEchoRequest, *EchoResponsePayload],
+	]
 }
 
-type EchoControllerBuilder struct {
-	// POST /echo
-	//
-	// Request type: EchoSendEchoRequest,
-	//
-	// Response type: EchoResponsePayload
-	HandleSendEcho actionBuilder[*EchoControllerBuilder, *EchoSendEchoRequest, *EchoResponsePayload]
-}
-
-func (c *EchoControllerBuilder) Finalize() *EchoController {
-	return &EchoController{
-		SendEcho: mustInitializeAction("sendEcho", c.HandleSendEcho.httpHandlerFactory),
+func newEchoControllerBuilder(app *RootHandler) *echoControllerBuilder {
+	return &echoControllerBuilder{
+		// POST /echo
+		SendEcho: newGenericHandlerBuilder(
+			app,
+			newHandlerAdapter[
+				*EchoSendEchoRequest,
+				*EchoResponsePayload,
+			](),
+			newHTTPHandlerAdapter[
+				*EchoSendEchoRequest,
+				*EchoResponsePayload,
+			](),
+			makeActionBuilderParams[
+				*EchoSendEchoRequest,
+				*EchoResponsePayload,
+			]{
+				defaultStatus: 200,
+				paramsParser:  newParamsParserEchoSendEcho(app),
+			},
+		),
 	}
 }
 
-func BuildEchoController() *EchoControllerBuilder {
-	controllerBuilder := &EchoControllerBuilder{}
-
+type EchoController interface {
 	// POST /echo
-	controllerBuilder.HandleSendEcho.controllerBuilder = controllerBuilder
-	controllerBuilder.HandleSendEcho.defaultStatusCode = 200
-	controllerBuilder.HandleSendEcho.paramsParserFactory = newParamsParserEchoSendEcho
-
-	return controllerBuilder
+	//
+	// Request type: EchoSendEchoRequest,
+	//
+	// Response type: EchoResponsePayload
+	SendEcho(HandlerBuilder[
+		*EchoSendEchoRequest,
+		*EchoResponsePayload,
+	]) http.Handler
 }
 
-func RegisterEchoRoutes(controller *EchoController, app *HTTPApp) {
-	app.router.HandleRoute("POST", "/echo", controller.SendEcho(app))
+// RegisterEchoRoutes will attach the following routes to the root handler:
+// 
+// - POST /echo
+// 
+// Routes will use provided controller to handle requests.
+func(rootHandler *RootHandler) RegisterEchoRoutes(controller EchoController) *RootHandler {
+	builder := newEchoControllerBuilder(rootHandler)
+	rootHandler.router.HandleRoute("POST", "/echo", controller.SendEcho(builder.SendEcho))
+	return rootHandler
 }

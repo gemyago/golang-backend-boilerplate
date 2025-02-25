@@ -11,7 +11,7 @@ import (
 )
 
 // Use apigen to generate v1routes
-//go:generate apigen ./v1schemas/api.yaml ./v1routes --verbose
+//go:generate go run github.com/gemyago/apigen ./v1routes.yaml ./v1routes
 
 type V1RoutesAppDeps struct {
 	dig.In

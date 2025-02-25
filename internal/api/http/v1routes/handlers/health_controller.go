@@ -5,12 +5,14 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	. "github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
 )
 
 // Below is to workaround unused imports.
+var _ = http.MethodGet
 var _ = time.Time{}
 var _ = json.Unmarshal
 var _ = fmt.Sprint
@@ -18,42 +20,61 @@ type _ func() Error
 
 
 
-type HealthController struct {
+type healthControllerBuilder struct {
 	// GET /health
 	//
 	// Request type: none
 	//
 	// Response type: none
-	HealthCheck httpHandlerFactory
+	HealthCheck genericHandlerBuilder[
+		void,
+		void,
+		handlerActionFuncNoParamsNoResponse[void, void],
+		httpHandlerActionFuncNoParamsNoResponse[void, void],
+	]
 }
 
-type HealthControllerBuilder struct {
-	// GET /health
-	//
-	// Request type: none
-	//
-	// Response type: none
-	HandleHealthCheck actionBuilderNoParamsVoidResult[*HealthControllerBuilder]
-}
-
-func (c *HealthControllerBuilder) Finalize() *HealthController {
-	return &HealthController{
-		HealthCheck: mustInitializeAction("healthCheck", c.HandleHealthCheck.httpHandlerFactory),
+func newHealthControllerBuilder(app *RootHandler) *healthControllerBuilder {
+	return &healthControllerBuilder{
+		// GET /health
+		HealthCheck: newGenericHandlerBuilder(
+			app,
+			newHandlerAdapterNoParamsNoResponse[
+				void,
+				void,
+			](),
+			newHTTPHandlerAdapterNoParamsNoResponse[
+				void,
+				void,
+			](),
+			makeActionBuilderParams[
+				void,
+				void,
+			]{
+				defaultStatus: 204,
+				voidResult:    true,
+				paramsParser:  makeVoidParamsParser(app),
+			},
+		),
 	}
 }
 
-func BuildHealthController() *HealthControllerBuilder {
-	controllerBuilder := &HealthControllerBuilder{}
-
+type HealthController interface {
 	// GET /health
-	controllerBuilder.HandleHealthCheck.controllerBuilder = controllerBuilder
-	controllerBuilder.HandleHealthCheck.defaultStatusCode = 204
-	controllerBuilder.HandleHealthCheck.voidResult = true
-	controllerBuilder.HandleHealthCheck.paramsParserFactory = makeVoidParamsParser
-
-	return controllerBuilder
+	//
+	// Request type: none
+	//
+	// Response type: none
+	HealthCheck(NoParamsNoResponseHandlerBuilder) http.Handler
 }
 
-func RegisterHealthRoutes(controller *HealthController, app *HTTPApp) {
-	app.router.HandleRoute("GET", "/health", controller.HealthCheck(app))
+// RegisterHealthRoutes will attach the following routes to the root handler:
+// 
+// - GET /health
+// 
+// Routes will use provided controller to handle requests.
+func(rootHandler *RootHandler) RegisterHealthRoutes(controller HealthController) *RootHandler {
+	builder := newHealthControllerBuilder(rootHandler)
+	rootHandler.router.HandleRoute("GET", "/health", controller.HealthCheck(builder.HealthCheck))
+	return rootHandler
 }
