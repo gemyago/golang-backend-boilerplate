@@ -21,6 +21,7 @@ type V1RoutesAppDeps struct {
 	RootLogger *slog.Logger
 
 	*v1controllers.HealthController
+	*v1controllers.EchoController
 }
 
 func NewRootHandler(deps V1RoutesAppDeps) http.Handler { // coverage-ignore // Little value in testing wireup code.
@@ -31,6 +32,7 @@ func NewRootHandler(deps V1RoutesAppDeps) http.Handler { // coverage-ignore // L
 		handlers.WithLogger(logger),
 	)
 	rootHandler.RegisterHealthRoutes(deps.HealthController)
+	rootHandler.RegisterEchoRoutes(deps.EchoController)
 
 	return rootHandler
 }

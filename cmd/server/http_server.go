@@ -8,7 +8,6 @@ import (
 	"time"
 
 	internalHttp "github.com/gemyago/golang-backend-boilerplate/internal/api/http"
-	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/routes"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
@@ -91,7 +90,6 @@ func newHTTPServerCmd(container *dig.Container) *cobra.Command {
 	cmd.PreRunE = func(_ *cobra.Command, _ []string) error {
 		return errors.Join(
 			// http related dependencies
-			routes.Register(container),
 			internalHttp.Register(container),
 			di.ProvideAll(
 				container,

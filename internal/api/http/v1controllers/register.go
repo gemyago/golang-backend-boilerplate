@@ -6,5 +6,8 @@ import (
 )
 
 func Register(container *dig.Container) error {
-	return di.ProvideAll(container, di.ProvideValue(&HealthController{}))
+	return di.ProvideAll(container,
+		newEchoController,
+		di.ProvideValue(&HealthController{}),
+	)
 }
