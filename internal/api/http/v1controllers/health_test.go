@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHealthCheckRoutes(t *testing.T) {
+func TestHealthCheck(t *testing.T) {
 	type mockDeps struct {
 		HealthController handlers.HealthController
 	}
