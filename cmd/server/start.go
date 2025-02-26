@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"time"
 
-	internalHttp "github.com/gemyago/golang-backend-boilerplate/internal/api/http"
+	"github.com/gemyago/golang-backend-boilerplate/internal/api/http"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/services"
@@ -16,7 +16,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type runHTTPServerParams struct {
+type startServerParams struct {
 	dig.In `ignore-unexported:"true"`
 
 	RootLogger *slog.Logger
@@ -28,7 +28,7 @@ type runHTTPServerParams struct {
 	noop bool
 }
 
-func runHTTPServer(params runHTTPServerParams) error {
+func startServer(params startServerParams) error {
 	rootLogger := params.RootLogger
 	httpServer := params.HTTPServer
 	rootCtx := context.Background()
@@ -51,7 +51,8 @@ func runHTTPServer(params runHTTPServerParams) error {
 	signalCtx, cancel := signal.NotifyContext(rootCtx, unix.SIGINT, unix.SIGTERM)
 	defer cancel()
 
-	startupErrors := make(chan error, 1)
+	const startedComponents = 2
+	startupErrors := make(chan error, startedComponents)
 	go func() {
 		if params.noop {
 			rootLogger.InfoContext(signalCtx, "NOOP: Starting http server")
@@ -74,10 +75,10 @@ func runHTTPServer(params runHTTPServerParams) error {
 	return errors.Join(startupErr, shutdown())
 }
 
-func newHTTPServerCmd(container *dig.Container) *cobra.Command {
+func newStartServerCmd(container *dig.Container) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "http",
-		Short: "Command to start http server",
+		Use:   "start",
+		Short: "Command to start server",
 	}
 	noop := false
 	cmd.Flags().BoolVar(
@@ -88,15 +89,14 @@ func newHTTPServerCmd(container *dig.Container) *cobra.Command {
 	)
 	cmd.PreRunE = func(_ *cobra.Command, _ []string) error {
 		return errors.Join(
-			// http related dependencies
-			internalHttp.Register(container),
 			server.Register(container),
+			http.Register(container),
 		)
 	}
 	cmd.RunE = func(_ *cobra.Command, _ []string) error {
-		return container.Invoke(func(params runHTTPServerParams) error {
+		return container.Invoke(func(params startServerParams) error {
 			params.noop = noop
-			return runHTTPServer(params)
+			return startServer(params)
 		})
 	}
 	return cmd
