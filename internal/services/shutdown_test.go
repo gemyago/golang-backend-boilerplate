@@ -61,7 +61,7 @@ func TestShutdownHooks(t *testing.T) {
 				{name: faker.Word()},
 			}
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			for _, hook := range hooks {
 				hook.On("shutdown", mock.AnythingOfType("*context.timerCtx")).Return(nil)
@@ -86,7 +86,7 @@ func TestShutdownHooks(t *testing.T) {
 				{name: faker.Word()},
 			}
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			for _, hook := range hooks {
 				hook.On("shutdownNoCtx").Return(nil)
@@ -111,7 +111,7 @@ func TestShutdownHooks(t *testing.T) {
 				{name: "should-fail-" + faker.Word()},
 			}
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			wantErr := errors.New(faker.Sentence())
 			lastHook := hooks[len(hooks)-1]

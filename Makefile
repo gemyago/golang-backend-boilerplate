@@ -17,9 +17,6 @@ lint: bin/golangci-lint
 $(cover_dir):
 	mkdir -p $(cover_dir)
 
-tools:
-	go install github.com/mitranim/gow@latest
-
 dist/bin: 
 	go build \
 		-tags=release \

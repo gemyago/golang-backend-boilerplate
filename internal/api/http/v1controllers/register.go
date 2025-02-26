@@ -1,4 +1,4 @@
-package app
+package v1controllers
 
 import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
@@ -6,5 +6,8 @@ import (
 )
 
 func Register(container *dig.Container) error {
-	return di.ProvideAll(container, NewEchoService)
+	return di.ProvideAll(container,
+		newEchoController,
+		di.ProvideValue(&HealthController{}),
+	)
 }

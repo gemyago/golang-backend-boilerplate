@@ -2,9 +2,13 @@ package di
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/dig"
 )
 
@@ -72,7 +76,7 @@ func TestDig(t *testing.T) {
 		constructor := func(_ context.Context, _ DepA) (DepB, error) {
 			return DepB{}, nil
 		}
-		ctx := context.Background()
+		ctx := t.Context()
 		if err := ProvideAll(container,
 			ProvideValue(DepA{}),
 			ProvideWithArgErr(ctx, constructor),
@@ -92,7 +96,7 @@ func TestDig(t *testing.T) {
 		constructor := func(_ context.Context, _ DepA) DepB {
 			return DepB{}
 		}
-		ctx := context.Background()
+		ctx := t.Context()
 		if err := ProvideAll(container,
 			ProvideValue(DepA{}),
 			ProvideWithArg(ctx, constructor),
@@ -105,5 +109,46 @@ func TestDig(t *testing.T) {
 		}); !assert.NoError(t, err) {
 			return
 		}
+	})
+
+	t.Run("ProvideAs", func(t *testing.T) {
+		t.Run("should provide one type as another", func(t *testing.T) {
+			container := dig.New()
+			type DepA fmt.Stringer
+			type DepB fmt.Stringer
+
+			var dep1Val DepA = time.Now()
+
+			err := ProvideAll(container,
+				func() DepA { return dep1Val },
+				ProvideAs[DepA, DepB],
+			)
+			require.NoError(t, err)
+
+			if err = container.Invoke(func(b DepB) {
+				assert.Equal(t, dep1Val, b)
+			}); !assert.NoError(t, err) {
+				return
+			}
+		})
+
+		t.Run("should fail if types are not compatible", func(t *testing.T) {
+			container := dig.New()
+			type DepA fmt.Stringer
+			type DepB http.Handler
+
+			var dep1Val DepA = time.Now()
+
+			err := ProvideAll(container,
+				func() DepA { return dep1Val },
+				ProvideAs[DepA, DepB],
+			)
+			require.NoError(t, err)
+
+			err = container.Invoke(func(_ DepB) {
+				assert.Fail(t, "should not be called")
+			})
+			require.Error(t, err)
+		})
 	})
 }

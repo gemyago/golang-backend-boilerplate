@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"math/rand/v2"
 	"net/http"
 	"syscall"
@@ -29,7 +28,7 @@ func TestHTTPServer(t *testing.T) {
 
 			stopCh := make(chan error)
 			startedSignal := make(chan struct{})
-			ctx := context.Background()
+			ctx := t.Context()
 			go func() {
 				close(startedSignal)
 				stopCh <- srv.Start(ctx)

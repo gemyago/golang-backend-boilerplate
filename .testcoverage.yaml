@@ -25,3 +25,4 @@ exclude:
   paths:
     - testing.go
     - mock_.*.go
+    - internal/api/http/v1routes/.* # Generated code

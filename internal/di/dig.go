@@ -2,6 +2,7 @@ package di
 
 import (
 	"fmt"
+	"reflect"
 
 	"go.uber.org/dig"
 )
@@ -66,4 +67,16 @@ func ProvideWithArgErr[
 	return func(cArg TConstructorArg) (TDep, error) {
 		return constructor(arg, cArg)
 	}
+}
+
+// ProvideAs is used to provide one type as another, typically
+// used to provide implementation struct as particular interface.
+func ProvideAs[TSource any, TTarget any](source TSource) (TTarget, error) {
+	target, ok := any(source).(TTarget)
+	if !ok {
+		var src TSource
+		var tgt TTarget
+		return target, fmt.Errorf("failed to cast %s to %s", reflect.TypeOf(src), reflect.TypeOf(tgt))
+	}
+	return target, nil
 }

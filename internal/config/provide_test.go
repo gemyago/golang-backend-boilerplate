@@ -17,19 +17,27 @@ import (
 func Test_provideConfigValue(t *testing.T) {
 	t.Run("should provide config value as int", func(t *testing.T) {
 		cfg := viper.New()
-		configKey := "int-cfg-key"
-		cfg.Set(configKey, rand.IntN(1000))
+		intCfgKey := "int-cfg-key"
+		cfg.Set(intCfgKey, rand.IntN(1000))
+
+		int32CfgKey := "int-32-cfg-key"
+		cfg.Set(int32CfgKey, rand.Int32N(1000))
 
 		type configReceiver struct {
 			dig.In
-			Value int `name:"config.int-cfg-key"`
+			IntVal   int   `name:"config.int-cfg-key"`
+			Int32Val int32 `name:"config.int-32-cfg-key"`
 		}
 
 		container := dig.New()
-		require.NoError(t, di.ProvideAll(container, provideConfigValue(cfg, configKey).asInt()))
+		require.NoError(t, di.ProvideAll(container,
+			provideConfigValue(cfg, intCfgKey).asInt(),
+			provideConfigValue(cfg, int32CfgKey).asInt32(),
+		))
 
 		require.NoError(t, container.Invoke(func(receiver configReceiver) {
-			require.Equal(t, cfg.GetInt(configKey), receiver.Value)
+			require.Equal(t, cfg.GetInt(intCfgKey), receiver.IntVal)
+			require.Equal(t, cfg.GetInt32(int32CfgKey), receiver.Int32Val)
 		}))
 	})
 

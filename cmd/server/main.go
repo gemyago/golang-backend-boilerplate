@@ -11,7 +11,7 @@ func setupCommands() *cobra.Command {
 	container := dig.New()
 	rootCmd := newRootCmd(container)
 	rootCmd.AddCommand(
-		newHTTPServerCmd(container),
+		newStartServerCmd(container),
 	)
 	return rootCmd
 }
