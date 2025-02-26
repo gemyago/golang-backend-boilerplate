@@ -15,7 +15,7 @@ import (
 // Use apigen to generate v1routes
 //go:generate go run github.com/gemyago/apigen ./v1routes.yaml ./v1routes
 
-type V1RoutesAppDeps struct {
+type V1RoutesDeps struct {
 	dig.In
 
 	RootLogger *slog.Logger
@@ -24,7 +24,7 @@ type V1RoutesAppDeps struct {
 	*v1controllers.EchoController
 }
 
-func NewRootHandler(deps V1RoutesAppDeps) http.Handler { // coverage-ignore // Little value in testing wireup code.
+func NewRootHandler(deps V1RoutesDeps) http.Handler { // coverage-ignore // Little value in testing wireup code.
 	logger := deps.RootLogger.WithGroup("http")
 
 	rootHandler := handlers.NewRootHandler(
