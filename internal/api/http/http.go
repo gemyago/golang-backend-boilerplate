@@ -1,12 +1,14 @@
 package http
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
+	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1controllers"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/di"
 	"go.uber.org/dig"
 )
 
@@ -18,27 +20,26 @@ type V1RoutesAppDeps struct {
 
 	RootLogger *slog.Logger
 
-	Router *server.MuxRouterAdapter
+	*v1controllers.HealthController
 }
 
-func NewV1RoutesApp(deps V1RoutesAppDeps) *handlers.HTTPApp { // coverage-ignore // Little value in testing wireup code.
-	logger := deps.RootLogger.WithGroup("http.v1routes")
-	return handlers.NewHTTPApp(deps.Router,
+func NewRootHandler(deps V1RoutesAppDeps) http.Handler { // coverage-ignore // Little value in testing wireup code.
+	logger := deps.RootLogger.WithGroup("http")
+
+	rootHandler := handlers.NewRootHandler(
+		(*server.HTTPRouter)(http.NewServeMux()),
 		handlers.WithLogger(logger),
-		handlers.WithActionErrorHandler(func(r *http.Request, w http.ResponseWriter, err error) {
-			logger.ErrorContext(r.Context(), "Failed to process request", diag.ErrAttr(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}),
 	)
+	rootHandler.RegisterHealthRoutes(deps.HealthController)
+
+	return rootHandler
 }
 
 func Register(container *dig.Container) error {
-	panic("not implemented")
-	// return errors.Join(
-	// 	v1controllers.Register(container),
-	// 	di.ProvideAll(container,
-	// 		NewV1RoutesApp,
-	// 		server.MakeHandlersGroupFactory(handlers.RegisterMessagesRoutes),
-	// 	),
-	// )
+	return errors.Join(
+		v1controllers.Register(container),
+		di.ProvideAll(container,
+			NewRootHandler,
+		),
+	)
 }

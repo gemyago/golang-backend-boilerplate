@@ -1,4 +1,4 @@
-package server
+package v1controllers
 
 import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
@@ -6,8 +6,5 @@ import (
 )
 
 func Register(container *dig.Container) error {
-	return di.ProvideAll(
-		container,
-		NewHTTPServer,
-	)
+	return di.ProvideAll(container, di.ProvideValue(&HealthController{}))
 }

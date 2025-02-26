@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"time"
 
+	internalHttp "github.com/gemyago/golang-backend-boilerplate/internal/api/http"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/routes"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
@@ -91,10 +92,10 @@ func newHTTPServerCmd(container *dig.Container) *cobra.Command {
 		return errors.Join(
 			// http related dependencies
 			routes.Register(container),
+			internalHttp.Register(container),
 			di.ProvideAll(
 				container,
 				server.NewHTTPServer,
-				server.NewRootHandler,
 			),
 		)
 	}

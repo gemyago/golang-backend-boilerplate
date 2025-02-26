@@ -19,8 +19,7 @@ func TestMuxRouterAdapter(t *testing.T) {
 			http.NoBody,
 		)
 
-		mux := http.NewServeMux()
-		adapter := NewMuxRouterAdapter(mux)
+		adapter := (*HTTPRouter)(http.NewServeMux())
 		handlerInvoked := false
 		adapter.HandleRoute(
 			http.MethodGet,
@@ -30,7 +29,7 @@ func TestMuxRouterAdapter(t *testing.T) {
 				assert.Equal(t, wantPathParam, gotPathParam)
 				handlerInvoked = true
 			}))
-		adapter.mux.ServeHTTP(httptest.NewRecorder(), req)
+		adapter.ServeHTTP(httptest.NewRecorder(), req)
 		assert.True(t, handlerInvoked)
 	})
 }

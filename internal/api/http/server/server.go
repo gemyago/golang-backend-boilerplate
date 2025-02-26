@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware"
 	"github.com/gemyago/golang-backend-boilerplate/internal/services"
+	sloghttp "github.com/samber/slog-http"
 	"go.uber.org/dig"
 )
 
@@ -46,6 +48,27 @@ func (srv *HTTPServer) Start(ctx context.Context) error {
 	return srv.httpSrv.ListenAndServe()
 }
 
+func buildMiddlewareChain(logger *slog.Logger, handler http.Handler) http.Handler {
+	// Router wire-up
+	chain := middleware.Chain(
+		middleware.NewTracingMiddleware(middleware.NewTracingMiddlewareCfg()),
+		sloghttp.NewWithConfig(logger, sloghttp.Config{
+			DefaultLevel:     slog.LevelInfo,
+			ClientErrorLevel: slog.LevelWarn,
+			ServerErrorLevel: slog.LevelError,
+
+			WithUserAgent:      true,
+			WithRequestID:      false, // We handle it ourselves (tracing middleware)
+			WithRequestHeader:  true,
+			WithResponseHeader: true,
+			WithSpanID:         true,
+			WithTraceID:        true,
+		}),
+		middleware.NewRecovererMiddleware(logger),
+	)
+	return chain(handler)
+}
+
 // NewHTTPServer constructor factory for general use *http.Server.
 func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
 	address := fmt.Sprintf("[::]:%d", deps.Port)
@@ -55,7 +78,7 @@ func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
 		ReadHeaderTimeout: deps.ReadHeaderTimeout,
 		ReadTimeout:       deps.ReadTimeout,
 		WriteTimeout:      deps.WriteTimeout,
-		Handler:           deps.Handler,
+		Handler:           buildMiddlewareChain(deps.RootLogger, deps.Handler),
 		ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
 	}
 
