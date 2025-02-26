@@ -3,6 +3,7 @@ package diag
 import (
 	"bytes"
 	"context"
+	"errors"
 	"log/slog"
 	"testing"
 	"time"
@@ -90,5 +91,13 @@ func TestDiagSlogHandler(t *testing.T) {
 			logger.InfoContext(t.Context(), faker.Sentence())
 			assert.NotEmpty(t, testOutput.String())
 		})
+	})
+}
+
+func TestAttributes(t *testing.T) {
+	t.Run("ErrAttr should create a standard error attribute", func(t *testing.T) {
+		err := errors.New(faker.Sentence())
+		got := ErrAttr(err)
+		assert.Equal(t, slog.Any("err", err), got)
 	})
 }

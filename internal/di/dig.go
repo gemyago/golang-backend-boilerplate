@@ -74,9 +74,9 @@ func ProvideWithArgErr[
 func ProvideAs[TSource any, TTarget any](source TSource) (TTarget, error) {
 	target, ok := any(source).(TTarget)
 	if !ok {
-		return target, fmt.Errorf("failed to cast %s to %s",
-			reflect.TypeOf((*TSource)(nil)).Elem(), reflect.TypeOf((*TTarget)(nil)).Elem(),
-		)
+		var src TSource
+		var tgt TTarget
+		return target, fmt.Errorf("failed to cast %s to %s", reflect.TypeOf(src), reflect.TypeOf(tgt))
 	}
 	return target, nil
 }
