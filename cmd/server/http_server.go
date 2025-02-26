@@ -9,7 +9,6 @@ import (
 
 	internalHttp "github.com/gemyago/golang-backend-boilerplate/internal/api/http"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
-	"github.com/gemyago/golang-backend-boilerplate/internal/di"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/services"
 	"github.com/spf13/cobra"
@@ -91,10 +90,7 @@ func newHTTPServerCmd(container *dig.Container) *cobra.Command {
 		return errors.Join(
 			// http related dependencies
 			internalHttp.Register(container),
-			di.ProvideAll(
-				container,
-				server.NewHTTPServer,
-			),
+			server.Register(container),
 		)
 	}
 	cmd.RunE = func(_ *cobra.Command, _ []string) error {
