@@ -4,7 +4,7 @@ package internal
 
 import (
 	"time"
-	. "github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
+	. "github.com/gemyago/golang-backend-boilerplate/internal/app/models"
 )
 
 // Below is to workaround unused imports.

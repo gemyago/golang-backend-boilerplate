@@ -3,60 +3,13 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"time"
 
-	. "github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
+	. "github.com/gemyago/golang-backend-boilerplate/internal/app/models"
 )
 
-// Below is to workaround unused imports.
-var _ = http.MethodGet
-var _ = time.Time{}
-var _ = json.Unmarshal
-var _ = fmt.Sprint
+// Below is to workaround unused imports if that happens.
 type _ func() Error
-
-
-
-type healthControllerBuilder struct {
-	// GET /health
-	//
-	// Request type: none
-	//
-	// Response type: HealthResponsePayload
-	HealthCheck genericHandlerBuilder[
-		void,
-		*HealthResponsePayload,
-		handlerActionFuncNoParams[void, *HealthResponsePayload],
-		httpHandlerActionFuncNoParams[void, *HealthResponsePayload],
-	]
-}
-
-func newHealthControllerBuilder(app *RootHandler) *healthControllerBuilder {
-	return &healthControllerBuilder{
-		// GET /health
-		HealthCheck: newGenericHandlerBuilder(
-			app,
-			newHandlerAdapterNoParams[
-				void,
-				*HealthResponsePayload,
-			](),
-			newHTTPHandlerAdapterNoParams[
-				void,
-				*HealthResponsePayload,
-			](),
-			makeActionBuilderParams[
-				void,
-				*HealthResponsePayload,
-			]{
-				defaultStatus: 200,
-				paramsParser:  makeVoidParamsParser(app),
-			},
-		),
-	}
-}
 
 type HealthController interface {
 	// GET /health

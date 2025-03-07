@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
-	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
+	"github.com/gemyago/golang-backend-boilerplate/internal/app/models"
 )
 
 type HealthController struct{}

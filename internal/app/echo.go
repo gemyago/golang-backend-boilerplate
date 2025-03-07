@@ -4,14 +4,11 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/app/models"
 	"go.uber.org/dig"
 )
 
 // Minimalistic application layer service example.
-
-type EchoData struct {
-	Message string
-}
 
 type EchoServiceDeps struct {
 	dig.In
@@ -23,10 +20,13 @@ type EchoService struct {
 	logger *slog.Logger
 }
 
-func (svc *EchoService) SendEcho(ctx context.Context, data *EchoData) (*EchoData, error) {
-	svc.logger.InfoContext(ctx, "Going to echo data", slog.String("message", data.Message))
-	return &EchoData{
-		Message: data.Message,
+func (svc *EchoService) SendEcho(
+	ctx context.Context,
+	data *models.SendEchoParams,
+) (*models.EchoResponsePayload, error) {
+	svc.logger.InfoContext(ctx, "Going to echo data", slog.String("message", data.Payload.Message))
+	return &models.EchoResponsePayload{
+		Message: data.Payload.Message,
 	}, nil
 }
 

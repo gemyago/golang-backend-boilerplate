@@ -1,4 +1,3 @@
-.openapi-generator-ignore
 echo_request_payload.go
 echo_response_payload.go
 error.go

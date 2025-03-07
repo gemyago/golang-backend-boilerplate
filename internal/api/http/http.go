@@ -13,7 +13,8 @@ import (
 )
 
 // Use apigen to generate v1routes
-//go:generate go run github.com/gemyago/apigen ./v1routes.yaml ./v1routes
+//go:generate go run github.com/gemyago/apigen server ./v1routes.yaml ../../app/models --global-property models
+//go:generate go run github.com/gemyago/apigen server ./v1routes.yaml ./v1routes --global-property apis --model-package "github.com/gemyago/golang-backend-boilerplate/internal/app/models"
 
 type V1RoutesDeps struct {
 	dig.In
