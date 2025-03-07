@@ -60,8 +60,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-tool github.com/vektra/mockery/v2
-
-tool github.com/mitranim/gow
-
-tool github.com/gemyago/apigen
+tool (
+	github.com/gemyago/apigen
+	github.com/mitranim/gow
+	github.com/vektra/mockery/v2
+)
