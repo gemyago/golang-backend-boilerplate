@@ -12,7 +12,7 @@ import (
 	"go.uber.org/dig"
 )
 
-// Use apigen to generate v1routes
+// Use apigen to generate v1routes. Models are generated on app layer.
 //go:generate go run github.com/gemyago/apigen server ./v1routes.yaml ../../app/models --global-property models
 //go:generate go run github.com/gemyago/apigen server ./v1routes.yaml ./v1routes --global-property apis --model-package "github.com/gemyago/golang-backend-boilerplate/internal/app/models"
 
@@ -25,7 +25,7 @@ type V1RoutesDeps struct {
 	*v1controllers.EchoController
 }
 
-func NewRootHandler(deps V1RoutesDeps) http.Handler { // coverage-ignore // Little value in testing wireup code.
+func NewRootHandlerV1(deps V1RoutesDeps) http.Handler { // coverage-ignore // Little value in testing wireup code.
 	logger := deps.RootLogger.WithGroup("http")
 
 	rootHandler := handlers.NewRootHandler(
@@ -42,7 +42,7 @@ func Register(container *dig.Container) error {
 	return errors.Join(
 		v1controllers.Register(container),
 		di.ProvideAll(container,
-			NewRootHandler,
+			NewRootHandlerV1,
 		),
 	)
 }
