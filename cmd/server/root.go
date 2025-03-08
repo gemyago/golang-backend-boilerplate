@@ -74,11 +74,10 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 				di.ProvideValue(rootLogger),
 			),
 		)
-		if err != nil {
-			return fmt.Errorf("failed to inject dependencies: %w", err)
-		}
 
-		return nil
+		return lo.
+			If(err != nil, fmt.Errorf("failed to inject dependencies: %w", err)).
+			Else(nil)
 	}
 	return cmd
 }

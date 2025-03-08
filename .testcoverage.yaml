@@ -26,3 +26,4 @@ exclude:
     - testing.go
     - mock_.*.go
     - internal/api/http/v1routes/.* # Generated code
+    - internal/app/models/.* # Generated code
