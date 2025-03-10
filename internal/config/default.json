@@ -2,6 +2,7 @@
   "defaultLogLevel": "INFO",
   "gracefulShutdownTimeout": "10s",
   "httpServer": {
+    "host": "[::]",
     "port": 8080,
     "idleTimeout": "60s",
     "readHeaderTimeout": "2s",

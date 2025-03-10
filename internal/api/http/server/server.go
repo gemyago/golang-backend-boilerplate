@@ -19,6 +19,7 @@ type HTTPServerDeps struct {
 	RootLogger *slog.Logger
 
 	// config
+	Host              string        `name:"config.httpServer.host"`
 	Port              int           `name:"config.httpServer.port"`
 	IdleTimeout       time.Duration `name:"config.httpServer.idleTimeout"`
 	ReadHeaderTimeout time.Duration `name:"config.httpServer.readHeaderTimeout"`
@@ -71,7 +72,7 @@ func buildMiddlewareChain(logger *slog.Logger, handler http.Handler) http.Handle
 
 // NewHTTPServer constructor factory for general use *http.Server.
 func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
-	address := fmt.Sprintf("[::]:%d", deps.Port)
+	address := fmt.Sprintf("%s:%d", deps.Host, deps.Port)
 	srv := &http.Server{
 		Addr:              address,
 		IdleTimeout:       deps.IdleTimeout,
