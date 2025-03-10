@@ -18,6 +18,7 @@ func TestHTTPServer(t *testing.T) {
 			hooks := services.NewTestShutdownHooks()
 			srv := NewHTTPServer(HTTPServerDeps{
 				RootLogger:    diag.RootTestLogger(),
+				Host:          "localhost",
 				Port:          50000 + rand.IntN(15000),
 				ShutdownHooks: hooks,
 				Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

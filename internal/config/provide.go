@@ -46,6 +46,7 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 		provideConfigValue(cfg, "gracefulShutdownTimeout").asDuration(),
 
 		// http server config
+		provideConfigValue(cfg, "httpServer.host").asString(),
 		provideConfigValue(cfg, "httpServer.port").asInt(),
 		provideConfigValue(cfg, "httpServer.idleTimeout").asDuration(),
 		provideConfigValue(cfg, "httpServer.readHeaderTimeout").asDuration(),
