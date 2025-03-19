@@ -35,6 +35,14 @@ dist: $(dist_platforms)
 .git-meta/repo-name: .git-meta
 	@basename $(shell git rev-parse --show-toplevel) > $@
 
+.git-meta/remote-url: .git-meta
+	@git remote get-url origin | sed -E \
+		-e 's|^git@([^:]+):|https://\1/|' \
+		-e 's|^http:|https:|' \
+		-e 's|\.git$$||' > $@.tmp
+	@cmp -s $@.tmp $@ || mv $@.tmp $@
+	@rm -f $@.tmp
+
 .git-meta/HEAD: FORCE .git-meta
 	@git rev-parse HEAD > $@.tmp
 	@if cmp -s $@ $@.tmp; then \
@@ -43,14 +51,14 @@ dist: $(dist_platforms)
 		mv $@.tmp $@; \
 	fi
 
-docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/HEAD-time
+docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/HEAD-time .git-meta/remote-url
 	@echo "org.opencontainers.image.created=\"$(shell git show -s --format=%cI HEAD)\"" > $@
 	@echo "org.opencontainers.image.source=\"$(shell git remote get-url origin)\"" >> $@
 	@echo "org.opencontainers.image.version=\"$(shell git describe --tags --always)\"" >> $@
 	@echo "org.opencontainers.image.revision=\"$(shell cat .git-meta/HEAD)\"" >> $@
 	@echo "org.opencontainers.image.ref.name=\"$(shell git rev-parse --abbrev-ref HEAD)\"" >> $@
 	@echo "org.opencontainers.image.title=\"$(shell cat .git-meta/repo-name)\"" >> $@
-	@echo "org.opencontainers.image.url=\"$(shell git remote get-url origin)\"" >> $@
+	@echo "org.opencontainers.image.url=\"$(shell cat .git-remote-url)\"" >> $@
 
 docker/.local-args: docker/.labels
 	@echo "--build-arg RUNTIME_IMAGE=$(call read_config,build.cfg,docker_runtime_image)" > $@
