@@ -6,7 +6,7 @@ app_name:=$(shell basename `git rev-parse --show-toplevel`)
 # Define a function to read values from any config file
 # Usage: $(call read_config,config_file,key_name)
 define read_config
-$(shell grep -m 1 "^$(2)\s*=\s*" $(1) | cut -d'=' -f2)
+$(shell grep -m 1 "^$(2)\s*=\s*" $(1) | cut -d'=' -f2 | sed 's/^[[:space:]]*//;s/[[:space:]]*$$//')
 endef
 
 # Reading config using the new function
@@ -29,19 +29,6 @@ dist/%: FORCE
 
 dist: $(dist_platforms)
 
-docker_build_args=\
-				--platform $(platforms) \
-				--build-arg RUNTIME_IMAGE=$(docker_runtime_image) \
-				-f docker/Dockerfile \
-				--label org.opencontainers.image.created=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ') \
-				--label org.opencontainers.image.source=$(shell git remote get-url origin) \
-				--label org.opencontainers.image.version=$(shell git describe --tags --always) \
-				--label org.opencontainers.image.revision=$(shell git rev-parse HEAD) \
-				--label org.opencontainers.image.ref.name=$(shell git rev-parse --abbrev-ref HEAD) \
-				--label org.opencontainers.image.title=$(app_name) \
-				--label org.opencontainers.image.url=$(shell git remote get-url origin) \
-				../
-
 .git-meta:
 	@mkdir -p $@
 
@@ -57,24 +44,31 @@ docker_build_args=\
 	fi
 
 docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/HEAD-time
-	@echo "org.opencontainers.image.created=$(shell git show -s --format=%cI HEAD)" > $@
-	@echo "org.opencontainers.image.source=$(shell git remote get-url origin)" >> $@
-	@echo "org.opencontainers.image.version=$(shell git describe --tags --always)" >> $@
-	@echo "org.opencontainers.image.revision=$(shell cat .git-meta/HEAD)" >> $@
-	@echo "org.opencontainers.image.ref.name=$(shell git rev-parse --abbrev-ref HEAD)" >> $@
-	@echo "org.opencontainers.image.title=$(shell cat .git-meta/repo-name)" >> $@
-	@echo "org.opencontainers.image.url=$(shell git remote get-url origin)" >> $@
+	@echo "org.opencontainers.image.created=\"$(shell git show -s --format=%cI HEAD)\"" > $@
+	@echo "org.opencontainers.image.source=\"$(shell git remote get-url origin)\"" >> $@
+	@echo "org.opencontainers.image.version=\"$(shell git describe --tags --always)\"" >> $@
+	@echo "org.opencontainers.image.revision=\"$(shell cat .git-meta/HEAD)\"" >> $@
+	@echo "org.opencontainers.image.ref.name=\"$(shell git rev-parse --abbrev-ref HEAD)\"" >> $@
+	@echo "org.opencontainers.image.title=\"$(shell cat .git-meta/repo-name)\"" >> $@
+	@echo "org.opencontainers.image.url=\"$(shell git remote get-url origin)\"" >> $@
+
+docker/.local-args: docker/.labels
+	@echo "--build-arg RUNTIME_IMAGE=$(call read_config,build.cfg,docker_runtime_image)" > $@
+	@echo --platform $(platforms) >> $@
+	@echo -f docker/Dockerfile >> $@
+	@sed 's/^/--label /' docker/.labels >> $@
+	@echo "../" >> $@
 
 # Build local image
 # Target must be in form: docker/.local-<binary>-image
 # Example: make docker/.local-server-image
-docker/.local-%-image:
-	$(eval registry := $(call read_config,build.cfg,docker_local_registry_host))
-	$(eval image := $(registry)/$(app_name)-$*:latest)
+docker/.local-%-image: docker/.local-args
+	$(eval registry := $(call read_config,build.cfg,docker_local_registry))
+	$(eval image := $(registry)/$(shell cat .git-meta/repo-name)-$*:latest)
 	@echo "Building $(image)"
 	docker build -t $(image) \
 			--build-arg TARGET_BINARY="$*" \
-			$(docker_build_args)
+			$(shell cat $<)
 	docker inspect $(image) > $@-inspect
 	cat $@-inspect | jq -r '.[0].RepoTags[] | select(. | startswith("$(registry)"))' > $@
 

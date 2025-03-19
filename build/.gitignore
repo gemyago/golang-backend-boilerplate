@@ -1,3 +1,4 @@
 /dist/
 .git-meta/*
 /docker/.labels
+/docker/.local-*
