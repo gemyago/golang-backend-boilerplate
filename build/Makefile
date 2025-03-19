@@ -6,7 +6,7 @@ app_name:=$(shell basename `git rev-parse --show-toplevel`)
 # Define a function to read values from any config file
 # Usage: $(call read_config,config_file,key_name)
 define read_config
-$(shell grep -m 1 "^$(2)=" $(1) | cut -d'=' -f2)
+$(shell grep -m 1 "^$(2)\s*=\s*" $(1) | cut -d'=' -f2)
 endef
 
 # Reading config using the new function
