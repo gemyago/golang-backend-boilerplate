@@ -42,6 +42,12 @@ docker_build_args=\
 				--label org.opencontainers.image.url=$(shell git remote get-url origin) \
 				../
 
+.git-HEAD:
+	@current_commit=$$(git rev-parse HEAD); \
+	if [ ! -f $@ ] || [ "$$current_commit" != "$$($(cat $@ 2>/dev/null))" ]; then \
+		echo "$$current_commit" > $@; \
+	fi
+
 # Build local image
 # Target must be in form: docker/.local-<binary>-image
 # Example: make docker/.local-server-image
@@ -98,3 +104,4 @@ dist/clean:
 		rm -rf dist
 
 clean: docker/clean dist/clean
+		rm -f .git-HEAD
