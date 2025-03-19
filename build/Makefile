@@ -21,11 +21,11 @@ dist_platforms:=$(patsubst %,dist/%,$(subst $(comma), ,$(platforms)))
 
 # Example: dist/linux/amd64
 dist/%: FORCE
-		$(eval GOOS:=$(word 1,$(subst /, ,$*)))
-		$(eval GOARCH:=$(word 2,$(subst /, ,$*)))
-		GOOS=$(GOOS) GOARCH=$(GOARCH) go build -C .. \
-				-tags=release \
-				-o build/dist/$(GOOS)/$(GOARCH)/ ./cmd/...;
+	$(eval GOOS:=$(word 1,$(subst /, ,$*)))
+	$(eval GOARCH:=$(word 2,$(subst /, ,$*)))
+	GOOS=$(GOOS) GOARCH=$(GOARCH) go build -C .. \
+			-tags=release \
+			-o build/dist/$(GOOS)/$(GOARCH)/ ./cmd/...;
 
 dist: $(dist_platforms)
 
@@ -42,51 +42,53 @@ docker_build_args=\
 				--label org.opencontainers.image.url=$(shell git remote get-url origin) \
 				../
 
-.git-HEAD:
-	@current_commit=$$(git rev-parse HEAD); \
-	if [ ! -f $@ ] || [ "$$current_commit" != "$$($(cat $@ 2>/dev/null))" ]; then \
-		echo "$$current_commit" > $@; \
+.git-HEAD: FORCE
+	@git rev-parse HEAD > $@.tmp
+	@if cmp -s $@ $@.tmp; then \
+		rm $@.tmp; \
+	else \
+		mv $@.tmp $@; \
 	fi
 
 # Build local image
 # Target must be in form: docker/.local-<binary>-image
 # Example: make docker/.local-server-image
 docker/.local-%-image:
-		$(eval registry := $(call read_config,build.cfg,docker_local_registry_host))
-		$(eval image := $(registry)/$(app_name)-$*:latest)
-		@echo "Building $(image)"
-		docker build -t $(image) \
-				--build-arg TARGET_BINARY="$*" \
-				$(docker_build_args)
-		docker inspect $(image) > $@-inspect
-		cat $@-inspect | jq -r '.[0].RepoTags[] | select(. | startswith("$(registry)"))' > $@
+	$(eval registry := $(call read_config,build.cfg,docker_local_registry_host))
+	$(eval image := $(registry)/$(app_name)-$*:latest)
+	@echo "Building $(image)"
+	docker build -t $(image) \
+			--build-arg TARGET_BINARY="$*" \
+			$(docker_build_args)
+	docker inspect $(image) > $@-inspect
+	cat $@-inspect | jq -r '.[0].RepoTags[] | select(. | startswith("$(registry)"))' > $@
 
 # Build all local images for each binary in dist/
 # Fill use top folders from cmd folder to understand which binaries to build (wildcard)
 .PHONY: docker/local-images
 docker/local-images: $(patsubst %, docker/.local-%-image, $(notdir $(wildcard ../cmd/*)))
-		@echo "Local images are ready: $?"
+	@echo "Local images are ready: $?"
 
 # Push image to remote registry
 # Target must be in form: docker/.remote-<registry>-<binary>-image
 # Example: make docker/.remote-ghcr-server-image
 # The registry host is read from build.cfg under docker_<registry>_registry_host key
 docker/.remote-%-image: docker/.local-$$(word 2, $$(subst -, ,$$*))-image docker/.remote-tags
-		$(eval registry_name := $(word 1,$(subst -, ,$*)))
-		$(eval target_binary := $(word 2,$(subst -, ,$*)))
-		$(eval registry := $(call read_config,build.cfg,docker_$(registry_name)_registry_host))
-		$(eval local_image_id := $(call read_config,$<,id))
-		$(eval local_image_tag := $(call read_config,$<,repo_tag))
-		$(eval local_image_digest := $(call read_config,$<,repo_digest))
-		$(eval remote_image_base_name := $(registry)/$(app_name)-$(target_binary))
-		$(eval remote_tags := $(shell cat docker/.remote-tags))
-		@echo "Pushing $(local_image_tag) image to $(remote_image_base_name) with tags: $(remote_tags)"
-		$(foreach tag,$(remote_tags),\
-				$(shell docker tag $(local_image_digest) $(remote_image_base_name):$(tag)) \
-				$(shell docker push $(remote_image_base_name):$(tag)) \
-		)
-		@echo "id=$(local_image_id)" > $@
-		@echo "tags=$(remote_tags)" >> $@
+	$(eval registry_name := $(word 1,$(subst -, ,$*)))
+	$(eval target_binary := $(word 2,$(subst -, ,$*)))
+	$(eval registry := $(call read_config,build.cfg,docker_$(registry_name)_registry_host))
+	$(eval local_image_id := $(call read_config,$<,id))
+	$(eval local_image_tag := $(call read_config,$<,repo_tag))
+	$(eval local_image_digest := $(call read_config,$<,repo_digest))
+	$(eval remote_image_base_name := $(registry)/$(app_name)-$(target_binary))
+	$(eval remote_tags := $(shell cat docker/.remote-tags))
+	@echo "Pushing $(local_image_tag) image to $(remote_image_base_name) with tags: $(remote_tags)"
+	$(foreach tag,$(remote_tags),\
+			$(shell docker tag $(local_image_digest) $(remote_image_base_name):$(tag)) \
+			$(shell docker push $(remote_image_base_name):$(tag)) \
+	)
+	@echo "id=$(local_image_id)" > $@
+	@echo "tags=$(remote_tags)" >> $@
 
 # Push all images to remote registry
 .PHONY: docker/remote-images
