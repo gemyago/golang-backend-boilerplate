@@ -42,13 +42,28 @@ docker_build_args=\
 				--label org.opencontainers.image.url=$(shell git remote get-url origin) \
 				../
 
-.git-HEAD: FORCE
+.git-meta:
+	@mkdir -p $@
+
+.git-meta/repo-name: .git-meta
+	@basename $(shell git rev-parse --show-toplevel) > $@
+
+.git-meta/HEAD: FORCE .git-meta
 	@git rev-parse HEAD > $@.tmp
 	@if cmp -s $@ $@.tmp; then \
 		rm $@.tmp; \
 	else \
 		mv $@.tmp $@; \
 	fi
+
+docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/HEAD-time
+	@echo "org.opencontainers.image.created=$(shell git show -s --format=%cI HEAD)" > $@
+	@echo "org.opencontainers.image.source=$(shell git remote get-url origin)" >> $@
+	@echo "org.opencontainers.image.version=$(shell git describe --tags --always)" >> $@
+	@echo "org.opencontainers.image.revision=$(shell cat .git-meta/HEAD)" >> $@
+	@echo "org.opencontainers.image.ref.name=$(shell git rev-parse --abbrev-ref HEAD)" >> $@
+	@echo "org.opencontainers.image.title=$(shell cat .git-meta/repo-name)" >> $@
+	@echo "org.opencontainers.image.url=$(shell git remote get-url origin)" >> $@
 
 # Build local image
 # Target must be in form: docker/.local-<binary>-image
@@ -100,10 +115,10 @@ docker/remote-images: $(patsubst %, docker/.remote-%-image, $(foreach registry,$
 .PHONY: clean docker/clean dist/clean
 
 docker/clean:
-		rm -f docker/.local-* docker/.remote-*
+	rm -f docker/.local-* docker/.remote-* docker/.labels
 
 dist/clean:
-		rm -rf dist
+	rm -rf dist
 
 clean: docker/clean dist/clean
-		rm -f .git-HEAD
+	rm -rf .git-meta
