@@ -2,3 +2,4 @@
 .git-meta/*
 /docker/.labels
 /docker/.local-*
+/docker/.remote-*

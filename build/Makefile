@@ -29,13 +29,19 @@ dist/%: FORCE
 
 dist: $(dist_platforms)
 
-.git-meta:
-	@mkdir -p $@
+.git-meta/HEAD: FORCE .git-meta
+	@mkdir -p .git-meta
+	@git rev-parse --short HEAD > $@.tmp
+	@if cmp -s $@ $@.tmp; then \
+		rm $@.tmp; \
+	else \
+		mv $@.tmp $@; \
+	fi
 
-.git-meta/repo-name: .git-meta
+.git-meta/repo-name: .git-meta/HEAD
 	@basename $(shell git rev-parse --show-toplevel) > $@
 
-.git-meta/remote-url: .git-meta
+.git-meta/remote-url: .git-meta/HEAD
 	@git remote get-url origin | sed -E \
 		-e 's|^git@([^:]+):|https://\1/|' \
 		-e 's|^http:|https:|' \
@@ -43,15 +49,6 @@ dist: $(dist_platforms)
 	@cmp -s $@.tmp $@ || mv $@.tmp $@
 	@rm -f $@.tmp
 
-.git-meta/HEAD: FORCE .git-meta
-	@git rev-parse HEAD > $@.tmp
-	@if cmp -s $@ $@.tmp; then \
-		rm $@.tmp; \
-	else \
-		mv $@.tmp $@; \
-	fi
-
-.INTERMEDIATE: docker/.labels
 docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/remote-url
 	@echo "org.opencontainers.image.created=\"$(shell git show -s --format=%cI HEAD)\"" > $@
 	@echo "org.opencontainers.image.source=\"$(shell git remote get-url origin)\"" >> $@
@@ -61,7 +58,6 @@ docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/remote-url
 	@echo "org.opencontainers.image.title=\"$(shell cat .git-meta/repo-name)\"" >> $@
 	@echo "org.opencontainers.image.url=\"$(shell cat .git-remote-url)\"" >> $@
 
-.INTERMEDIATE: docker/.local-args
 docker/.local-args: docker/.labels
 	@echo "--build-arg RUNTIME_IMAGE=$(call read_config,build.cfg,docker_runtime_image)" > $@
 	@echo --platform $(platforms) >> $@
@@ -97,6 +93,22 @@ docker/.local-%-image: docker/.local-args docker/.local-%-tags
 .PHONY: docker/local-images
 docker/local-images: $(patsubst %, docker/.local-%-image, $(notdir $(wildcard ../cmd/*)))
 	@echo "Local images are ready: $?"
+
+# Build image tags for remote registry
+# Target must be in form: docker/.remote-<registry>-<binary>-tags
+# Example: make docker/.remote-ghcr-server-tags
+# The registry host is read from build.cfg under docker_<registry>_registry key
+docker/.remote-%-tags: .git-meta/HEAD .git-meta/repo-name
+	$(eval registry_name = $(word 1,$(subst -, ,$*)))
+	$(eval target_binary = $(word 2,$(subst -, ,$*)))
+	$(eval registry := $(call read_config,build.cfg,docker_$(registry_name)_registry))
+	$(eval image_base_name := $(registry)/$(shell cat .git-meta/repo-name)-$*)
+	$(eval tag_names=$(shell ./scripts/resolve-docker-tags.sh \
+		--commit-sha $(shell cat .git-meta/HEAD) \
+		--git-ref $(shell git rev-parse --abbrev-ref HEAD) \
+		--stable-branches $(call read_config,build.cfg,stable_branches) \
+	))
+	@echo $(tag_names) | tr ' ' '\n' | sed 's|^|-t $(image_base_name):|' > $@
 
 # Push image to remote registry
 # Target must be in form: docker/.remote-<registry>-<binary>-image
