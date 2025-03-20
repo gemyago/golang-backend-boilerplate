@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Function to print usage information
+usage() {
+  echo "Usage: $0 [options]"
+  echo "Options:"
+  echo "  --stable-branches <branches>  Comma-separated list of stable branches"
+  echo "  --git-ref <ref>               Git reference (branch or tag)"
+  echo "  --commit-sha <sha>            Git commit SHA"
+  echo "  --self-test                   Run internal tests"
+  echo "  -h, --help                    Show this help message"
+}
+
+# Function to resolve Docker tags based on git reference
+resolve_docker_tags() {
+  local ref=$1
+  local sha=$2
+  local stable_branches=$3
+  local short_sha="${sha:0:7}"
+  local tags=""
+
+  # If ref is a tag (refs/tags/v1.0.0), return the tag without 'refs/tags/' prefix
+  if [[ $ref == refs/tags/* ]]; then
+    tags="${ref#refs/tags/}"
+  # If ref is a branch (refs/heads/main), process accordingly
+  elif [[ $ref == refs/heads/* ]]; then
+    local branch_name="${ref#refs/heads/}"
+    tags="${branch_name},${branch_name}-${short_sha}"
+    
+    # Check if branch is in the list of stable branches
+    IFS=',' read -ra STABLE_BRANCHES <<< "$stable_branches"
+    for stable in "${STABLE_BRANCHES[@]}"; do
+      if [[ "$stable" == "$branch_name" ]]; then
+        tags="${tags},latest-${branch_name}"
+        break
+      fi
+    done
+  fi
+
+  echo "$tags"
+}
+
+# Function to run self-tests
+run_tests() {
+  echo "Running self-tests..."
+  
+  # Test case 1: Tag reference
+  local test1_tags=$(resolve_docker_tags "refs/tags/v1.0.0" "abc1234567890" "main,develop")
+  if [[ "$test1_tags" == "v1.0.0" ]]; then
+    echo "✅ Test 1 passed: Tag resolution works"
+  else
+    echo "❌ Test 1 failed: Expected 'v1.0.0', got '$test1_tags'"
+    return 1
+  fi
+  
+  # Test case 2: Branch reference (not stable)
+  local test2_tags=$(resolve_docker_tags "refs/heads/feature/xyz" "abc1234567890" "main,develop")
+  if [[ "$test2_tags" == "feature/xyz,feature/xyz-abc1234" ]]; then
+    echo "✅ Test 2 passed: Non-stable branch resolution works"
+  else
+    echo "❌ Test 2 failed: Expected 'feature/xyz,feature/xyz-abc1234', got '$test2_tags'"
+    return 1
+  fi
+  
+  # Test case 3: Branch reference (stable)
+  local test3_tags=$(resolve_docker_tags "refs/heads/main" "abc1234567890" "main,develop")
+  if [[ "$test3_tags" == "main,main-abc1234,latest-main" ]]; then
+    echo "✅ Test 3 passed: Stable branch resolution works"
+  else
+    echo "❌ Test 3 failed: Expected 'main,main-abc1234,latest-main', got '$test3_tags'"
+    return 1
+  fi
+  
+  echo "All tests passed! 🎉"
+  return 0
+}
+
+# Main script starts here
+STABLE_BRANCHES=""
+GIT_REF=""
+COMMIT_SHA=""
+SELF_TEST=false
+
+# Parse command line arguments using getopts
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --stable-branches)
+      STABLE_BRANCHES="$2"
+      shift 2
+      ;;
+    --git-ref)
+      GIT_REF="$2"
+      shift 2
+      ;;
+    --commit-sha)
+      COMMIT_SHA="$2"
+      shift 2
+      ;;
+    --self-test)
+      SELF_TEST=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+# Run tests if in self-test mode
+if $SELF_TEST; then
+  run_tests
+  exit $?
+fi
+
+# Validate required arguments are provided
+if [[ -z "$GIT_REF" ]]; then
+  echo "Error: --git-ref is required"
+  usage
+  exit 1
+fi
+
+if [[ -z "$COMMIT_SHA" ]]; then
+  echo "Error: --commit-sha is required"
+  usage
+  exit 1
+fi
+
+# If not in self-test mode, resolve and output Docker tags
+tags=$(resolve_docker_tags "$GIT_REF" "$COMMIT_SHA" "$STABLE_BRANCHES")
+echo "$tags"
