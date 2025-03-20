@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# Docker Tag Resolution Logic:
+# - For git tags: Uses the tag name
+# - For non-stable branches: Uses branch name and git-commit-<commit-sha>
+# - For stable branches: Uses latest-<branch-name> and git-commit-<commit-sha>
+# All generated tags are sanitized to match Docker's tag format requirements.
+
 set -euo pipefail
 
 # Function to print usage information
