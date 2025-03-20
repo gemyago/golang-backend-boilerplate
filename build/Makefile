@@ -67,6 +67,13 @@ docker/.local-args: docker/.labels
 	@sed 's/^/--label /' docker/.labels >> $@
 	@echo "../" >> $@
 
+docker/.local-tags: .git-meta/HEAD
+	./scripts/resolve-docker-tags.sh \
+		--commit-sha $(shell cat .git-meta/HEAD) \
+		--git-ref $(shell git rev-parse --abbrev-ref HEAD) \
+		--stable-branches $(call read_config,build.cfg,stable_branches) \
+		> $@ 
+
 # Build local image
 # Target must be in form: docker/.local-<binary>-image
 # Example: make docker/.local-server-image
