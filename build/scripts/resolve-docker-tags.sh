@@ -46,36 +46,56 @@ resolve_docker_tags() {
   local stable_branches=$3
   local tags=""
 
-  # If ref is a tag (refs/tags/v1.0.0), return the tag without 'refs/tags/' prefix
+  # Normalize the ref (handle both refs/heads/branch and branch format)
   if [[ $ref == refs/tags/* ]]; then
+    # Tag reference
     local tag_name="${ref#refs/tags/}"
     tags="$(sanitize_docker_tag "$tag_name")"
-  # If ref is a branch (refs/heads/main), process accordingly
   elif [[ $ref == refs/heads/* ]]; then
+    # Branch reference with refs/heads/ prefix
     local branch_name="${ref#refs/heads/}"
-    local is_stable=false
-    local sanitized_branch="$(sanitize_docker_tag "$branch_name")"
-    local sanitized_commit="git-commit-$(sanitize_docker_tag "$sha")"
-    
-    # Check if branch is in the list of stable branches
-    IFS=',' read -ra STABLE_BRANCHES <<< "$stable_branches"
-    for stable in "${STABLE_BRANCHES[@]}"; do
-      if [[ "$stable" == "$branch_name" ]]; then
-        is_stable=true
-        break
-      fi
-    done
-    
-    if [[ "$is_stable" == "true" ]]; then
-      # For stable branches: latest-<branch-name> and git-commit-<commit-sha>
-      tags="latest-${sanitized_branch},${sanitized_commit}"
+    process_branch_tags "$branch_name" "$sha" "$stable_branches"
+    return $?
+  else
+    # Assume it's a branch name without refs/heads/ prefix
+    # Check if it's actually a tag ref without the prefix
+    if [[ $ref == tags/* ]]; then
+      local tag_name="${ref#tags/}"
+      tags="$(sanitize_docker_tag "$tag_name")"
     else
-      # For non-stable branches: <branch-name> and git-commit-<commit-sha>
-      tags="${sanitized_branch},${sanitized_commit}"
+      process_branch_tags "$ref" "$sha" "$stable_branches"
+      return $?
     fi
   fi
 
   echo "$tags"
+}
+
+# Helper function to process branch tags
+process_branch_tags() {
+  local branch_name=$1
+  local sha=$2
+  local stable_branches=$3
+  local is_stable=false
+  local sanitized_branch="$(sanitize_docker_tag "$branch_name")"
+  local sanitized_commit="git-commit-$(sanitize_docker_tag "$sha")"
+  
+  # Check if branch is in the list of stable branches
+  IFS=',' read -ra STABLE_BRANCHES <<< "$stable_branches"
+  for stable in "${STABLE_BRANCHES[@]}"; do
+    if [[ "$stable" == "$branch_name" ]]; then
+      is_stable=true
+      break
+    fi
+  done
+  
+  if [[ "$is_stable" == "true" ]]; then
+    # For stable branches: latest-<branch-name> and git-commit-<commit-sha>
+    echo "latest-${sanitized_branch} ${sanitized_commit}"
+  else
+    # For non-stable branches: <branch-name> and git-commit-<commit-sha>
+    echo "${sanitized_branch} ${sanitized_commit}"
+  fi
 }
 
 run_tests() {
@@ -121,21 +141,33 @@ run_tests() {
 
   echo ""
   echo "Running resolve_docker_tags tests:"
+  # Test with refs/tags prefix
   resolve_result=$(resolve_docker_tags "refs/tags/v1.0.0" "$commit_sha" "main,develop")
-  assert "$resolve_result" "v1.0.0" "Standard tag resolution" || ((failures++))
+  assert "$resolve_result" "v1.0.0" "Tag resolution with refs/tags prefix" || ((failures++))
   
+  # Test with refs/heads prefix
   resolve_result=$(resolve_docker_tags "refs/heads/feature/xyz" "$commit_sha" "main,develop")
-  assert "$resolve_result" "feature-xyz,git-commit-$commit_sha" "Standard non-stable branch resolution with sanitization" || ((failures++))
+  assert "$resolve_result" "feature-xyz git-commit-$commit_sha" "Non-stable branch resolution with refs/heads prefix" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "refs/heads/main" "$commit_sha" "main,develop")
-  assert "$resolve_result" "latest-main,git-commit-$commit_sha" "Standard stable branch resolution" || ((failures++))
+  assert "$resolve_result" "latest-main git-commit-$commit_sha" "Stable branch resolution with refs/heads prefix" || ((failures++))
+  
+  # Test without refs prefix
+  resolve_result=$(resolve_docker_tags "feature/xyz" "$commit_sha" "main,develop")
+  assert "$resolve_result" "feature-xyz git-commit-$commit_sha" "Non-stable branch resolution without refs prefix" || ((failures++))
+  
+  resolve_result=$(resolve_docker_tags "main" "$commit_sha" "main,develop")
+  assert "$resolve_result" "latest-main git-commit-$commit_sha" "Stable branch resolution without refs prefix" || ((failures++))
+  
+  resolve_result=$(resolve_docker_tags "tags/v1.0.0" "$commit_sha" "main,develop")
+  assert "$resolve_result" "v1.0.0" "Tag resolution with tags/ prefix but no refs/" || ((failures++))
   
   # Test with special characters
   resolve_result=$(resolve_docker_tags "refs/tags/v1.0.0@special" "$commit_sha" "main,develop")
   assert "$resolve_result" "v1.0.0-special" "Tag with special characters" || ((failures++))
   
-  resolve_result=$(resolve_docker_tags "refs/heads/feature/special@chars#here" "$commit_sha" "main,develop")
-  assert "$resolve_result" "feature-special-chars-here,git-commit-$commit_sha" "Branch with special characters" || ((failures++))
+  resolve_result=$(resolve_docker_tags "feature/special@chars#here" "$commit_sha" "main,develop")
+  assert "$resolve_result" "feature-special-chars-here git-commit-$commit_sha" "Branch with special characters without refs prefix" || ((failures++))
   
   if [[ $failures -eq 0 ]]; then
     echo "All tests passed!"
@@ -194,6 +226,12 @@ fi
 
 if [[ -z "$COMMIT_SHA" ]]; then
   echo "Error: --commit-sha is required"
+  usage
+  exit 1
+fi
+
+if [[ -z "$STABLE_BRANCHES" ]]; then
+  echo "Error: --stable-branches is required"
   usage
   exit 1
 fi
