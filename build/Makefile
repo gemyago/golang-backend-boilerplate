@@ -51,7 +51,8 @@ dist: $(dist_platforms)
 		mv $@.tmp $@; \
 	fi
 
-docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/HEAD-time .git-meta/remote-url
+.INTERMEDIATE: docker/.labels
+docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/remote-url
 	@echo "org.opencontainers.image.created=\"$(shell git show -s --format=%cI HEAD)\"" > $@
 	@echo "org.opencontainers.image.source=\"$(shell git remote get-url origin)\"" >> $@
 	@echo "org.opencontainers.image.version=\"$(shell git describe --tags --always)\"" >> $@
@@ -60,6 +61,7 @@ docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/HEAD-time .git-meta
 	@echo "org.opencontainers.image.title=\"$(shell cat .git-meta/repo-name)\"" >> $@
 	@echo "org.opencontainers.image.url=\"$(shell cat .git-remote-url)\"" >> $@
 
+.INTERMEDIATE: docker/.local-args
 docker/.local-args: docker/.labels
 	@echo "--build-arg RUNTIME_IMAGE=$(call read_config,build.cfg,docker_runtime_image)" > $@
 	@echo --platform $(platforms) >> $@
@@ -83,11 +85,12 @@ docker/.local-%-tags: .git-meta/HEAD .git-meta/repo-name
 # Example: make docker/.local-server-image
 docker/.local-%-image: docker/.local-args docker/.local-%-tags
 	@echo "Building local $* image"
-	docker build $(shell cat docker/.local-$*-tags) \
-			--build-arg TARGET_BINARY="$*" \
-			$(shell cat $<)
-	docker inspect $(image) > $@-inspect
-	cat $@-inspect | jq -r '.[0].RepoTags[] | select(. | startswith("$(registry)"))' > $@
+	docker build --build-arg TARGET_BINARY="$*" \
+			--iidfile $@-id \
+			$(shell cat docker/.local-$*-tags) \
+			$(shell cat docker/.local-args)
+	docker inspect $$(cat $@-id) > $@
+	rm $@-id
 
 # Build all local images for each binary in dist/
 # Fill use top folders from cmd folder to understand which binaries to build (wildcard)
