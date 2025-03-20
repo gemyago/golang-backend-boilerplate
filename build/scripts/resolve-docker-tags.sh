@@ -96,13 +96,11 @@ run_tests() {
   fi
 }
 
-# Main script starts here
 STABLE_BRANCHES=""
 GIT_REF=""
 COMMIT_SHA=""
 SELF_TEST=false
 
-# Parse command line arguments using getopts
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --stable-branches)
@@ -133,13 +131,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Run tests if in self-test mode
 if $SELF_TEST; then
   run_tests
   exit $?
 fi
 
-# Validate required arguments are provided
 if [[ -z "$GIT_REF" ]]; then
   echo "Error: --git-ref is required"
   usage
@@ -152,6 +148,5 @@ if [[ -z "$COMMIT_SHA" ]]; then
   exit 1
 fi
 
-# If not in self-test mode, resolve and output Docker tags
 tags=$(resolve_docker_tags "$GIT_REF" "$COMMIT_SHA" "$STABLE_BRANCHES")
 echo "$tags"
