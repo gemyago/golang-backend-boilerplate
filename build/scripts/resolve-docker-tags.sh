@@ -13,6 +13,26 @@ usage() {
   echo "  -h, --help                    Show this help message"
 }
 
+# Function to sanitize Docker tag according to the pattern /[\w][\w.-]{0,127}/
+# First character must be alphanumeric, remaining can be alphanumeric, dot, or dash
+sanitize_docker_tag() {
+  local tag="$1"
+  local sanitized=""
+  
+  # First character must be alphanumeric
+  if [[ "${tag:0:1}" =~ [a-zA-Z0-9] ]]; then
+    sanitized="${tag:0:1}"
+  else
+    sanitized="x-"
+  fi
+  
+  local remaining="${tag:1}"
+  local sanitized_remaining=$(echo "$remaining" | sed -E 's/[^a-zA-Z0-9.-]/-/g')
+  
+  sanitized="${sanitized}${sanitized_remaining}"
+  echo "${sanitized:0:128}"
+}
+
 # Function to resolve Docker tags based on git reference
 resolve_docker_tags() {
   local ref=$1
@@ -22,11 +42,14 @@ resolve_docker_tags() {
 
   # If ref is a tag (refs/tags/v1.0.0), return the tag without 'refs/tags/' prefix
   if [[ $ref == refs/tags/* ]]; then
-    tags="${ref#refs/tags/}"
+    local tag_name="${ref#refs/tags/}"
+    tags="$(sanitize_docker_tag "$tag_name")"
   # If ref is a branch (refs/heads/main), process accordingly
   elif [[ $ref == refs/heads/* ]]; then
     local branch_name="${ref#refs/heads/}"
     local is_stable=false
+    local sanitized_branch="$(sanitize_docker_tag "$branch_name")"
+    local sanitized_commit="git-commit-$(sanitize_docker_tag "$sha")"
     
     # Check if branch is in the list of stable branches
     IFS=',' read -ra STABLE_BRANCHES <<< "$stable_branches"
@@ -39,10 +62,10 @@ resolve_docker_tags() {
     
     if [[ "$is_stable" == "true" ]]; then
       # For stable branches: latest-<branch-name> and git-commit-<commit-sha>
-      tags="latest-${branch_name},git-commit-${sha}"
+      tags="latest-${sanitized_branch},${sanitized_commit}"
     else
       # For non-stable branches: <branch-name> and git-commit-<commit-sha>
-      tags="${branch_name},git-commit-${sha}"
+      tags="${sanitized_branch},${sanitized_commit}"
     fi
   fi
 
@@ -68,24 +91,45 @@ run_tests() {
 
   echo "Running self-tests..."
   local failures=0
+  local test_result
+  
+  echo ""
+  echo "Running sanitize_docker_tag tests:"
+  test_result=$(sanitize_docker_tag "valid-tag")
+  assert "$test_result" "valid-tag" "Simple valid tag" || ((failures++))
+  
+  test_result=$(sanitize_docker_tag "_invalid-first-char")
+  assert "$test_result" "x-invalid-first-char" "Invalid first character" || ((failures++))
+  
+  test_result=$(sanitize_docker_tag "branch/with/slashes")
+  assert "$test_result" "branch-with-slashes" "Replace slashes with dashes" || ((failures++))
+  
+  test_result=$(sanitize_docker_tag "tag@with#special&chars")
+  assert "$test_result" "tag-with-special-chars" "Replace special chars with dashes" || ((failures++))
+  
+  test_result=$(sanitize_docker_tag "very-long-tag-$(printf '%0.s-' {1..150})")
+  assert "${#test_result}" "128" "Truncate long tag to 128 chars" || ((failures++))
   
   local resolve_result
   local commit_sha="abc1234567890"
 
-  # Test case 1: Tag reference
+  echo ""
+  echo "Running resolve_docker_tags tests:"
   resolve_result=$(resolve_docker_tags "refs/tags/v1.0.0" "$commit_sha" "main,develop")
-  assert "$resolve_result" "v1.0.0" "Tag resolution" || ((failures++))
+  assert "$resolve_result" "v1.0.0" "Standard tag resolution" || ((failures++))
   
-  # Test case 2: Branch reference (not stable)
   resolve_result=$(resolve_docker_tags "refs/heads/feature/xyz" "$commit_sha" "main,develop")
-  assert "$resolve_result" "feature/xyz,git-commit-$commit_sha" "Non-stable branch resolution" || ((failures++))
+  assert "$resolve_result" "feature-xyz,git-commit-$commit_sha" "Standard non-stable branch resolution with sanitization" || ((failures++))
   
-  # Test case 3: Branch reference (stable)
   resolve_result=$(resolve_docker_tags "refs/heads/main" "$commit_sha" "main,develop")
-  assert "$resolve_result" "latest-main,git-commit-$commit_sha" "Stable branch resolution (main)" || ((failures++))
+  assert "$resolve_result" "latest-main,git-commit-$commit_sha" "Standard stable branch resolution" || ((failures++))
   
-  resolve_result=$(resolve_docker_tags "refs/heads/develop" "$commit_sha" "main,develop")
-  assert "$resolve_result" "latest-develop,git-commit-$commit_sha" "Stable branch resolution (develop)" || ((failures++))
+  # Test with special characters
+  resolve_result=$(resolve_docker_tags "refs/tags/v1.0.0@special" "$commit_sha" "main,develop")
+  assert "$resolve_result" "v1.0.0-special" "Tag with special characters" || ((failures++))
+  
+  resolve_result=$(resolve_docker_tags "refs/heads/feature/special@chars#here" "$commit_sha" "main,develop")
+  assert "$resolve_result" "feature-special-chars-here,git-commit-$commit_sha" "Branch with special characters" || ((failures++))
   
   if [[ $failures -eq 0 ]]; then
     echo "All tests passed!"
