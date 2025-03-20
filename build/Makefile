@@ -67,22 +67,23 @@ docker/.local-args: docker/.labels
 	@sed 's/^/--label /' docker/.labels >> $@
 	@echo "../" >> $@
 
-docker/.local-tags: .git-meta/HEAD
-	./scripts/resolve-docker-tags.sh \
+docker/.local-%-tags: .git-meta/HEAD .git-meta/repo-name
+	$(eval registry := $(call read_config,build.cfg,docker_local_registry))
+	$(eval image_base_name := $(registry)/$(shell cat .git-meta/repo-name)-$*)
+	$(eval tag_names=$(shell ./scripts/resolve-docker-tags.sh \
 		--latest \
 		--commit-sha $(shell cat .git-meta/HEAD) \
 		--git-ref $(shell git rev-parse --abbrev-ref HEAD) \
 		--stable-branches $(call read_config,build.cfg,stable_branches) \
-		> $@ 
+	))
+	@echo $(tag_names) | tr ' ' '\n' | sed 's|^|-t $(image_base_name):|' > $@
 
 # Build local image
 # Target must be in form: docker/.local-<binary>-image
 # Example: make docker/.local-server-image
-docker/.local-%-image: docker/.local-args
-	$(eval registry := $(call read_config,build.cfg,docker_local_registry))
-	$(eval image := $(registry)/$(shell cat .git-meta/repo-name)-$*:latest)
-	@echo "Building $(image)"
-	docker build -t $(image) \
+docker/.local-%-image: docker/.local-args docker/.local-%-tags
+	@echo "Building local $* image"
+	docker build $(shell cat docker/.local-$*-tags) \
 			--build-arg TARGET_BINARY="$*" \
 			$(shell cat $<)
 	docker inspect $(image) > $@-inspect
