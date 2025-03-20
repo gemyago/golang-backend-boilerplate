@@ -18,7 +18,6 @@ resolve_docker_tags() {
   local ref=$1
   local sha=$2
   local stable_branches=$3
-  local short_sha="${sha:0:7}"
   local tags=""
 
   # If ref is a tag (refs/tags/v1.0.0), return the tag without 'refs/tags/' prefix
@@ -27,16 +26,24 @@ resolve_docker_tags() {
   # If ref is a branch (refs/heads/main), process accordingly
   elif [[ $ref == refs/heads/* ]]; then
     local branch_name="${ref#refs/heads/}"
-    tags="${branch_name},${branch_name}-${short_sha}"
+    local is_stable=false
     
     # Check if branch is in the list of stable branches
     IFS=',' read -ra STABLE_BRANCHES <<< "$stable_branches"
     for stable in "${STABLE_BRANCHES[@]}"; do
       if [[ "$stable" == "$branch_name" ]]; then
-        tags="${tags},latest-${branch_name}"
+        is_stable=true
         break
       fi
     done
+    
+    if [[ "$is_stable" == "true" ]]; then
+      # For stable branches: latest-<branch-name> and git-commit-<commit-sha>
+      tags="latest-${branch_name},git-commit-${sha}"
+    else
+      # For non-stable branches: <branch-name> and git-commit-<commit-sha>
+      tags="${branch_name},git-commit-${sha}"
+    fi
   fi
 
   echo "$tags"
@@ -63,20 +70,22 @@ run_tests() {
   local failures=0
   
   local resolve_result
+  local commit_sha="abc1234567890"
 
   # Test case 1: Tag reference
-  resolve_result=$(resolve_docker_tags "refs/tags/v1.0.0" "abc1234567890" "main,develop")
+  resolve_result=$(resolve_docker_tags "refs/tags/v1.0.0" "$commit_sha" "main,develop")
   assert "$resolve_result" "v1.0.0" "Tag resolution" || ((failures++))
   
   # Test case 2: Branch reference (not stable)
-  resolve_result=$(resolve_docker_tags "refs/heads/feature/xyz" "abc1234567890" "main,develop")
-  assert "$resolve_result" "feature/xyz,feature/xyz-abc1234" "Non-stable branch resolution" || ((failures++))
+  resolve_result=$(resolve_docker_tags "refs/heads/feature/xyz" "$commit_sha" "main,develop")
+  assert "$resolve_result" "feature/xyz,git-commit-$commit_sha" "Non-stable branch resolution" || ((failures++))
   
   # Test case 3: Branch reference (stable)
-  resolve_result=$(resolve_docker_tags "refs/heads/main" "abc1234567890" "main,develop")
-  assert "$resolve_result" "main,main-abc1234,latest-main" "Stable branch resolution" || ((failures++))
-  resolve_result=$(resolve_docker_tags "refs/heads/develop" "abc1234567890" "main,develop")
-  assert "$resolve_result" "develop,develop-abc1234,latest-develop" "Stable branch resolution" || ((failures++))
+  resolve_result=$(resolve_docker_tags "refs/heads/main" "$commit_sha" "main,develop")
+  assert "$resolve_result" "latest-main,git-commit-$commit_sha" "Stable branch resolution (main)" || ((failures++))
+  
+  resolve_result=$(resolve_docker_tags "refs/heads/develop" "$commit_sha" "main,develop")
+  assert "$resolve_result" "latest-develop,git-commit-$commit_sha" "Stable branch resolution (develop)" || ((failures++))
   
   if [[ $failures -eq 0 ]]; then
     echo "All tests passed!"
