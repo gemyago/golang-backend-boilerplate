@@ -42,39 +42,49 @@ resolve_docker_tags() {
   echo "$tags"
 }
 
-# Function to run self-tests
 run_tests() {
+  assert() {
+    local actual="$1"
+    local expected="$2"
+    local message="$3"
+    
+    if [[ "$actual" == "$expected" ]]; then
+      echo "PASS: $message"
+      return 0
+    else
+      echo "FAIL: $message"
+      echo "  Expected: '$expected'"
+      echo "  Actual:   '$actual'"
+      return 1
+    fi
+  }
+
   echo "Running self-tests..."
+  local failures=0
   
+  local resolve_result
+
   # Test case 1: Tag reference
-  local test1_tags=$(resolve_docker_tags "refs/tags/v1.0.0" "abc1234567890" "main,develop")
-  if [[ "$test1_tags" == "v1.0.0" ]]; then
-    echo "✅ Test 1 passed: Tag resolution works"
-  else
-    echo "❌ Test 1 failed: Expected 'v1.0.0', got '$test1_tags'"
-    return 1
-  fi
+  resolve_result=$(resolve_docker_tags "refs/tags/v1.0.0" "abc1234567890" "main,develop")
+  assert "$resolve_result" "v1.0.0" "Tag resolution" || ((failures++))
   
   # Test case 2: Branch reference (not stable)
-  local test2_tags=$(resolve_docker_tags "refs/heads/feature/xyz" "abc1234567890" "main,develop")
-  if [[ "$test2_tags" == "feature/xyz,feature/xyz-abc1234" ]]; then
-    echo "✅ Test 2 passed: Non-stable branch resolution works"
-  else
-    echo "❌ Test 2 failed: Expected 'feature/xyz,feature/xyz-abc1234', got '$test2_tags'"
-    return 1
-  fi
+  resolve_result=$(resolve_docker_tags "refs/heads/feature/xyz" "abc1234567890" "main,develop")
+  assert "$resolve_result" "feature/xyz,feature/xyz-abc1234" "Non-stable branch resolution" || ((failures++))
   
   # Test case 3: Branch reference (stable)
-  local test3_tags=$(resolve_docker_tags "refs/heads/main" "abc1234567890" "main,develop")
-  if [[ "$test3_tags" == "main,main-abc1234,latest-main" ]]; then
-    echo "✅ Test 3 passed: Stable branch resolution works"
+  resolve_result=$(resolve_docker_tags "refs/heads/main" "abc1234567890" "main,develop")
+  assert "$resolve_result" "main,main-abc1234,latest-main" "Stable branch resolution" || ((failures++))
+  resolve_result=$(resolve_docker_tags "refs/heads/develop" "abc1234567890" "main,develop")
+  assert "$resolve_result" "develop,develop-abc1234,latest-develop" "Stable branch resolution" || ((failures++))
+  
+  if [[ $failures -eq 0 ]]; then
+    echo "All tests passed!"
+    return 0
   else
-    echo "❌ Test 3 failed: Expected 'main,main-abc1234,latest-main', got '$test3_tags'"
+    echo "$failures test(s) failed."
     return 1
   fi
-  
-  echo "All tests passed! 🎉"
-  return 0
 }
 
 # Main script starts here
