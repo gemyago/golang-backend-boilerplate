@@ -49,14 +49,21 @@ dist: $(dist_platforms)
 	@cmp -s $@.tmp $@ || mv $@.tmp $@
 	@rm -f $@.tmp
 
+.git-meta/repo-namespace: .git-meta/remote-url
+	@cat .git-meta/remote-url | sed -E \
+		-e 's|^https://[^/]+/||' \
+		-e 's|/[^/]+$$||' > $@.tmp
+	@cmp -s $@.tmp $@ || mv $@.tmp $@
+	@rm -f $@.tmp
+
 docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/remote-url
 	@echo "org.opencontainers.image.created=\"$(shell git show -s --format=%cI HEAD)\"" > $@
-	@echo "org.opencontainers.image.source=\"$(shell git remote get-url origin)\"" >> $@
+	@echo "org.opencontainers.image.source=\"$(shell cat .git-meta/remote-url)\"" >> $@
 	@echo "org.opencontainers.image.version=\"$(shell git describe --tags --always)\"" >> $@
 	@echo "org.opencontainers.image.revision=\"$(shell cat .git-meta/HEAD)\"" >> $@
 	@echo "org.opencontainers.image.ref.name=\"$(shell git rev-parse --abbrev-ref HEAD)\"" >> $@
 	@echo "org.opencontainers.image.title=\"$(shell cat .git-meta/repo-name)\"" >> $@
-	@echo "org.opencontainers.image.url=\"$(shell cat .git-remote-url)\"" >> $@
+	@echo "org.opencontainers.image.url=\"$(shell cat .git-meta/remote-url)\"" >> $@
 
 docker/.local-args: docker/.labels
 	@echo "--build-arg RUNTIME_IMAGE=$(call read_config,build.cfg,docker_runtime_image)" > $@
@@ -82,11 +89,9 @@ docker/.local-%-tags: .git-meta/HEAD .git-meta/repo-name
 docker/.local-%-image: docker/.local-args docker/.local-%-tags
 	@echo "Building local $* image"
 	docker build --build-arg TARGET_BINARY="$*" \
-			--iidfile $@-id \
+			--iidfile $@ \
 			$(shell cat docker/.local-$*-tags) \
 			$(shell cat docker/.local-args)
-	docker inspect $$(cat $@-id) > $@
-	rm $@-id
 
 # Build all local images for each binary in dist/
 # Fill use top folders from cmd folder to understand which binaries to build (wildcard)
@@ -98,38 +103,33 @@ docker/local-images: $(patsubst %, docker/.local-%-image, $(notdir $(wildcard ..
 # Target must be in form: docker/.remote-<registry>-<binary>-tags
 # Example: make docker/.remote-ghcr-server-tags
 # The registry host is read from build.cfg under docker_<registry>_registry key
-docker/.remote-%-tags: .git-meta/HEAD .git-meta/repo-name
+docker/.remote-%-tags: .git-meta/HEAD .git-meta/repo-name .git-meta/repo-namespace
 	$(eval registry_name = $(word 1,$(subst -, ,$*)))
 	$(eval target_binary = $(word 2,$(subst -, ,$*)))
 	$(eval registry := $(call read_config,build.cfg,docker_$(registry_name)_registry))
-	$(eval image_base_name := $(registry)/$(shell cat .git-meta/repo-name)-$*)
+	$(eval image_base_name := $(registry)/$(shell cat .git-meta/repo-namespace)/$(shell cat .git-meta/repo-name)-$(target_binary))
 	$(eval tag_names=$(shell ./scripts/resolve-docker-tags.sh \
 		--commit-sha $(shell cat .git-meta/HEAD) \
 		--git-ref $(shell git rev-parse --abbrev-ref HEAD) \
 		--stable-branches $(call read_config,build.cfg,stable_branches) \
 	))
-	@echo $(tag_names) | tr ' ' '\n' | sed 's|^|-t $(image_base_name):|' > $@
+	@echo $(tag_names) | tr ' ' '\n' | sed 's|^|$(image_base_name):|' > $@
 
 # Push image to remote registry
 # Target must be in form: docker/.remote-<registry>-<binary>-image
 # Example: make docker/.remote-ghcr-server-image
 # The registry host is read from build.cfg under docker_<registry>_registry_host key
-docker/.remote-%-image: docker/.local-$$(word 2, $$(subst -, ,$$*))-image docker/.remote-tags
+docker/.remote-%-image: docker/.local-$$(word 2, $$(subst -, ,$$*))-image docker/.remote-%-tags
 	$(eval registry_name := $(word 1,$(subst -, ,$*)))
 	$(eval target_binary := $(word 2,$(subst -, ,$*)))
-	$(eval registry := $(call read_config,build.cfg,docker_$(registry_name)_registry_host))
-	$(eval local_image_id := $(call read_config,$<,id))
-	$(eval local_image_tag := $(call read_config,$<,repo_tag))
-	$(eval local_image_digest := $(call read_config,$<,repo_digest))
-	$(eval remote_image_base_name := $(registry)/$(app_name)-$(target_binary))
-	$(eval remote_tags := $(shell cat docker/.remote-tags))
-	@echo "Pushing $(local_image_tag) image to $(remote_image_base_name) with tags: $(remote_tags)"
-	$(foreach tag,$(remote_tags),\
-			$(shell docker tag $(local_image_digest) $(remote_image_base_name):$(tag)) \
-			$(shell docker push $(remote_image_base_name):$(tag)) \
-	)
-	@echo "id=$(local_image_id)" > $@
-	@echo "tags=$(remote_tags)" >> $@
+	$(eval local_image_id := $(shell jq -r '.[0].Id' docker/.local-$(target_binary)-image))
+	$(eval remote_tags := $(shell cat docker/.remote-$*-tags))
+	@for tag in $$(cat docker/.remote-$*-tags); do \
+			echo "Pushing $$tag"; \
+			docker tag $(local_image_id) $$tag; \
+			docker push $$tag; \
+	done
+	docker inspect $(local_image_id) > $@
 
 # Push all images to remote registry
 .PHONY: docker/remote-images
