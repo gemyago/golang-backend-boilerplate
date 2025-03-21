@@ -90,6 +90,7 @@ docker/.local-%-image: docker/.local-args docker/.local-%-tags
 	@echo "Building local $* image"
 	docker build --build-arg TARGET_BINARY="$*" \
 			--iidfile $@ \
+			--annotation org.opencontainers.image.description="Includes $* binary" \
 			$(shell cat docker/.local-$*-tags) \
 			$(shell cat docker/.local-args)
 
