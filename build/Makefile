@@ -122,10 +122,10 @@ docker/.remote-%-tags: .git-meta/HEAD .git-meta/repo-name .git-meta/repo-namespa
 docker/.remote-%-image: docker/.local-$$(word 2, $$(subst -, ,$$*))-image docker/.remote-%-tags
 	$(eval registry_name := $(word 1,$(subst -, ,$*)))
 	$(eval target_binary := $(word 2,$(subst -, ,$*)))
-	$(eval local_image_id := $(shell jq -r '.[0].Id' docker/.local-$(target_binary)-image))
+	$(eval local_image_id := $(shell cat docker/.local-$(target_binary)-image))
 	$(eval remote_tags := $(shell cat docker/.remote-$*-tags))
 	@for tag in $$(cat docker/.remote-$*-tags); do \
-			echo "Pushing $$tag"; \
+			echo "Pushing $(local_image_id) as $$tag"; \
 			docker tag $(local_image_id) $$tag; \
 			docker push $$tag; \
 	done
