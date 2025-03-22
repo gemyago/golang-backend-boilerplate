@@ -54,12 +54,15 @@ go get -u ./... && go mod tidy
 
 ### Build dependencies
 
-This step is required if you plan to modify the build process. In this case please make sure to install:
+This step is required if you plan to work on the build tooling. In this case please make sure to install:
 * [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation).
 
 ```sh
 # Setup python environment
 python -m venv .venv
+
+# Reload env
+direnv reload
 
 # Install python dependencies
 pip install -r requirements.txt
