@@ -5,3 +5,4 @@ tmp
 .DS_Store
 .cover
 test.log
+.venv
