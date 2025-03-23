@@ -9,3 +9,13 @@ Golang binaries are build for platforms defined in [build.cfg](build.cfg) file (
 ## Docker
 
 To enable multi-platform builds please enable [container image storage](https://docs.docker.com/build/building/multi-platform/#prerequisites) for your docker daemon.
+
+## Build Scripts
+
+The build scripts are located in the [scripts](scripts) folder.
+
+If iterating on scripts, please make sure to run the tests:
+
+```sh
+make test
+```

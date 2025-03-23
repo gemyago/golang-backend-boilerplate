@@ -12,13 +12,17 @@ class AuthenticationError(Exception):
     """Raised when authentication fails"""
     pass
 
-def get_github_token() -> str:
+def get_github_token(environ=os.environ, subprocess_module=subprocess) -> str:
     """
     Retrieve a GitHub token using multiple methods.
     
     1. Check GITHUB_TOKEN environment variable
     2. Try to get token using GitHub CLI
     3. Raise AuthenticationError if all methods fail
+    
+    Args:
+        environ: Environment dictionary to use (default: os.environ)
+        subprocess_module: Subprocess module to use (default: subprocess)
     
     Returns:
         GitHub token as string
@@ -27,13 +31,13 @@ def get_github_token() -> str:
         AuthenticationError: If unable to retrieve a valid GitHub token
     """
     # Method 1: Environment variable
-    token = os.environ.get('GITHUB_TOKEN')
+    token = environ.get('GITHUB_TOKEN')
     if token:
         return token
     
     # Method 2: GitHub CLI
     try:
-        result = subprocess.run(
+        result = subprocess_module.run(
             ["gh", "auth", "token"], 
             capture_output=True, 
             text=True, 
