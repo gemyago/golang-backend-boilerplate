@@ -8,16 +8,23 @@ import json
 import subprocess
 from typing import List, Dict, Any, Optional
 
+class AuthenticationError(Exception):
+    """Raised when authentication fails"""
+    pass
+
 def get_github_token() -> str:
     """
     Retrieve a GitHub token using multiple methods.
     
     1. Check GITHUB_TOKEN environment variable
     2. Try to get token using GitHub CLI
-    3. Exit with error if all methods fail
+    3. Raise AuthenticationError if all methods fail
     
     Returns:
         GitHub token as string
+        
+    Raises:
+        AuthenticationError: If unable to retrieve a valid GitHub token
     """
     # Method 1: Environment variable
     token = os.environ.get('GITHUB_TOKEN')
@@ -39,11 +46,13 @@ def get_github_token() -> str:
         pass
     
     # All methods failed
-    print("Error: Unable to retrieve GitHub token.", file=sys.stderr)
-    print("Please either:", file=sys.stderr)
-    print("  1. Set the GITHUB_TOKEN environment variable, or", file=sys.stderr)
-    print("  2. Install and authenticate with GitHub CLI (gh)", file=sys.stderr)
-    sys.exit(1)
+    error_msg = (
+        "Unable to retrieve GitHub token.\n"
+        "Please either:\n"
+        "  1. Set the GITHUB_TOKEN environment variable, or\n"
+        "  2. Install and authenticate with GitHub CLI (gh)"
+    )
+    raise AuthenticationError(error_msg)
 
 def list_versions(namespace: str, package_name: str) -> List[Dict[str, Any]]:
     """
@@ -55,6 +64,10 @@ def list_versions(namespace: str, package_name: str) -> List[Dict[str, Any]]:
     
     Returns:
         List of package versions with metadata
+        
+    Raises:
+        AuthenticationError: If authentication fails
+        APIError: If API request fails
     """
     # Get authentication token
     token = get_github_token()
@@ -69,13 +82,9 @@ def list_versions(namespace: str, package_name: str) -> List[Dict[str, Any]]:
         "X-GitHub-Api-Version": "2022-11-28"
     }
     
-    try:
-        response = requests.get(api_url, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error accessing GitHub API: {e}", file=sys.stderr)
-        sys.exit(1)
+    response = requests.get(api_url, headers=headers)
+    response.raise_for_status()
+    return response.json()
 
 def main():
     parser = argparse.ArgumentParser(description="GitHub Container Registry (GHCR) CLI Tool")
@@ -93,16 +102,20 @@ def main():
         parser.print_help()
         sys.exit(1)
     
-    if args.command == "list-versions":
-        versions = list_versions(args.namespace, args.package)
-        print(f"Versions for {args.namespace}/{args.package}:")
-        for version in versions:
-            print(f"  - ID: {version.get('id')}")
-            print(f"    Name: {version.get('name')}")
-            print(f"    Created: {version.get('created_at')}")
-            print(f"    Updated: {version.get('updated_at')}")
-            print(f"    Tags: {', '.join(version.get('metadata', {}).get('container', {}).get('tags', []))}")
-            print("")
+    try:
+        if args.command == "list-versions":
+            versions = list_versions(args.namespace, args.package)
+            print(f"Versions for {args.namespace}/{args.package}:")
+            for version in versions:
+                print(f"  - ID: {version.get('id')}")
+                print(f"    Name: {version.get('name')}")
+                print(f"    Created: {version.get('created_at')}")
+                print(f"    Updated: {version.get('updated_at')}")
+                print(f"    Tags: {', '.join(version.get('metadata', {}).get('container', {}).get('tags', []))}")
+                print("")
+    except Exception as e:
+        print(f"Command failed: {e}", file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
