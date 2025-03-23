@@ -5,7 +5,45 @@ import sys
 import argparse
 import requests
 import json
+import subprocess
 from typing import List, Dict, Any, Optional
+
+def get_github_token() -> str:
+    """
+    Retrieve a GitHub token using multiple methods.
+    
+    1. Check GITHUB_TOKEN environment variable
+    2. Try to get token using GitHub CLI
+    3. Exit with error if all methods fail
+    
+    Returns:
+        GitHub token as string
+    """
+    # Method 1: Environment variable
+    token = os.environ.get('GITHUB_TOKEN')
+    if token:
+        return token
+    
+    # Method 2: GitHub CLI
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "token"], 
+            capture_output=True, 
+            text=True, 
+            check=False
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except FileNotFoundError:
+        # GitHub CLI not installed
+        pass
+    
+    # All methods failed
+    print("Error: Unable to retrieve GitHub token.", file=sys.stderr)
+    print("Please either:", file=sys.stderr)
+    print("  1. Set the GITHUB_TOKEN environment variable, or", file=sys.stderr)
+    print("  2. Install and authenticate with GitHub CLI (gh)", file=sys.stderr)
+    sys.exit(1)
 
 def list_versions(namespace: str, package_name: str) -> List[Dict[str, Any]]:
     """
@@ -18,14 +56,11 @@ def list_versions(namespace: str, package_name: str) -> List[Dict[str, Any]]:
     Returns:
         List of package versions with metadata
     """
-    # Get authentication token from environment
-    token = os.environ.get('GITHUB_TOKEN')
-    if not token:
-        print("Error: GITHUB_TOKEN environment variable is required", file=sys.stderr)
-        sys.exit(1)
+    # Get authentication token
+    token = get_github_token()
     
     # Construct API URL
-    api_url = f"https://api.github.com/packages/container/{namespace}/{package_name}/versions"
+    api_url = f"https://api.github.com/{namespace}/packages/container/{package_name}/versions?per_page=100"
     
     # Set up headers with authentication
     headers = {
