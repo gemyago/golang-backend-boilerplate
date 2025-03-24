@@ -1,11 +1,39 @@
 import sys
 import os
 import unittest
+import random
 from unittest.mock import MagicMock
+from faker import Faker
+
+fake = Faker()
 
 # Add the parent directory to sys.path to import the ghcr module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from ghcr import get_github_token, list_versions, AuthenticationError
+from ghcr import get_github_token, list_versions, AuthenticationError, PackageVersion
+
+
+def create_random_package_version() -> PackageVersion:
+    """
+    Create a random PackageVersion object for testing purposes.
+    
+    Returns:
+        A randomly generated PackageVersion object
+    """
+    
+    return {
+        "id": fake.random_int(min=1000, max=9999),
+        "name": fake.name(),
+        "url": fake.uri(),
+        "package_html_url": fake.uri(),
+        "created_at": fake.past_datetime().isoformat().replace('+00:00', 'Z'),
+        "updated_at": fake.past_datetime().isoformat().replace('+00:00', 'Z'),
+        "html_url": fake.uri(),
+        "metadata": {
+            "container": {
+                "tags": fake.words()
+            }
+        }
+    }
 
 
 class TestGetGitHubToken(unittest.TestCase):
@@ -93,24 +121,13 @@ class TestListVersions(unittest.TestCase):
         # Mock token function
         mock_token_func = MagicMock(return_value="test-token")
         
+        # Generate random package versions
+        num_versions = random.randint(3, 5)
+        mock_versions = [create_random_package_version() for _ in range(num_versions)]
+        
         # Sample API response
         mock_response = MagicMock()
-        mock_response.json.return_value = [
-            {
-                "id": 1234,
-                "name": "1.0.0",
-                "url": "https://api.github.com/user/test/packages/container/test-package/versions/1234",
-                "package_html_url": "https://github.com/user/test/packages/container/package/test-package",
-                "created_at": "2023-01-01T00:00:00Z",
-                "updated_at": "2023-01-01T00:00:00Z",
-                "html_url": "https://github.com/user/test/packages/container/test-package/1234",
-                "metadata": {
-                    "container": {
-                        "tags": ["latest", "1.0.0"]
-                    }
-                }
-            }
-        ]
+        mock_response.json.return_value = mock_versions
         
         # Mock requests module
         mock_requests = MagicMock()
@@ -135,10 +152,13 @@ class TestListVersions(unittest.TestCase):
         )
         
         # Verify the response was parsed correctly
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["id"], 1234)
-        self.assertEqual(result[0]["name"], "1.0.0")
-        self.assertEqual(result[0]["metadata"]["container"]["tags"], ["latest", "1.0.0"])
+        self.assertEqual(len(result), num_versions)
+        # Verify each result matches the original mock data
+        for i, version in enumerate(result):
+            self.assertEqual(version["id"], mock_versions[i]["id"])
+            self.assertEqual(version["name"], mock_versions[i]["name"])
+            self.assertEqual(version["metadata"]["container"]["tags"], 
+                             mock_versions[i]["metadata"]["container"]["tags"])
 
 if __name__ == "__main__":
     unittest.main()
