@@ -6,7 +6,7 @@ import argparse
 import requests
 import json
 import subprocess
-from typing import List, Dict, Any, Optional, TypedDict
+from typing import List, Optional, TypedDict
 
 class AuthenticationError(Exception):
     """Raised when authentication fails"""
