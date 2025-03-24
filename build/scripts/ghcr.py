@@ -74,7 +74,7 @@ def get_github_token(environ=os.environ, subprocess_module=subprocess) -> str:
     )
     raise AuthenticationError(error_msg)
 
-def list_versions(namespace: str, package_name: str, token_func=get_github_token) -> List[PackageVersion]:
+def list_versions(namespace: str, package_name: str, token_func=get_github_token, requests_module=requests) -> List[PackageVersion]:
     """
     List all versions of a package in the GitHub Container Registry.
     
@@ -82,6 +82,7 @@ def list_versions(namespace: str, package_name: str, token_func=get_github_token
         namespace: The namespace in form of 'user/<username>' or 'org/<orgname>'
         package_name: The name of the package
         token_func: Function that returns a GitHub token (default: get_github_token)
+        requests_module: Module to use for HTTP requests (default: requests)
     
     Returns:
         List of package versions with metadata
@@ -103,7 +104,7 @@ def list_versions(namespace: str, package_name: str, token_func=get_github_token
         "X-GitHub-Api-Version": "2022-11-28"
     }
     
-    response = requests.get(api_url, headers=headers)
+    response = requests_module.get(api_url, headers=headers)
     response.raise_for_status()
     return response.json()
 
