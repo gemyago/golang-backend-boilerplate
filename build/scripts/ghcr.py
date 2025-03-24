@@ -6,11 +6,27 @@ import argparse
 import requests
 import json
 import subprocess
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TypedDict
 
 class AuthenticationError(Exception):
     """Raised when authentication fails"""
     pass
+
+class ContainerMetadata(TypedDict):
+    tags: List[str]
+
+class VersionMetadata(TypedDict):
+    container: ContainerMetadata
+
+class PackageVersion(TypedDict):
+    id: int
+    name: Optional[str]
+    url: str
+    package_html_url: str
+    created_at: str
+    updated_at: str
+    html_url: str
+    metadata: VersionMetadata
 
 def get_github_token(environ=os.environ, subprocess_module=subprocess) -> str:
     """
@@ -58,7 +74,7 @@ def get_github_token(environ=os.environ, subprocess_module=subprocess) -> str:
     )
     raise AuthenticationError(error_msg)
 
-def list_versions(namespace: str, package_name: str, token_func=get_github_token) -> List[Dict[str, Any]]:
+def list_versions(namespace: str, package_name: str, token_func=get_github_token) -> List[PackageVersion]:
     """
     List all versions of a package in the GitHub Container Registry.
     
@@ -112,11 +128,12 @@ def main():
             versions = list_versions(args.namespace, args.package)
             print(f"Versions for {args.namespace}/{args.package}:")
             for version in versions:
-                print(f"  - ID: {version.get('id')}")
-                print(f"    Name: {version.get('name')}")
-                print(f"    Created: {version.get('created_at')}")
-                print(f"    Updated: {version.get('updated_at')}")
-                print(f"    Tags: {', '.join(version.get('metadata', {}).get('container', {}).get('tags', []))}")
+                print(f"  - ID: {version['id']}")
+                print(f"    Name: {version['name'] if version['name'] else 'N/A'}")
+                print(f"    Created: {version['created_at']}")
+                print(f"    Updated: {version['updated_at']}")
+                tags = version['metadata']['container']['tags'] if 'container' in version['metadata'] else []
+                print(f"    Tags: {', '.join(tags)}")
                 print("")
     except Exception as e:
         print(f"Command failed: {e}", file=sys.stderr)
