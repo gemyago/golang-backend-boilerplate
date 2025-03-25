@@ -264,28 +264,7 @@ class TestFindVersionsToClean(unittest.TestCase):
         # Check that we're keeping the 3 most recent versions
         kept_ids = set(v["id"] for v in versions) - set(v["id"] for v in to_remove)
         self.assertEqual(kept_ids, {1000, 1001, 1002})  # The first 3 IDs (most recent)
-    
-    def test_keep_regex_pattern(self):
-        """Test keeping versions that match a regex pattern - removed functionality"""
-        # This test is no longer applicable since keep_regex has been removed
-        pass
-    
-    def test_keep_latest_and_regex(self):
-        """Test keeping both latest N versions and regex pattern matches - partially removed functionality"""
-        # This test is now partially applicable since keep_regex has been removed
-        # We'll just test the keep_latest functionality
-        # Create 20 versions
-        versions = create_dated_package_versions(20, date_pattern='sequential')
-        
-        # Keep latest 3 versions
-        to_remove = find_versions_to_clean(versions, keep_latest=3)
-        
-        # We should keep the 3 most recent versions (1000, 1001, 1002)
-        expected_to_keep = {1000, 1001, 1002}
-        kept_ids = set(v["id"] for v in versions) - set(v["id"] for v in to_remove)
-        
-        self.assertEqual(kept_ids, expected_to_keep)
-    
+
     def test_empty_versions_list(self):
         """Test with an empty list of versions"""
         to_remove = find_versions_to_clean([])
