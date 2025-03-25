@@ -112,22 +112,33 @@ def list_versions(namespace: str, package_name: str, token_func=get_github_token
 def find_versions_to_clean(versions: List[PackageVersion], keep_latest: int = 5) -> List[PackageVersion]:
     """
     Find package versions that should be cleaned up/removed.
-    Currently returns only versions that have no tags.
+    Keeps only the latest 'keep_latest' versions that have tags.
     
     Args:
         versions: List of package versions to analyze
-        keep_latest: Number of most recent versions to keep (not used currently)
+        keep_latest: Number of most recent tagged versions to keep (default: 5)
     
     Returns:
-        List of package versions that should be removed (those with no tags)
+        List of package versions that should be removed
     """
-    to_remove = []
+    # Separate versions into tagged and untagged
+    tagged_versions = []
+    untagged_versions = []
     
     for version in versions:
-        # Check if the version has no tags
         tags = version.get('metadata', {}).get('container', {}).get('tags', [])
-        if not tags:
-            to_remove.append(version)
+        if tags:
+            tagged_versions.append(version)
+        else:
+            untagged_versions.append(version)
+    
+    sorted_tagged = sorted(
+        tagged_versions, 
+        key=lambda v: datetime.fromisoformat(v['created_at'].replace('Z', '+00:00')),
+        reverse=True
+    )
+    
+    to_remove = untagged_versions + [v for v in sorted_tagged[keep_latest:]]
     
     return to_remove
 
