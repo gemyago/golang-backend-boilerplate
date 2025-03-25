@@ -1,5 +1,6 @@
 import sys
 import os
+from typing import List
 import unittest
 import random
 import re
@@ -21,15 +22,18 @@ from ghcr import (
 )
 
 
-def create_random_package_version() -> PackageVersion:
+def create_random_package_version(**overrides) -> PackageVersion:
     """
     Create a random PackageVersion object for testing purposes.
     
+    Args:
+        overrides: Optional keyword arguments to override default values
+
     Returns:
         A randomly generated PackageVersion object
     """
     
-    return {
+    version = {
         "id": fake.random_int(min=1000, max=9999),
         "name": fake.name(),
         "url": fake.uri(),
@@ -43,8 +47,10 @@ def create_random_package_version() -> PackageVersion:
             }
         }
     }
+    version.update(overrides)
+    return PackageVersion(**version)
 
-def create_dated_package_versions(num_versions, date_pattern='recent'):
+def create_dated_package_versions(num_versions, date_pattern='recent') -> List[PackageVersion]:
     """
     Create a list of package versions with specific dating patterns for testing.
     
@@ -74,25 +80,12 @@ def create_dated_package_versions(num_versions, date_pattern='recent'):
             
         created_date = (base_date - timedelta(days=days_ago)).isoformat().replace('+00:00', 'Z')
         
-        version = {
-            "id": 1000 + i,
-            "name": f"{random.randint(0, 3)}.{random.randint(0, 10)}.{random.randint(0, 20)}",
-            "url": f"https://api.github.com/user/test/packages/container/test-package/versions/{1000 + i}",
-            "package_html_url": "https://github.com/user/test/packages/container/package/test-package",
-            "created_at": created_date,
-            "updated_at": created_date,
-            "html_url": f"https://github.com/user/test/packages/container/test-package/{1000 + i}",
-            "metadata": {
-                "container": {
-                    "tags": [f"v{i}", "latest"] if i == 0 else [f"v{i}"]
-                }
-            }
-        }
-        
-        # Add special names for some versions to test regex matching
-        if i % 5 == 0:
-            version["name"] = f"stable-{random.randint(1, 100)}"
-            
+        version = create_random_package_version(
+            id=1000 + i,
+            created_at=created_date,
+            updated_at=created_date
+        )
+
         versions.append(version)
     
     return versions

@@ -4,10 +4,8 @@ import os
 import sys
 import argparse
 import requests
-import json
 import subprocess
-import re
-from typing import List, Optional, TypedDict, Callable, Dict, Any, Protocol, NamedTuple, Union
+from typing import List, Optional, TypedDict, Callable, Protocol
 from datetime import datetime, timezone
 import logging
 
