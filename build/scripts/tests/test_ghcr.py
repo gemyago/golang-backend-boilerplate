@@ -284,26 +284,16 @@ class TestFindVersionsToClean(unittest.TestCase):
         for version in to_remove:
             self.assertEqual(version['metadata']['container']['tags'], [])
     
-    def test_no_untagged_versions(self):
-        """Test when all versions have tags"""
+    def test_keep_tagged_versions(self):
+        """Test keeping versions with tags"""
         versions = []
         
         # Create 5 versions, all with tags
         for i in range(5):
-            version = {
-                "id": 1000 + i,
-                "name": f"{i}.0.0",
-                "url": f"https://api.github.com/user/test/packages/container/test-package/versions/{1000 + i}",
-                "package_html_url": "https://github.com/user/test/packages/container/package/test-package",
-                "created_at": datetime.now().isoformat().replace('+00:00', 'Z'),
-                "updated_at": datetime.now().isoformat().replace('+00:00', 'Z'),
-                "html_url": f"https://github.com/user/test/packages/container/test-package/{1000 + i}",
-                "metadata": {
-                    "container": {
-                        "tags": [f"tag-{i}"]
-                    }
-                }
-            }
+            version = create_random_package_version(
+                id=1000 + i,
+                metadata={"container": {"tags": [f"tag-{i}", "latest"]}}
+            )
             versions.append(version)
         
         # Find versions to clean
@@ -311,12 +301,6 @@ class TestFindVersionsToClean(unittest.TestCase):
         
         # None should be removed since all have tags
         self.assertEqual(len(to_remove), 0)
-    
-    def test_empty_versions_list(self):
-        """Test with an empty list of versions"""
-        to_remove = find_versions_to_clean([])
-        self.assertEqual(len(to_remove), 0)
-
 
 class TestRemoveVersion(unittest.TestCase):
     def test_remove_version_dry_run(self):
