@@ -2,14 +2,23 @@ import sys
 import os
 import unittest
 import random
-from unittest.mock import MagicMock
+import re
+from unittest.mock import MagicMock, patch
 from faker import Faker
+from datetime import datetime, timedelta
 
 fake = Faker()
 
 # Add the parent directory to sys.path to import the ghcr module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from ghcr import get_github_token, list_versions, AuthenticationError, PackageVersion
+from ghcr import (
+    get_github_token, 
+    list_versions, 
+    find_versions_to_clean,
+    remove_version,
+    AuthenticationError, 
+    PackageVersion
+)
 
 
 def create_random_package_version() -> PackageVersion:
@@ -34,6 +43,92 @@ def create_random_package_version() -> PackageVersion:
             }
         }
     }
+
+def create_dated_package_versions(num_versions, date_pattern='recent'):
+    """
+    Create a list of package versions with specific dating patterns for testing.
+    
+    Args:
+        num_versions: Number of versions to create
+        date_pattern: 'recent' for versions created recently, 'sequential' for 
+                     versions with sequential dates
+    
+    Returns:
+        List of versioned packages with controlled dates
+    """
+    versions = []
+    base_date = datetime.now()
+    
+    for i in range(num_versions):
+        if date_pattern == 'recent':
+            # Create some versions from today, some from last week, some from last month
+            if i < num_versions // 3:
+                days_ago = random.randint(0, 2)  # Last couple days
+            elif i < 2 * (num_versions // 3):
+                days_ago = random.randint(3, 10)  # Last week or so
+            else:
+                days_ago = random.randint(20, 60)  # Last month or two
+        else:  # sequential
+            # Each version is created 1 day before the previous one
+            days_ago = i
+            
+        created_date = (base_date - timedelta(days=days_ago)).isoformat().replace('+00:00', 'Z')
+        
+        version = {
+            "id": 1000 + i,
+            "name": f"{random.randint(0, 3)}.{random.randint(0, 10)}.{random.randint(0, 20)}",
+            "url": f"https://api.github.com/user/test/packages/container/test-package/versions/{1000 + i}",
+            "package_html_url": "https://github.com/user/test/packages/container/package/test-package",
+            "created_at": created_date,
+            "updated_at": created_date,
+            "html_url": f"https://github.com/user/test/packages/container/test-package/{1000 + i}",
+            "metadata": {
+                "container": {
+                    "tags": [f"v{i}", "latest"] if i == 0 else [f"v{i}"]
+                }
+            }
+        }
+        
+        # Add special names for some versions to test regex matching
+        if i % 5 == 0:
+            version["name"] = f"stable-{random.randint(1, 100)}"
+            
+        versions.append(version)
+    
+    return versions
+
+def create_test_versions_with_varying_tags():
+    """
+    Create a set of test versions with a mix of tagged and untagged versions.
+    
+    Returns:
+        List of package versions, some with tags and some without
+    """
+    versions = []
+    
+    # Create 10 versions
+    for i in range(10):
+        # Every other version will have tags
+        has_tags = i % 2 == 0
+        
+        version = {
+            "id": 1000 + i,
+            "name": f"{random.randint(0, 3)}.{random.randint(0, 10)}.{random.randint(0, 20)}",
+            "url": f"https://api.github.com/user/test/packages/container/test-package/versions/{1000 + i}",
+            "package_html_url": "https://github.com/user/test/packages/container/package/test-package",
+            "created_at": datetime.now().isoformat().replace('+00:00', 'Z'),
+            "updated_at": datetime.now().isoformat().replace('+00:00', 'Z'),
+            "html_url": f"https://github.com/user/test/packages/container/test-package/{1000 + i}",
+            "metadata": {
+                "container": {
+                    "tags": [f"tag-{i}", "latest"] if has_tags else []
+                }
+            }
+        }
+        
+        versions.append(version)
+    
+    return versions
 
 
 class TestGetGitHubToken(unittest.TestCase):
@@ -159,6 +254,177 @@ class TestListVersions(unittest.TestCase):
             self.assertEqual(version["name"], mock_versions[i]["name"])
             self.assertEqual(version["metadata"]["container"]["tags"], 
                              mock_versions[i]["metadata"]["container"]["tags"])
+
+
+class TestFindVersionsToClean(unittest.TestCase):
+    def test_keep_latest_versions(self):
+        """Test keeping the latest N versions by date"""
+        # Create 10 versions with sequential dates
+        versions = create_dated_package_versions(10, date_pattern='sequential')
+        
+        # Keep latest 3 versions
+        to_remove = find_versions_to_clean(versions, keep_latest=3)
+        
+        # We should have 7 versions to remove (10 total - 3 to keep)
+        self.assertEqual(len(to_remove), 7)
+        
+        # Check that we're keeping the 3 most recent versions
+        kept_ids = set(v["id"] for v in versions) - set(v["id"] for v in to_remove)
+        self.assertEqual(kept_ids, {1000, 1001, 1002})  # The first 3 IDs (most recent)
+    
+    def test_keep_regex_pattern(self):
+        """Test keeping versions that match a regex pattern - removed functionality"""
+        # This test is no longer applicable since keep_regex has been removed
+        pass
+    
+    def test_keep_latest_and_regex(self):
+        """Test keeping both latest N versions and regex pattern matches - partially removed functionality"""
+        # This test is now partially applicable since keep_regex has been removed
+        # We'll just test the keep_latest functionality
+        # Create 20 versions
+        versions = create_dated_package_versions(20, date_pattern='sequential')
+        
+        # Keep latest 3 versions
+        to_remove = find_versions_to_clean(versions, keep_latest=3)
+        
+        # We should keep the 3 most recent versions (1000, 1001, 1002)
+        expected_to_keep = {1000, 1001, 1002}
+        kept_ids = set(v["id"] for v in versions) - set(v["id"] for v in to_remove)
+        
+        self.assertEqual(kept_ids, expected_to_keep)
+    
+    def test_empty_versions_list(self):
+        """Test with an empty list of versions"""
+        to_remove = find_versions_to_clean([])
+        self.assertEqual(len(to_remove), 0)
+    
+    def test_find_untagged_versions(self):
+        """Test finding versions with no tags"""
+        versions = create_test_versions_with_varying_tags()
+        
+        # Find versions to clean (should be only those with no tags)
+        to_remove = find_versions_to_clean(versions)
+        
+        # We should have 5 versions to remove (those with odd indices have no tags)
+        self.assertEqual(len(to_remove), 5)
+        
+        # Verify all versions to remove have empty tag lists
+        for version in to_remove:
+            self.assertEqual(version['metadata']['container']['tags'], [])
+    
+    def test_no_untagged_versions(self):
+        """Test when all versions have tags"""
+        versions = []
+        
+        # Create 5 versions, all with tags
+        for i in range(5):
+            version = {
+                "id": 1000 + i,
+                "name": f"{i}.0.0",
+                "url": f"https://api.github.com/user/test/packages/container/test-package/versions/{1000 + i}",
+                "package_html_url": "https://github.com/user/test/packages/container/package/test-package",
+                "created_at": datetime.now().isoformat().replace('+00:00', 'Z'),
+                "updated_at": datetime.now().isoformat().replace('+00:00', 'Z'),
+                "html_url": f"https://github.com/user/test/packages/container/test-package/{1000 + i}",
+                "metadata": {
+                    "container": {
+                        "tags": [f"tag-{i}"]
+                    }
+                }
+            }
+            versions.append(version)
+        
+        # Find versions to clean
+        to_remove = find_versions_to_clean(versions)
+        
+        # None should be removed since all have tags
+        self.assertEqual(len(to_remove), 0)
+    
+    def test_empty_versions_list(self):
+        """Test with an empty list of versions"""
+        to_remove = find_versions_to_clean([])
+        self.assertEqual(len(to_remove), 0)
+
+
+class TestRemoveVersion(unittest.TestCase):
+    def test_remove_version_dry_run(self):
+        """Test removing a version in dry run mode"""
+        # Mock token function
+        mock_token_func = MagicMock(return_value="test-token")
+        
+        # Mock requests module
+        mock_requests = MagicMock()
+        
+        # Call remove_version with dry_run=True
+        result = remove_version(
+            namespace="user/test",
+            package_name="test-package",
+            version_id=1234,
+            dry_run=True,
+            token_func=mock_token_func,
+            requests_module=mock_requests
+        )
+        
+        # Verify result is True
+        self.assertTrue(result)
+        
+        # Verify no API calls were made
+        mock_requests.delete.assert_not_called()
+    
+    def test_remove_version_actual(self):
+        """Test removing a version for real"""
+        # Mock token function
+        mock_token_func = MagicMock(return_value="test-token")
+        
+        # Mock requests module
+        mock_response = MagicMock()
+        mock_requests = MagicMock()
+        mock_requests.delete.return_value = mock_response
+        
+        # Call remove_version with dry_run=False
+        result = remove_version(
+            namespace="user/test",
+            package_name="test-package",
+            version_id=1234,
+            dry_run=False,
+            token_func=mock_token_func,
+            requests_module=mock_requests
+        )
+        
+        # Verify result is True
+        self.assertTrue(result)
+        
+        # Verify API was called correctly
+        mock_requests.delete.assert_called_once_with(
+            "https://api.github.com/user/test/packages/container/test-package/versions/1234",
+            headers={
+                "Accept": "application/vnd.github+json",
+                "Authorization": "Bearer test-token",
+                "X-GitHub-Api-Version": "2022-11-28"
+            }
+        )
+        
+    def test_remove_version_error(self):
+        """Test error handling when removing a version"""
+        # Mock token function
+        mock_token_func = MagicMock(return_value="test-token")
+        
+        # Mock requests module with an error response
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("API Error")
+        mock_requests = MagicMock()
+        mock_requests.delete.return_value = mock_response
+        
+        # Call remove_version with dry_run=False
+        with self.assertRaises(requests.exceptions.HTTPError):
+            remove_version(
+                namespace="user/test",
+                package_name="test-package",
+                version_id=1234,
+                dry_run=False,
+                token_func=mock_token_func,
+                requests_module=mock_requests
+            )
 
 if __name__ == "__main__":
     unittest.main()
