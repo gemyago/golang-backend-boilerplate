@@ -5,7 +5,7 @@ import sys
 import argparse
 import requests
 import subprocess
-from typing import List, Optional, TypedDict, Callable, Protocol
+from typing import List, Optional, TypedDict, Callable, Protocol, Dict, Literal, Any
 from datetime import datetime, timezone
 import logging
 
@@ -28,6 +28,11 @@ class PackageVersion(TypedDict):
     updated_at: str
     html_url: str
     metadata: VersionMetadata
+
+class CleanupAction(TypedDict):
+    version: PackageVersion
+    action: Literal["keep", "delete"]
+    reason: str
 
 def get_github_token(environ=os.environ, subprocess_module=subprocess) -> str:
     """
@@ -109,7 +114,7 @@ def list_versions(namespace: str, package_name: str, token_func=get_github_token
     response.raise_for_status()
     return response.json()
 
-def find_versions_to_clean(versions: List[PackageVersion], keep_latest: int = 5) -> List[PackageVersion]:
+def find_versions_to_clean(versions: List[PackageVersion], keep_latest: int = 5) -> List[CleanupAction]:
     """
     Find package versions that should be cleaned up/removed.
     Keeps only the latest 'keep_latest' versions that have tags.
@@ -119,7 +124,7 @@ def find_versions_to_clean(versions: List[PackageVersion], keep_latest: int = 5)
         keep_latest: Number of most recent tagged versions to keep (default: 5)
     
     Returns:
-        List of package versions that should be removed
+        List of cleanup actions with version, action ("keep" or "delete"), and reason
     """
     # Separate versions into tagged and untagged
     tagged_versions = []
@@ -132,15 +137,40 @@ def find_versions_to_clean(versions: List[PackageVersion], keep_latest: int = 5)
         else:
             untagged_versions.append(version)
     
+    # Sort tagged versions by creation date (newest first)
     sorted_tagged = sorted(
         tagged_versions, 
         key=lambda v: datetime.fromisoformat(v['created_at'].replace('Z', '+00:00')),
         reverse=True
     )
     
-    to_remove = untagged_versions + [v for v in sorted_tagged[keep_latest:]]
+    # Initialize result list
+    cleanup_actions = []
     
-    return to_remove
+    # Process tagged versions to keep
+    for i, version in enumerate(sorted_tagged):
+        if i < keep_latest:
+            cleanup_actions.append({
+                "version": version,
+                "action": "keep",
+                "reason": f"Tagged version within the {keep_latest} most recent"
+            })
+        else:
+            cleanup_actions.append({
+                "version": version,
+                "action": "delete",
+                "reason": f"Older tagged version beyond the {keep_latest} most recent to keep"
+            })
+    
+    # Process untagged versions (all should be deleted)
+    for version in untagged_versions:
+        cleanup_actions.append({
+            "version": version,
+            "action": "delete",
+            "reason": "Untagged version"
+        })
+    
+    return cleanup_actions
 
 def remove_version(namespace: str, package_name: str, version_id: int, 
                    dry_run: bool = True, token_func=get_github_token, 
@@ -196,7 +226,7 @@ class CleanupArgs(Protocol):
 
 def cleanup_versions_command(args: CleanupArgs, 
                            list_versions_func: Callable[[str, str], List[PackageVersion]] = list_versions, 
-                           find_versions_func: Callable[[List[PackageVersion], int], List[PackageVersion]] = find_versions_to_clean, 
+                           find_versions_func: Callable[[List[PackageVersion], int], List[CleanupAction]] = find_versions_to_clean, 
                            remove_version_func: Callable[[str, str, int, bool], bool] = remove_version):
     """
     Handle the cleanup-versions command logic.
@@ -211,30 +241,32 @@ def cleanup_versions_command(args: CleanupArgs,
     all_versions = list_versions_func(args.namespace, args.package)
     
     # Find versions to clean
-    to_remove = find_versions_func(
+    cleanup_actions = find_versions_func(
         all_versions, 
         keep_latest=args.keep_latest
     )
+    
+    print(f"Found {len(cleanup_actions)} versions from {args.namespace}/{args.package}:")
+    for action in cleanup_actions:
+      version = action["version"]
+      name_display = version['name'] if version['name'] else 'N/A'
+      tags = version['metadata']['container']['tags'] if 'container' in version['metadata'] else []
+      print(f"  - ID: {version['id']}, Name: {name_display}, Tags: {', '.join(tags)}")
+      print(f"    Action: {action['action']}")
+      print(f"    Reason: {action['reason']}")
+
+    # Get versions to remove (those with action="delete")
+    to_remove = [action["version"] for action in cleanup_actions if action["action"] == "delete"]
     
     # Show what would be removed
     if not to_remove:
         print(f"No versions to remove from {args.namespace}/{args.package}.")
         return
     
-    print(f"Found {len(to_remove)} versions to remove from {args.namespace}/{args.package}:")
+    print(f"Removing {len(to_remove)} (really_remove: {args.really_remove}) versions from {args.namespace}/{args.package}:")
     for version in to_remove:
-        name_display = version['name'] if version['name'] else 'N/A'
-        tags = version['metadata']['container']['tags'] if 'container' in version['metadata'] else []
-        print(f"  - ID: {version['id']}, Name: {name_display}, Tags: {', '.join(tags)}")
-    
-    # Perform removals if --really-remove is specified
-    if args.really_remove:
-        print("\nPerforming actual removal...")
-        for version in to_remove:
-            remove_version_func(args.namespace, args.package, version['id'], dry_run=False)
-        print(f"Successfully removed {len(to_remove)} versions.")
-    else:
-        print("\nDRY RUN: Use --really-remove to actually remove these versions.")
+        remove_version_func(args.namespace, args.package, version['id'], dry_run=not args.really_remove)
+    print(f"Successfully removed {len(to_remove)} versions.")
 
 def main():
     parser = argparse.ArgumentParser(description="GitHub Container Registry (GHCR) CLI Tool")
