@@ -237,7 +237,7 @@ class TestFindVersionsToClean(unittest.TestCase):
         kept_ids = {v["version"]['id'] for v in to_keep}
         self.assertEqual(kept_ids, {versions[0]['id'], versions[1]['id'], versions[2]['id'], })
         
-        # Verify all actions have a reason
+        # Verify all actions have a valid reason
         for action in to_keep:
             self.assertRegex(action["reason"], r"most recent")
 
@@ -252,25 +252,22 @@ class TestFindVersionsToClean(unittest.TestCase):
     def test_find_untagged_versions(self):
         """Test finding versions with no tags"""
         with_tags = [
-            create_random_package_version(metadata={"container": {"tags": ["tag1", "latest"]}}),
-            create_random_package_version(metadata={"container": {"tags": ["tag1", "latest"]}}),
-            create_random_package_version(metadata={"container": {"tags": ["tag1", "latest"]}}),
+            create_random_package_version(metadata={"container": {"tags": ["tag1", "latest"]}})
+            for _ in range(6)
         ]
 
         without_tags = [
-            create_random_package_version(metadata={"container": {"tags": []}}),
-            create_random_package_version(metadata={"container": {"tags": []}}),
-            create_random_package_version(metadata={"container": {"tags": []}}),
+            create_random_package_version(metadata={"container": {"tags": []}}) 
+            for _ in range(6)
         ]
         
-        cleanup_actions = find_versions_to_clean(with_tags + without_tags)
-        
-        # Extract versions marked for deletion
-        to_remove = [action["version"] for action in cleanup_actions if action["action"] == "delete"]
+        cleanup_actions = find_versions_to_clean(with_tags + without_tags, keep_latest=len(with_tags))
         
         # All untagged versions should be marked for deletion
-        self.assertEqual(len(to_remove), len(without_tags))
-        self.assertEqual({v["id"] for v in to_remove}, {v["id"] for v in without_tags})
+        self.assertEqual(len(cleanup_actions), len(with_tags) + len(without_tags))
+
+        to_remove = [action for action in cleanup_actions if action["action"] == "delete"]
+        self.assertEqual({a["version"]["id"] for a in to_remove}, {a["id"] for a in without_tags})
         
         # Verify the reason for deletion
         for action in cleanup_actions:
