@@ -17,5 +17,9 @@ The build scripts are located in the [scripts](scripts) folder.
 If iterating on scripts, please make sure to run the tests:
 
 ```sh
+# Run tests for all scripts
 make test
+
+# Run specific python tests
+python -m unittest discover -v -s ./scripts/tests -k TestListVersions
 ```
