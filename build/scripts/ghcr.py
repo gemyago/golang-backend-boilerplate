@@ -34,60 +34,88 @@ class CleanupAction(TypedDict):
     action: Literal["keep", "delete"]
     reason: str
 
-def get_github_token(environ=os.environ, subprocess_module=subprocess) -> str:
+class GitHubTokenProvider:
     """
-    Retrieve a GitHub token using multiple methods.
-    
-    1. Check GITHUB_TOKEN environment variable
-    2. Try to get token using GitHub CLI
-    3. Raise AuthenticationError if all methods fail
-    
-    Args:
-        environ: Environment dictionary to use (default: os.environ)
-        subprocess_module: Subprocess module to use (default: subprocess)
-    
-    Returns:
-        GitHub token as string
+    Class responsible for retrieving and caching GitHub tokens from various sources.
+    """
+    def __init__(self, environ=os.environ, subprocess_module=subprocess):
+        """
+        Initialize the token provider.
         
-    Raises:
-        AuthenticationError: If unable to retrieve a valid GitHub token
-    """
-    # Method 1: Environment variable
-    token = environ.get('GITHUB_TOKEN')
-    if token:
-        return token
+        Args:
+            environ: Environment dictionary to use (default: os.environ)
+            subprocess_module: Subprocess module to use (default: subprocess)
+        """
+        self._environ = environ
+        self._subprocess = subprocess_module
+        self._token = None
     
-    # Method 2: GitHub CLI
-    try:
-        result = subprocess_module.run(
-            ["gh", "auth", "token"], 
-            capture_output=True, 
-            text=True, 
-            check=False
+    def get_token(self) -> str:
+        """
+        Retrieve a GitHub token using multiple methods.
+        
+        1. Return cached token if available
+        2. Check GITHUB_TOKEN environment variable
+        3. Try to get token using GitHub CLI
+        4. Raise AuthenticationError if all methods fail
+        
+        Returns:
+            GitHub token as string
+            
+        Raises:
+            AuthenticationError: If unable to retrieve a valid GitHub token
+        """
+        # Return cached token if we already retrieved it
+        if self._token:
+            return self._token
+        
+        # Method 1: Environment variable
+        token = self._environ.get('GITHUB_TOKEN')
+        if token:
+            self._token = token
+            return token
+        
+        # Method 2: GitHub CLI
+        try:
+            result = self._subprocess.run(
+                ["gh", "auth", "token"], 
+                capture_output=True, 
+                text=True, 
+                check=False
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                self._token = result.stdout.strip()
+                return self._token
+        except FileNotFoundError:
+            # GitHub CLI not installed
+            pass
+        
+        # All methods failed
+        error_msg = (
+            "Unable to retrieve GitHub token.\n"
+            "Please either:\n"
+            "  1. Set the GITHUB_TOKEN environment variable, or\n"
+            "  2. Install and authenticate with GitHub CLI (gh)"
         )
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-    except FileNotFoundError:
-        # GitHub CLI not installed
-        pass
+        raise AuthenticationError(error_msg)
     
-    # All methods failed
-    error_msg = (
-        "Unable to retrieve GitHub token.\n"
-        "Please either:\n"
-        "  1. Set the GITHUB_TOKEN environment variable, or\n"
-        "  2. Install and authenticate with GitHub CLI (gh)"
-    )
-    raise AuthenticationError(error_msg)
+    def clear_token(self):
+        """
+        Clear the cached token, forcing a refresh on next get_token() call.
+        """
+        self._token = None
 
-def list_versions(namespace: str, package_name: str, token_func=get_github_token, requests_module=requests) -> List[PackageVersion]:
+# Create a default token provider instance
+default_token_provider = GitHubTokenProvider()
+
+def list_versions(namespace: str, package_name: str, token_provider=default_token_provider, requests_module=requests) -> List[PackageVersion]:
     """
     List all versions of a package in the GitHub Container Registry.
     
     Args:
         namespace: The namespace in form of 'user/<username>' or 'org/<orgname>'
         package_name: The name of the package
-        token_func: Function that returns a GitHub token (default: get_github_token)
+        token_provider: Provider that returns a GitHub token (default: default_token_provider)
         requests_module: Module to use for HTTP requests (default: requests)
     
     Returns:
@@ -98,7 +126,7 @@ def list_versions(namespace: str, package_name: str, token_func=get_github_token
         APIError: If API request fails
     """
     # Get authentication token
-    token = token_func()
+    token = token_provider.get_token()
     
     # Construct API URL
     api_url = f"https://api.github.com/{namespace}/packages/container/{package_name}/versions?per_page=100"
@@ -173,7 +201,7 @@ def find_versions_to_clean(versions: List[PackageVersion], keep_latest: int = 5)
     return cleanup_actions
 
 def remove_version(namespace: str, package_name: str, version_id: int, 
-                   dry_run: bool = True, token_func=get_github_token, 
+                   dry_run: bool = True, token_provider=default_token_provider, 
                    requests_module=requests) -> bool:
     """
     Remove a specific package version from the GitHub Container Registry.
@@ -183,7 +211,7 @@ def remove_version(namespace: str, package_name: str, version_id: int,
         package_name: The name of the package
         version_id: The ID of the version to remove
         dry_run: If True, only simulate removal (default: True)
-        token_func: Function that returns a GitHub token
+        token_provider: Provider that returns a GitHub token (default: default_token_provider)
         requests_module: Module to use for HTTP requests
     
     Returns:
@@ -198,7 +226,7 @@ def remove_version(namespace: str, package_name: str, version_id: int,
         return True
     
     # Get authentication token
-    token = token_func()
+    token = token_provider.get_token()
     
     # Construct API URL
     api_url = f"https://api.github.com/{namespace}/packages/container/{package_name}/versions/{version_id}"

@@ -15,7 +15,7 @@ fake = Faker()
 # Add the parent directory to sys.path to import the ghcr module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from ghcr import (
-    get_github_token, 
+    GitHubTokenProvider,
     list_versions, 
     find_versions_to_clean,
     remove_version,
@@ -94,7 +94,7 @@ def create_dated_package_versions(num_versions, date_pattern='recent') -> List[P
     return versions
 
 
-class TestGetGitHubToken(unittest.TestCase):
+class TestGitHubTokenProvider(unittest.TestCase):
     def test_get_token_from_env(self):
         """Test getting token from environment variable"""
         mock_environ = {'GITHUB_TOKEN': 'test-token-from-env'}
@@ -102,11 +102,17 @@ class TestGetGitHubToken(unittest.TestCase):
         # Mock subprocess to ensure it's not used when env var is available
         mock_subprocess = MagicMock()
         
-        token = get_github_token(environ=mock_environ, subprocess_module=mock_subprocess)
+        provider = GitHubTokenProvider(environ=mock_environ, subprocess_module=mock_subprocess)
+        token = provider.get_token()
         
         self.assertEqual(token, 'test-token-from-env')
         # Verify subprocess was not called
         mock_subprocess.run.assert_not_called()
+        
+        # Verify the token is memoized (second call doesn't try to lookup again)
+        mock_environ.clear()
+        token2 = provider.get_token()
+        self.assertEqual(token2, 'test-token-from-env')
     
     def test_get_token_from_gh_cli(self):
         """Test getting token from GitHub CLI when env var is not available"""
@@ -121,7 +127,8 @@ class TestGetGitHubToken(unittest.TestCase):
         mock_subprocess = MagicMock()
         mock_subprocess.run.return_value = mock_process
         
-        token = get_github_token(environ=mock_environ, subprocess_module=mock_subprocess)
+        provider = GitHubTokenProvider(environ=mock_environ, subprocess_module=mock_subprocess)
+        token = provider.get_token()
         
         self.assertEqual(token, 'test-token-from-gh-cli')
         # Verify subprocess was called with correct arguments
@@ -131,7 +138,40 @@ class TestGetGitHubToken(unittest.TestCase):
             text=True,
             check=False
         )
+        
+        # Verify the token is memoized (second call doesn't call subprocess again)
+        mock_subprocess.reset_mock()
+        token2 = provider.get_token()
+        self.assertEqual(token2, 'test-token-from-gh-cli')
+        mock_subprocess.run.assert_not_called()
     
+    def test_clear_token(self):
+        """Test clearing the cached token"""
+        mock_environ = {'GITHUB_TOKEN': 'test-token-from-env'}
+        provider = GitHubTokenProvider(environ=mock_environ)
+        
+        # First call should retrieve the token
+        token1 = provider.get_token()
+        self.assertEqual(token1, 'test-token-from-env')
+        
+        # Clear the environment and the token cache
+        mock_environ.clear()
+        provider.clear_token()
+        
+        # Mock subprocess for second attempt
+        mock_process = MagicMock()
+        mock_process.returncode = 0
+        mock_process.stdout = "test-token-from-gh-cli\n"
+        
+        mock_subprocess = MagicMock()
+        mock_subprocess.run.return_value = mock_process
+        provider._subprocess = mock_subprocess
+        
+        # Second call should try to get the token from gh cli
+        token2 = provider.get_token()
+        self.assertEqual(token2, 'test-token-from-gh-cli')
+        mock_subprocess.run.assert_called_once()
+        
     def test_gh_cli_not_found(self):
         """Test handling when GitHub CLI is not installed"""
         # Empty environment - no GITHUB_TOKEN
@@ -141,9 +181,11 @@ class TestGetGitHubToken(unittest.TestCase):
         mock_subprocess = MagicMock()
         mock_subprocess.run.side_effect = FileNotFoundError("No such file or directory: 'gh'")
         
+        provider = GitHubTokenProvider(environ=mock_environ, subprocess_module=mock_subprocess)
+        
         # Should raise AuthenticationError
         with self.assertRaises(AuthenticationError) as context:
-            get_github_token(environ=mock_environ, subprocess_module=mock_subprocess)
+            provider.get_token()
         
         # Verify error message contains helpful instructions
         error_message = str(context.exception)
@@ -164,9 +206,11 @@ class TestGetGitHubToken(unittest.TestCase):
         mock_subprocess = MagicMock()
         mock_subprocess.run.return_value = mock_process
         
+        provider = GitHubTokenProvider(environ=mock_environ, subprocess_module=mock_subprocess)
+        
         # Should raise AuthenticationError
         with self.assertRaises(AuthenticationError) as context:
-            get_github_token(environ=mock_environ, subprocess_module=mock_subprocess)
+            provider.get_token()
         
         # Verify error message contains helpful instructions
         error_message = str(context.exception)
@@ -176,8 +220,9 @@ class TestGetGitHubToken(unittest.TestCase):
 class TestListVersions(unittest.TestCase):
     def test_list_versions_success(self):
         """Test listing versions with successful API response"""
-        # Mock token function
-        mock_token_func = MagicMock(return_value="test-token")
+        # Mock token provider
+        mock_token_provider = MagicMock()
+        mock_token_provider.get_token.return_value = "test-token"
         
         # Generate random package versions
         num_versions = random.randint(3, 5)
@@ -195,7 +240,7 @@ class TestListVersions(unittest.TestCase):
         result = list_versions(
             namespace="user/test",
             package_name="test-package",
-            token_func=mock_token_func,
+            token_provider=mock_token_provider,
             requests_module=mock_requests
         )
         
@@ -298,8 +343,9 @@ class TestFindVersionsToClean(unittest.TestCase):
 class TestRemoveVersion(unittest.TestCase):
     def test_remove_version_dry_run(self):
         """Test removing a version in dry run mode"""
-        # Mock token function
-        mock_token_func = MagicMock(return_value="test-token")
+        # Mock token provider
+        mock_token_provider = MagicMock()
+        mock_token_provider.get_token.return_value = "test-token"
         
         # Mock requests module
         mock_requests = MagicMock()
@@ -310,7 +356,7 @@ class TestRemoveVersion(unittest.TestCase):
             package_name="test-package",
             version_id=1234,
             dry_run=True,
-            token_func=mock_token_func,
+            token_provider=mock_token_provider,
             requests_module=mock_requests
         )
         
@@ -322,8 +368,9 @@ class TestRemoveVersion(unittest.TestCase):
     
     def test_remove_version_actual(self):
         """Test removing a version for real"""
-        # Mock token function
-        mock_token_func = MagicMock(return_value="test-token")
+        # Mock token provider
+        mock_token_provider = MagicMock()
+        mock_token_provider.get_token.return_value = "test-token"
         
         # Mock requests module
         mock_response = MagicMock()
@@ -336,7 +383,7 @@ class TestRemoveVersion(unittest.TestCase):
             package_name="test-package",
             version_id=1234,
             dry_run=False,
-            token_func=mock_token_func,
+            token_provider=mock_token_provider,
             requests_module=mock_requests
         )
         
@@ -355,8 +402,9 @@ class TestRemoveVersion(unittest.TestCase):
         
     def test_remove_version_error(self):
         """Test error handling when removing a version"""
-        # Mock token function
-        mock_token_func = MagicMock(return_value="test-token")
+        # Mock token provider
+        mock_token_provider = MagicMock()
+        mock_token_provider.get_token.return_value = "test-token"
         
         # Mock requests module with an error response
         mock_response = MagicMock()
@@ -371,7 +419,7 @@ class TestRemoveVersion(unittest.TestCase):
                 package_name="test-package",
                 version_id=1234,
                 dry_run=False,
-                token_func=mock_token_func,
+                token_provider=mock_token_provider,
                 requests_module=mock_requests
             )
 
