@@ -6,7 +6,7 @@ import argparse
 import requests
 import subprocess
 from typing import List, Optional, TypedDict, Callable, Protocol, Dict, Literal, Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 import re
 
@@ -162,14 +162,14 @@ def list_versions(namespace: str, package_name: str, token_provider=default_toke
     
     return all_versions
 
-def find_versions_to_clean(versions: List[PackageVersion], keep_latest: int = 5) -> List[CleanupAction]:
+def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int) -> List[CleanupAction]:
     """
     Find package versions that should be cleaned up/removed.
-    Keeps only the latest 'keep_latest' versions that have tags.
+    Keeps tagged versions newer than 'tagged_max_age' seconds.
     
     Args:
         versions: List of package versions to analyze
-        keep_latest: Number of most recent tagged versions to keep (default: 5)
+        tagged_max_age: Maximum age in seconds for tagged versions to keep
     
     Returns:
         List of cleanup actions with version, action ("keep" or "delete"), and reason
@@ -185,29 +185,27 @@ def find_versions_to_clean(versions: List[PackageVersion], keep_latest: int = 5)
         else:
             untagged_versions.append(version)
     
-    # Sort tagged versions by creation date (newest first)
-    sorted_tagged = sorted(
-        tagged_versions, 
-        key=lambda v: datetime.fromisoformat(v['created_at'].replace('Z', '+00:00')),
-        reverse=True
-    )
+    # Calculate cutoff date
+    now = datetime.now(timezone.utc)
+    cutoff_date = now - timedelta(seconds=tagged_max_age)
     
     # Initialize result list
     cleanup_actions = []
     
-    # Process tagged versions to keep
-    for i, version in enumerate(sorted_tagged):
-        if i < keep_latest:
+    # Process tagged versions
+    for version in tagged_versions:
+        created_date = datetime.fromisoformat(version['created_at'])
+        if created_date > cutoff_date:
             cleanup_actions.append({
                 "version": version,
                 "action": "keep",
-                "reason": f"Tagged version within the {keep_latest} most recent"
+                "reason": f"Tagged version newer than {tagged_max_age} seconds"
             })
         else:
             cleanup_actions.append({
                 "version": version,
                 "action": "delete",
-                "reason": f"Older tagged version beyond the {keep_latest} most recent to keep"
+                "reason": f"Tagged version older than {tagged_max_age} seconds"
             })
     
     # Process untagged versions (all should be deleted)
@@ -269,7 +267,7 @@ class CleanupArgs(Protocol):
     """Type definition for cleanup command arguments."""
     namespace: str
     package: str
-    keep_latest: int
+    tagged_max_age: int
     really_remove: bool
 
 def cleanup_versions_command(args: CleanupArgs, 
@@ -291,7 +289,7 @@ def cleanup_versions_command(args: CleanupArgs,
     # Find versions to clean
     cleanup_actions = find_versions_func(
         all_versions, 
-        keep_latest=args.keep_latest
+        tagged_max_age=args.tagged_max_age
     )
     
     print(f"Found {len(cleanup_actions)} versions from {args.namespace}/{args.package}:")
@@ -329,7 +327,7 @@ def main():
     cleanup_parser = subparsers.add_parser("cleanup-versions", help="Clean up old package versions")
     cleanup_parser.add_argument("--namespace", required=True, help="Namespace in form 'user/<username>' or 'org/<orgname>'")
     cleanup_parser.add_argument("--package", required=True, help="Package name")
-    cleanup_parser.add_argument("--keep-latest", type=int, default=5, help="Number of latest versions to keep (default: 5)")
+    cleanup_parser.add_argument("--tagged-max-age", type=int, default=604800, help="Maximum age in seconds for tagged versions to keep (default: 604800 = 7 days)")
     cleanup_parser.add_argument("--really-remove", action="store_true", help="Actually perform deletion (without this flag, dry run is performed)")
     
     args = parser.parse_args()

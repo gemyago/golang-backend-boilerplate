@@ -6,7 +6,7 @@ import random
 import re
 from unittest.mock import MagicMock, patch
 from faker import Faker
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
 
@@ -332,50 +332,29 @@ class TestListVersions(unittest.TestCase):
 
 
 class TestFindVersionsToClean(unittest.TestCase):
-    def test_keep_latest_versions(self):
-        """Test keeping the latest N versions by date"""
-        versions = create_dated_package_versions(10, date_pattern='sequential')
-        
-        cleanup_actions = find_versions_to_clean(versions, keep_latest=3)
-        
-        # Extract versions marked for deletion
-        to_remove = [action for action in cleanup_actions if action["action"] == "delete"]
-        # Extract versions marked to keep
-        to_keep = [action for action in cleanup_actions if action["action"] == "keep"]
-        
-        # Verify counts
-        self.assertEqual(len(to_remove), 7)
-        self.assertEqual(len(to_keep), 3)
-        
-        # Verify the correct versions are kept (most recent ones)
-        kept_ids = {v["version"]['id'] for v in to_keep}
-        self.assertEqual(kept_ids, {versions[0]['id'], versions[1]['id'], versions[2]['id'], })
-        
-        # Verify all actions have a valid reason
-        for action in to_keep:
-            self.assertRegex(action["reason"], r"most recent")
-
-        for action in to_remove:
-            self.assertRegex(action["reason"], r"Older tagged")
-
     def test_empty_versions_list(self):
         """Test with an empty list of versions"""
-        cleanup_actions = find_versions_to_clean([])
+        cleanup_actions = find_versions_to_clean(versions=[], tagged_max_age=0)
         self.assertEqual(len(cleanup_actions), 0)
     
     def test_find_untagged_versions(self):
         """Test finding versions with no tags"""
+        created_at = fake.past_datetime(tzinfo=timezone.utc)
+        created_at_iso = created_at.isoformat()
         with_tags = [
-            create_random_package_version(metadata={"container": {"tags": ["tag1", "latest"]}})
+            create_random_package_version(created_at=created_at_iso, metadata={"container": {"tags": ["tag1", "latest"]}})
             for _ in range(6)
         ]
 
         without_tags = [
-            create_random_package_version(metadata={"container": {"tags": []}}) 
+            create_random_package_version(created_at=created_at_iso, metadata={"container": {"tags": []}}) 
             for _ in range(6)
         ]
         
-        cleanup_actions = find_versions_to_clean(with_tags + without_tags, keep_latest=len(with_tags))
+        cleanup_actions = find_versions_to_clean(
+            versions = with_tags + without_tags,
+            tagged_max_age=datetime.now().timestamp() - created_at.timestamp() + 1
+        )
         
         # All untagged versions should be marked for deletion
         self.assertEqual(len(cleanup_actions), len(with_tags) + len(without_tags))
@@ -387,25 +366,51 @@ class TestFindVersionsToClean(unittest.TestCase):
         for action in cleanup_actions:
             if action["action"] == "delete":
                 self.assertEqual(action["reason"], "Untagged version")
-    
-    def test_keep_tagged_versions(self):
-        """Test keeping versions with tags"""
-        versions = []
+
+    def test_delete_old_tagged_versions(self):
+        """Test to delete old tagged versions"""
+        now = datetime.now(timezone.utc)
+        base_past = fake.past_datetime(tzinfo=timezone.utc)
         
-        for i in range(5):
+        older_versions = []
+        for i in range(4):
             version = create_random_package_version(
                 id=1000 + i,
-                metadata={"container": {"tags": [f"tag-{i}", "latest"]}}
+                created_at=(base_past - timedelta(hours=i*5) - timedelta(seconds=1)).isoformat()
             )
-            versions.append(version)
+            older_versions.append(version)
         
-        cleanup_actions = find_versions_to_clean(versions)
+        newer_versions = []
+        for i in range(6):
+            version = create_random_package_version(
+                id=2000 + i,
+                created_at=(base_past + timedelta(hours=i*5) + timedelta(seconds=1)).isoformat()
+            )
+            newer_versions.append(version)
         
-        # Extract versions marked for deletion
-        to_remove = [action["version"] for action in cleanup_actions if action["action"] == "delete"]
+        cleanup_actions = find_versions_to_clean(
+            versions = older_versions + newer_versions,
+            tagged_max_age=now.timestamp() - base_past.timestamp()
+        )
         
-        # No versions should be marked for deletion (all 5 are tagged and within keep_latest=5)
-        self.assertEqual(len(to_remove), 0)
+        to_remove = [action for action in cleanup_actions if action["action"] == "delete"]
+        to_keep = [action for action in cleanup_actions if action["action"] == "keep"]
+        
+        self.assertEqual(len(to_remove), len(older_versions))
+        self.assertEqual(len(to_keep), len(newer_versions))
+        
+        kept_ids = {v["version"]['id'] for v in to_keep}
+        self.assertEqual(kept_ids, {v["id"] for v in newer_versions})
+
+        removed_ids = {v["version"]['id'] for v in to_remove}
+        self.assertEqual(removed_ids, {v["id"] for v in older_versions})
+        
+        for action in to_keep:
+            self.assertIn("Tagged version newer than", action["reason"])
+
+        for action in to_remove:
+            self.assertIn("Tagged version older than", action["reason"])
+
 
 class TestRemoveVersion(unittest.TestCase):
     def test_remove_version_dry_run(self):
