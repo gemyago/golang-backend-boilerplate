@@ -187,7 +187,8 @@ def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int) 
     
     # Calculate cutoff date
     now = datetime.now(timezone.utc)
-    cutoff_date = now - timedelta(seconds=tagged_max_age)
+    tagged_max_age_delta = timedelta(seconds=tagged_max_age)
+    cutoff_date = now - tagged_max_age_delta
     
     # Initialize result list
     cleanup_actions = []
@@ -199,13 +200,13 @@ def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int) 
             cleanup_actions.append({
                 "version": version,
                 "action": "keep",
-                "reason": f"Tagged version newer than {tagged_max_age} seconds"
+                "reason": f"Tagged version newer than '{tagged_max_age_delta}'"
             })
         else:
             cleanup_actions.append({
                 "version": version,
                 "action": "delete",
-                "reason": f"Tagged version older than {tagged_max_age} seconds"
+                "reason": f"Tagged version older than '{tagged_max_age_delta}'"
             })
     
     # Process untagged versions (all should be deleted)
