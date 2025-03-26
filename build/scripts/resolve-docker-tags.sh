@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Docker Tag Resolution Logic:
-# - For git tags: Uses the tag name
+# - For git tags: Uses the git-tag-<tag name>
 # - For non-stable branches: Uses branch name and git-commit-<commit-sha>
 # - For stable branches: Uses latest-<branch-name> and git-commit-<commit-sha>
 # - When --latest is provided: Also includes the "latest" tag
@@ -53,7 +53,7 @@ resolve_docker_tags() {
   if [[ $ref == refs/tags/* ]]; then
     # Tag reference
     local tag_name="${ref#refs/tags/}"
-    tags="$(sanitize_docker_tag "$tag_name")"
+    tags="$(sanitize_docker_tag "git-tag-$tag_name")"
     if [[ "$is_latest" == "true" ]]; then
       tags="$tags latest"
     fi
@@ -67,7 +67,7 @@ resolve_docker_tags() {
     # Check if it's actually a tag ref without the prefix
     if [[ $ref == tags/* ]]; then
       local tag_name="${ref#tags/}"
-      tags="$(sanitize_docker_tag "$tag_name")"
+      tags="$(sanitize_docker_tag "git-tag-$tag_name")"
       if [[ "$is_latest" == "true" ]]; then
         tags="$tags latest"
       fi
@@ -161,7 +161,7 @@ run_tests() {
   echo "Running resolve_docker_tags tests:"
   # Test with refs/tags prefix
   resolve_result=$(resolve_docker_tags "refs/tags/v1.0.0" "$commit_sha" "main,develop" "false")
-  assert "$resolve_result" "v1.0.0" "Tag resolution with refs/tags prefix" || ((failures++))
+  assert "$resolve_result" "git-tag-v1.0.0" "Tag resolution with refs/tags prefix" || ((failures++))
   
   # Test with refs/heads prefix
   resolve_result=$(resolve_docker_tags "refs/heads/feature/xyz" "$commit_sha" "main,develop" "false")
@@ -178,18 +178,18 @@ run_tests() {
   assert "$resolve_result" "latest-main git-commit-$commit_sha" "Stable branch resolution without refs prefix" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "tags/v1.0.0" "$commit_sha" "main,develop")
-  assert "$resolve_result" "v1.0.0" "Tag resolution with tags/ prefix but no refs/" || ((failures++))
+  assert "$resolve_result" "git-tag-v1.0.0" "Tag resolution with tags/ prefix but no refs/" || ((failures++))
   
   # Test with special characters
   resolve_result=$(resolve_docker_tags "refs/tags/v1.0.0@special" "$commit_sha" "main,develop")
-  assert "$resolve_result" "v1.0.0-special" "Tag with special characters" || ((failures++))
+  assert "$resolve_result" "git-tag-v1.0.0-special" "Tag with special characters" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "feature/special@chars#here" "$commit_sha" "main,develop")
   assert "$resolve_result" "feature-special-chars-here git-commit-$commit_sha" "Branch with special characters without refs prefix" || ((failures++))
   
   # Test --latest flag
   resolve_result=$(resolve_docker_tags "refs/tags/v1.0.0" "$commit_sha" "main,develop" "true")
-  assert "$resolve_result" "v1.0.0 latest" "Tag resolution with is-latest flag" || ((failures++))
+  assert "$resolve_result" "git-tag-v1.0.0 latest" "Tag resolution with is-latest flag" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "refs/heads/feature/xyz" "$commit_sha" "main,develop" "true")
   assert "$resolve_result" "feature-xyz git-commit-$commit_sha latest" "Non-stable branch with is-latest flag" || ((failures++))

@@ -22,4 +22,7 @@ make test
 
 # Run specific python tests
 python -m unittest discover -v -s ./scripts/tests -k TestListVersions
+
+# Run self-test for bash scripts
+scripts/resolve-docker-tags.sh --self-test
 ```
