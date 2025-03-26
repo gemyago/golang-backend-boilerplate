@@ -8,6 +8,8 @@ from unittest.mock import MagicMock, patch
 from faker import Faker
 from datetime import datetime, timedelta
 
+import requests
+
 fake = Faker()
 
 # Add the parent directory to sys.path to import the ghcr module
