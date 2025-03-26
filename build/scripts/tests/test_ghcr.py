@@ -231,6 +231,7 @@ class TestListVersions(unittest.TestCase):
         # Sample API response
         mock_response = MagicMock()
         mock_response.json.return_value = mock_versions
+        mock_response.headers = {}  # No Link header means only one page
         
         # Mock requests module
         mock_requests = MagicMock()
@@ -262,6 +263,72 @@ class TestListVersions(unittest.TestCase):
             self.assertEqual(version["name"], mock_versions[i]["name"])
             self.assertEqual(version["metadata"]["container"]["tags"], 
                              mock_versions[i]["metadata"]["container"]["tags"])
+
+    def test_list_versions_pagination(self):
+        """Test listing versions with pagination"""
+        # Mock token provider
+        mock_token_provider = MagicMock()
+        mock_token_provider.get_token.return_value = "test-token"
+        
+        # Create mock versions for two pages
+        first_page_versions = [create_random_package_version() for _ in range(3)]
+        second_page_versions = [create_random_package_version() for _ in range(2)]
+        
+        # Create mock responses for pagination
+        first_response = MagicMock()
+        first_response.json.return_value = first_page_versions
+        first_response.headers = {
+            'Link': '<https://api.github.com/user/test/packages/container/test-package/versions?page=2&per_page=100>; rel="next", '
+                   '<https://api.github.com/user/test/packages/container/test-package/versions?page=199&per_page=100>; rel="last"'
+        }
+        
+        second_response = MagicMock()
+        second_response.json.return_value = second_page_versions
+        second_response.headers = {} # No Link header means this is the last page
+        
+        # Mock requests to return different responses for different URLs
+        mock_requests = MagicMock()
+        mock_requests.get.side_effect = [first_response, second_response]
+        
+        # Call the function
+        result = list_versions(
+            namespace="user/test",
+            package_name="test-package",
+            token_provider=mock_token_provider,
+            requests_module=mock_requests
+        )
+        
+        # Verify API was called for both pages
+        expected_calls = [
+            unittest.mock.call(
+                "https://api.github.com/user/test/packages/container/test-package/versions?per_page=100",
+                headers={
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": "Bearer test-token",
+                    "X-GitHub-Api-Version": "2022-11-28"
+                }
+            ),
+            unittest.mock.call(
+                "https://api.github.com/user/test/packages/container/test-package/versions?page=2&per_page=100",
+                headers={
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": "Bearer test-token",
+                    "X-GitHub-Api-Version": "2022-11-28"
+                }
+            )
+        ]
+        mock_requests.get.assert_has_calls(expected_calls)
+        
+        # Verify the combined results from both pages
+        self.assertEqual(len(result), 5)  # 3 from first page + 2 from second page
+        
+        # First three items should be from the first page
+        for i in range(3):
+            self.assertEqual(result[i]["id"], first_page_versions[i]["id"])
+        
+        # Last two items should be from the second page
+        for i in range(2):
+            self.assertEqual(result[i+3]["id"], second_page_versions[i]["id"])
 
 
 class TestFindVersionsToClean(unittest.TestCase):

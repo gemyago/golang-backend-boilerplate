@@ -8,6 +8,7 @@ import subprocess
 from typing import List, Optional, TypedDict, Callable, Protocol, Dict, Literal, Any
 from datetime import datetime, timezone
 import logging
+import re
 
 class AuthenticationError(Exception):
     """Raised when authentication fails"""
@@ -138,9 +139,28 @@ def list_versions(namespace: str, package_name: str, token_provider=default_toke
         "X-GitHub-Api-Version": "2022-11-28"
     }
     
-    response = requests_module.get(api_url, headers=headers)
-    response.raise_for_status()
-    return response.json()
+    all_versions = []
+    next_page = api_url
+    
+    # Fetch all pages
+    while next_page:
+        print(f"Fetching versions from: {next_page}")
+        response = requests_module.get(next_page, headers=headers)
+        response.raise_for_status()
+        all_versions.extend(response.json())
+        
+        # Check if there's a next page in Link header
+        next_page = None
+        if 'Link' in response.headers:
+            links = response.headers['Link'].split(',')
+            for link in links:
+                if 'rel="next"' in link:
+                    # Extract URL between < and >
+                    match = re.search(r'<([^>]+)>', link)
+                    if match:
+                        next_page = match.group(1)
+    
+    return all_versions
 
 def find_versions_to_clean(versions: List[PackageVersion], keep_latest: int = 5) -> List[CleanupAction]:
     """
@@ -325,7 +345,7 @@ def main():
     try:
         if args.command == "list-versions":
             versions = list_versions(args.namespace, args.package)
-            print(f"Versions for {args.namespace}/{args.package}:")
+            print(f"Found {len(versions)} versions for {args.namespace}/{args.package}:")
             for version in versions:
                 print(f"  - ID: {version['id']}")
                 print(f"    Name: {version['name'] if version['name'] else 'N/A'}")
