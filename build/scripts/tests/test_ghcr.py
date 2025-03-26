@@ -18,7 +18,8 @@ from ghcr import (
     find_versions_to_clean,
     remove_version,
     AuthenticationError, 
-    PackageVersion
+    PackageVersion,
+    CleanupAction
 )
 
 
@@ -221,17 +222,32 @@ class TestFindVersionsToClean(unittest.TestCase):
         """Test keeping the latest N versions by date"""
         versions = create_dated_package_versions(10, date_pattern='sequential')
         
-        to_remove = find_versions_to_clean(versions, keep_latest=3)
+        cleanup_actions = find_versions_to_clean(versions, keep_latest=3)
         
+        # Extract versions marked for deletion
+        to_remove = [action for action in cleanup_actions if action["action"] == "delete"]
+        # Extract versions marked to keep
+        to_keep = [action for action in cleanup_actions if action["action"] == "keep"]
+        
+        # Verify counts
         self.assertEqual(len(to_remove), 7)
+        self.assertEqual(len(to_keep), 3)
         
-        kept_ids = set(v["id"] for v in versions) - set(v["id"] for v in to_remove)
-        self.assertEqual(kept_ids, {1000, 1001, 1002})  # The first 3 IDs (most recent)
+        # Verify the correct versions are kept (most recent ones)
+        kept_ids = {v["version"]['id'] for v in to_keep}
+        self.assertEqual(kept_ids, {versions[0]['id'], versions[1]['id'], versions[2]['id'], })
+        
+        # Verify all actions have a reason
+        for action in to_keep:
+            self.assertRegex(action["reason"], r"most recent")
+
+        for action in to_remove:
+            self.assertRegex(action["reason"], r"Older tagged")
 
     def test_empty_versions_list(self):
         """Test with an empty list of versions"""
-        to_remove = find_versions_to_clean([])
-        self.assertEqual(len(to_remove), 0)
+        cleanup_actions = find_versions_to_clean([])
+        self.assertEqual(len(cleanup_actions), 0)
     
     def test_find_untagged_versions(self):
         """Test finding versions with no tags"""
@@ -247,10 +263,19 @@ class TestFindVersionsToClean(unittest.TestCase):
             create_random_package_version(metadata={"container": {"tags": []}}),
         ]
         
-        to_remove = find_versions_to_clean(with_tags + without_tags)
+        cleanup_actions = find_versions_to_clean(with_tags + without_tags)
         
+        # Extract versions marked for deletion
+        to_remove = [action["version"] for action in cleanup_actions if action["action"] == "delete"]
+        
+        # All untagged versions should be marked for deletion
         self.assertEqual(len(to_remove), len(without_tags))
-        self.assertEqual(without_tags, to_remove)
+        self.assertEqual({v["id"] for v in to_remove}, {v["id"] for v in without_tags})
+        
+        # Verify the reason for deletion
+        for action in cleanup_actions:
+            if action["action"] == "delete":
+                self.assertEqual(action["reason"], "Untagged version")
     
     def test_keep_tagged_versions(self):
         """Test keeping versions with tags"""
@@ -263,8 +288,12 @@ class TestFindVersionsToClean(unittest.TestCase):
             )
             versions.append(version)
         
-        to_remove = find_versions_to_clean(versions)
+        cleanup_actions = find_versions_to_clean(versions)
         
+        # Extract versions marked for deletion
+        to_remove = [action["version"] for action in cleanup_actions if action["action"] == "delete"]
+        
+        # No versions should be marked for deletion (all 5 are tagged and within keep_latest=5)
         self.assertEqual(len(to_remove), 0)
 
 class TestRemoveVersion(unittest.TestCase):
