@@ -162,14 +162,16 @@ def list_versions(namespace: str, package_name: str, token_provider=default_toke
     
     return all_versions
 
-def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int) -> List[CleanupAction]:
+def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int, keep_tags_pattern: str) -> List[CleanupAction]:
     """
     Find package versions that should be cleaned up/removed.
     Keeps tagged versions newer than 'tagged_max_age' seconds.
+    Keeps tagged versions with tags matching keep_tags_pattern.
     
     Args:
         versions: List of package versions to analyze
         tagged_max_age: Maximum age in seconds for tagged versions to keep
+        keep_tags_pattern: Regex pattern for tags to always keep regardless of age
     
     Returns:
         List of cleanup actions with version, action ("keep" or "delete"), and reason
@@ -193,10 +195,28 @@ def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int) 
     # Initialize result list
     cleanup_actions = []
     
+    # Compile pattern if provided
+    pattern = re.compile(keep_tags_pattern)
+    
     # Process tagged versions
     for version in tagged_versions:
+        tags = version.get('metadata', {}).get('container', {}).get('tags', [])
         created_date = datetime.fromisoformat(version['created_at'])
-        if created_date > cutoff_date:
+        
+        # Check if any tag matches the keep pattern
+        should_keep_due_to_pattern = False
+        for tag in tags:
+            if pattern.search(tag):
+                should_keep_due_to_pattern = True
+                break
+        
+        if should_keep_due_to_pattern:
+            cleanup_actions.append({
+                "version": version,
+                "action": "keep",
+                "reason": f"Tagged version matches keep pattern '{keep_tags_pattern}'"
+            })
+        elif created_date > cutoff_date:
             cleanup_actions.append({
                 "version": version,
                 "action": "keep",
@@ -270,10 +290,11 @@ class CleanupArgs(Protocol):
     package: str
     tagged_max_age: int
     really_remove: bool
+    keep_tags_pattern: str
 
 def cleanup_versions_command(args: CleanupArgs, 
                            list_versions_func: Callable[[str, str], List[PackageVersion]] = list_versions, 
-                           find_versions_func: Callable[[List[PackageVersion], int], List[CleanupAction]] = find_versions_to_clean, 
+                           find_versions_func: Callable[[List[PackageVersion], int, str], List[CleanupAction]] = find_versions_to_clean, 
                            remove_version_func: Callable[[str, str, int, bool], bool] = remove_version):
     """
     Handle the cleanup-versions command logic.
@@ -290,7 +311,8 @@ def cleanup_versions_command(args: CleanupArgs,
     # Find versions to clean
     cleanup_actions = find_versions_func(
         all_versions, 
-        tagged_max_age=args.tagged_max_age
+        tagged_max_age=args.tagged_max_age,
+        keep_tags_pattern=args.keep_tags_pattern
     )
     
     print(f"Found {len(cleanup_actions)} versions from {args.namespace}/{args.package}:")
@@ -330,6 +352,8 @@ def main():
     cleanup_parser.add_argument("--package", required=True, help="Package name")
     cleanup_parser.add_argument("--tagged-max-age", type=int, default=604800, help="Maximum age in seconds for tagged versions to keep (default: 604800 = 7 days)")
     cleanup_parser.add_argument("--really-remove", action="store_true", help="Actually perform deletion (without this flag, dry run is performed)")
+    cleanup_parser.add_argument("--keep-tags-pattern", type=str, default="^(latest-|git-tag-)", 
+                              help="Regex pattern for tags to always keep regardless of age (default: '^(latest-|git-tag-)')")
     
     args = parser.parse_args()
     

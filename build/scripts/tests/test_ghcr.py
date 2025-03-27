@@ -334,7 +334,7 @@ class TestListVersions(unittest.TestCase):
 class TestFindVersionsToClean(unittest.TestCase):
     def test_empty_versions_list(self):
         """Test with an empty list of versions"""
-        cleanup_actions = find_versions_to_clean(versions=[], tagged_max_age=0)
+        cleanup_actions = find_versions_to_clean(versions=[], tagged_max_age=0, keep_tags_pattern="^test-pattern-")
         self.assertEqual(len(cleanup_actions), 0)
     
     def test_find_untagged_versions(self):
@@ -353,7 +353,8 @@ class TestFindVersionsToClean(unittest.TestCase):
         
         cleanup_actions = find_versions_to_clean(
             versions = with_tags + without_tags,
-            tagged_max_age=datetime.now().timestamp() - created_at.timestamp() + 1
+            tagged_max_age=datetime.now().timestamp() - created_at.timestamp() + 1,
+            keep_tags_pattern="^preserve-"  # Different pattern
         )
         
         # All untagged versions should be marked for deletion
@@ -390,7 +391,8 @@ class TestFindVersionsToClean(unittest.TestCase):
         
         cleanup_actions = find_versions_to_clean(
             versions = older_versions + newer_versions,
-            tagged_max_age=now.timestamp() - base_past.timestamp()
+            tagged_max_age=now.timestamp() - base_past.timestamp(),
+            keep_tags_pattern="^keep-me-"  # Different pattern
         )
         
         to_remove = [action for action in cleanup_actions if action["action"] == "delete"]
@@ -410,7 +412,64 @@ class TestFindVersionsToClean(unittest.TestCase):
 
         for action in to_remove:
             self.assertIn("Tagged version older than", action["reason"])
+    
+    def test_keep_versions_matching_pattern(self):
+        """Test keeping versions with tags matching pattern regardless of age"""
+        now = datetime.now(timezone.utc)
+        old_date = (now - timedelta(days=30)).isoformat()
+        test_pattern = "^(archive-|stable-)"
+        
+        versions = []
+        
+        old_matching_versions = []
+        for i in range(3):
+            version = create_random_package_version(
+                id=1000 + i,
+                created_at=old_date,
+                metadata={"container": {"tags": [f"archive-{i}", f"other-{i}"]}}
+            )
+            old_matching_versions.append(version)
+            
+        for i in range(3):
+            version = create_random_package_version(
+                id=2000 + i,
+                created_at=old_date,
+                metadata={"container": {"tags": [f"stable-v1.{i}.0", f"other-{i}"]}}
+            )
+            old_matching_versions.append(version)
 
+        old_not_matching_versions = []
+        for i in range(4):
+            version = create_random_package_version(
+                id=3000 + i,
+                created_at=old_date,
+                metadata={"container": {"tags": [f"v1.{i}.0", f"latest-{i}"]}}
+            )
+            old_not_matching_versions.append(version)
+        
+        cleanup_actions = find_versions_to_clean(
+            versions=old_matching_versions + old_not_matching_versions,
+            tagged_max_age=60 * 60 * 24 * 7,  # 7 days
+            keep_tags_pattern=test_pattern
+        )
+        
+        to_keep = [action for action in cleanup_actions if action["action"] == "keep"]
+        to_remove = [action for action in cleanup_actions if action["action"] == "delete"]
+        
+        self.assertEqual(len(to_keep), len(old_matching_versions))
+        self.assertEqual(len(to_remove), len(old_not_matching_versions))
+        
+        kept_ids = {action["version"]["id"] for action in to_keep}
+        expected_kept_ids = {v["id"] for v in old_matching_versions}
+        self.assertEqual(kept_ids, expected_kept_ids)
+
+        deleted_ids = {action["version"]["id"] for action in to_remove}
+        expected_deleted_ids = {v["id"] for v in old_not_matching_versions}
+        self.assertEqual(deleted_ids, expected_deleted_ids)
+        
+        for action in to_keep:
+            self.assertIn("Tagged version matches keep pattern", action["reason"])
+            self.assertIn(test_pattern, action["reason"])
 
 class TestRemoveVersion(unittest.TestCase):
     def test_remove_version_dry_run(self):
