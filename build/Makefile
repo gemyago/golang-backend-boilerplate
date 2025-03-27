@@ -149,3 +149,11 @@ dist/clean:
 
 clean: docker/clean dist/clean
 	rm -rf .git-meta
+
+.PHONY: test
+test:
+	@echo "Running resolve-docker-tags self-test"
+	scripts/resolve-docker-tags.sh --self-test
+
+	@echo "Running python script tests"
+	python -m unittest discover -s scripts/tests -p "test_*.py"

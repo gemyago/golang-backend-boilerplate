@@ -3,3 +3,4 @@
 /docker/.labels
 /docker/.local-*
 /docker/.remote-*
+*.pyc
