@@ -144,7 +144,7 @@ def list_versions(namespace: str, package_name: str, token_provider=default_toke
     
     # Fetch all pages
     while next_page:
-        print(f"Fetching versions from: {next_page}")
+        logging.info(f"Fetching versions from: {next_page}")
         response = requests_module.get(next_page, headers=headers)
         response.raise_for_status()
         all_versions.extend(response.json())
@@ -323,28 +323,28 @@ def cleanup_versions_command(args: CleanupArgs,
         keep_tags_pattern=args.keep_tags_pattern
     )
     
-    print(f"Found {len(cleanup_actions)} versions from {args.namespace}/{args.package}:")
+    logging.info(f"Found {len(cleanup_actions)} versions from {args.namespace}/{args.package}:")
     for action in cleanup_actions:
       version = action["version"]
       name_display = version['name'] if version['name'] else 'N/A'
       tags = version['metadata']['container']['tags'] if 'container' in version['metadata'] else []
-      print(f"  - ID: {version['id']}, Name: {name_display}, Tags: {', '.join(tags)}")
-      print(f"    Created: {version['created_at']}")
-      print(f"    Action: {action['action']}")
-      print(f"    Reason: {action['reason']}")
+      logging.info(f"  - ID: {version['id']}, Name: {name_display}, Tags: {', '.join(tags)}")
+      logging.info(f"    Created: {version['created_at']}")
+      logging.info(f"    Action: {action['action']}")
+      logging.info(f"    Reason: {action['reason']}")
 
     # Get versions to remove (those with action="delete")
     to_remove = [action["version"] for action in cleanup_actions if action["action"] == "delete"]
     
     # Show what would be removed
     if not to_remove:
-        print(f"No versions to remove from {args.namespace}/{args.package}.")
+        logging.info(f"No versions to remove from {args.namespace}/{args.package}.")
         return
     
-    print(f"Removing {len(to_remove)} (really_remove: {args.really_remove}) versions from {args.namespace}/{args.package}:")
+    logging.info(f"Removing {len(to_remove)} (really_remove: {args.really_remove}) versions from {args.namespace}/{args.package}:")
     for version in to_remove:
         remove_version_func(args.namespace, args.package, version['id'], dry_run=not args.really_remove)
-    print(f"Successfully removed {len(to_remove)} versions.")
+    logging.info(f"Successfully removed {len(to_remove)} versions.")
 
 def main():
     parser = argparse.ArgumentParser(description="GitHub Container Registry (GHCR) CLI Tool")
@@ -377,21 +377,21 @@ def main():
     try:
         if args.command == "list-versions":
             versions = list_versions(args.namespace, args.package)
-            print(f"Found {len(versions)} versions for {args.namespace}/{args.package}:")
+            logging.info(f"Found {len(versions)} versions for {args.namespace}/{args.package}:")
             for version in versions:
-                print(f"  - ID: {version['id']}")
-                print(f"    Name: {version['name'] if version['name'] else 'N/A'}")
-                print(f"    Created: {version['created_at']}")
-                print(f"    Updated: {version['updated_at']}")
+                logging.info(f"  - ID: {version['id']}")
+                logging.info(f"    Name: {version['name'] if version['name'] else 'N/A'}")
+                logging.info(f"    Created: {version['created_at']}")
+                logging.info(f"    Updated: {version['updated_at']}")
                 tags = version['metadata']['container']['tags'] if 'container' in version['metadata'] else []
-                print(f"    Tags: {', '.join(tags)}")
-                print("")
+                logging.info(f"    Tags: {', '.join(tags)}")
+                logging.info("")
         
         elif args.command == "cleanup-versions":
             cleanup_versions_command(args)
     
     except Exception as e:
-        print(f"Command failed: {e}", file=sys.stderr)
+        logging.info(f"Command failed: {e}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":

@@ -2,8 +2,7 @@ name: Docker Images
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-    # types: [closed]
+    types: [closed]
 
 jobs:
   cleanup:
@@ -32,6 +31,6 @@ jobs:
         # Here we should do the cleanup, probably via makefile.
         run: |
           ./scripts/ghcr.py cleanup-versions --namespace "users/${GITHUB_REPOSITORY_OWNER}" --package golang-backend-boilerplate-jobs --really-remove
-          ./scripts/ghcr.py cleanup-versions --namespace "users/${GITHUB_REPOSITORY_OWNER}" --package golang-backend-boilerplate-server
+          ./scripts/ghcr.py cleanup-versions --namespace "users/${GITHUB_REPOSITORY_OWNER}" --package golang-backend-boilerplate-server --really-remove
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
