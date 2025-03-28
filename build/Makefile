@@ -38,7 +38,7 @@ build-artifacts.tar.%: .build-artifacts
 	rm -f $@
 	tar -a -cf $@ $(shell cat $<)
 
-.git-meta/HEAD: FORCE .git-meta
+.git-meta/HEAD: FORCE
 	@mkdir -p .git-meta
 	@git rev-parse --short HEAD > $@.tmp
 	@if cmp -s $@ $@.tmp; then \
