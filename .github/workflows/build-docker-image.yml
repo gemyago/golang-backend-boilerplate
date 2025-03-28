@@ -2,9 +2,6 @@ name: Docker Image
 
 on:
   workflow_call:
-    secrets:
-      FC_READ_PACKAGES_TOKEN:
-        required: true
 
 jobs:
   build-image:
