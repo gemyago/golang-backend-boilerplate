@@ -329,6 +329,7 @@ def cleanup_versions_command(args: CleanupArgs,
       name_display = version['name'] if version['name'] else 'N/A'
       tags = version['metadata']['container']['tags'] if 'container' in version['metadata'] else []
       print(f"  - ID: {version['id']}, Name: {name_display}, Tags: {', '.join(tags)}")
+      print(f"    Created: {version['created_at']}")
       print(f"    Action: {action['action']}")
       print(f"    Reason: {action['reason']}")
 
