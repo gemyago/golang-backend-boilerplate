@@ -23,6 +23,6 @@ jobs:
   #   uses: ./.github/workflows/tests-run.yml
 
   docker-image:
-    needs: prepare-build-artifacts
+    needs: build-artifacts
     name: Build Docker Image
     uses: ./.github/workflows/build-docker-image.yml
