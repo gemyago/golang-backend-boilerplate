@@ -178,14 +178,22 @@ def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int, 
     """
     # Separate versions into tagged and untagged
     tagged_versions = []
-    untagged_versions = []
+    orphan_versions = []
+
+    git_commit_regex = re.compile(r"^git-commit-")
     
     for version in versions:
         tags = version.get('metadata', {}).get('container', {}).get('tags', [])
-        if tags:
+        has_tags = len(tags) > 0
+
+        # Version with git-commit-xxx only is considered orphan and should be deleted
+        if has_tags and len(tags) == 1 and git_commit_regex.match(tags[0]):
+            has_tags = False
+
+        if has_tags:
             tagged_versions.append(version)
         else:
-            untagged_versions.append(version)
+            orphan_versions.append(version)
     
     # Calculate cutoff date
     now = datetime.now(timezone.utc)
@@ -230,11 +238,11 @@ def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int, 
             })
     
     # Process untagged versions (all should be deleted)
-    for version in untagged_versions:
+    for version in orphan_versions:
         cleanup_actions.append({
             "version": version,
             "action": "delete",
-            "reason": "Untagged version"
+            "reason": "Orphan version"
         })
     
     return cleanup_actions
