@@ -18,9 +18,10 @@ jobs:
     name: Build Artifacts
     uses: ./.github/workflows/build-artifacts.yml
 
-  # run-tests:
-  #   name: Tests
-  #   uses: ./.github/workflows/tests-run.yml
+  run-tests:
+    needs: build-artifacts
+    name: Tests
+    uses: ./.github/workflows/tests-run.yml
 
   docker-image:
     needs: build-artifacts
