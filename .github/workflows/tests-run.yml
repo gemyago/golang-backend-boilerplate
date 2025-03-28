@@ -1,13 +1,10 @@
 name: Tests
 
-on: 
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches:
-      - 'main'
+on:
+  workflow_call:
 
 jobs:
-  run-tests:
+  tests-run:
     name: Run
     runs-on: ubuntu-24.04
     steps:

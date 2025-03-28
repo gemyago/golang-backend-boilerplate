@@ -29,7 +29,16 @@ dist/%: FORCE
 
 dist: $(dist_platforms)
 
-.git-meta/HEAD: FORCE .git-meta
+.build-artifacts: dist
+	@echo ./dist > $@
+
+# Create a tarball of build artifacts
+# Example: make build-artifacts.tar.gz
+build-artifacts.tar.%: .build-artifacts
+	rm -f $@
+	tar -a -cf $@ $(shell cat $<)
+
+.git-meta/HEAD: FORCE
 	@mkdir -p .git-meta
 	@git rev-parse --short HEAD > $@.tmp
 	@if cmp -s $@ $@.tmp; then \
@@ -149,6 +158,8 @@ dist/clean:
 
 clean: docker/clean dist/clean
 	rm -rf .git-meta
+	rm -f .build-artifacts
+	rm -f build-artifacts.tar.*
 
 .PHONY: test
 test:

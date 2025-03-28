@@ -53,47 +53,6 @@ def create_random_package_version(**overrides) -> PackageVersion:
     version.update(overrides)
     return PackageVersion(**version)
 
-def create_dated_package_versions(num_versions, date_pattern='recent') -> List[PackageVersion]:
-    """
-    Create a list of package versions with specific dating patterns for testing.
-    
-    Args:
-        num_versions: Number of versions to create
-        date_pattern: 'recent' for versions created recently, 'sequential' for 
-                     versions with sequential dates
-    
-    Returns:
-        List of versioned packages with controlled dates
-    """
-    versions = []
-    base_date = datetime.now()
-    
-    for i in range(num_versions):
-        if date_pattern == 'recent':
-            # Create some versions from today, some from last week, some from last month
-            if i < num_versions // 3:
-                days_ago = random.randint(0, 2)  # Last couple days
-            elif i < 2 * (num_versions // 3):
-                days_ago = random.randint(3, 10)  # Last week or so
-            else:
-                days_ago = random.randint(20, 60)  # Last month or two
-        else:  # sequential
-            # Each version is created 1 day before the previous one
-            days_ago = i
-            
-        created_date = (base_date - timedelta(days=days_ago)).isoformat().replace('+00:00', 'Z')
-        
-        version = create_random_package_version(
-            id=1000 + i,
-            created_at=created_date,
-            updated_at=created_date
-        )
-
-        versions.append(version)
-    
-    return versions
-
-
 class TestGitHubTokenProvider(unittest.TestCase):
     def test_get_token_from_env(self):
         """Test getting token from environment variable"""
@@ -366,7 +325,43 @@ class TestFindVersionsToClean(unittest.TestCase):
         # Verify the reason for deletion
         for action in cleanup_actions:
             if action["action"] == "delete":
-                self.assertEqual(action["reason"], "Untagged version")
+                self.assertEqual(action["reason"], "Orphan version")
+    
+    def test_find_versions_with_git_commit_only(self):
+        """Test finding versions with git commit only"""
+        created_at = fake.past_datetime(tzinfo=timezone.utc)
+        created_at_iso = created_at.isoformat()
+        with_tags = [
+            create_random_package_version(created_at=created_at_iso, metadata={"container": {"tags": ["tag1", "latest"]}})
+            for _ in range(6)
+        ]
+
+        without_tags = [
+            create_random_package_version(created_at=created_at_iso, metadata={"container": {"tags": []}}) 
+            for _ in range(6)
+        ]
+
+        with_git_commit_only_tags = [
+            create_random_package_version(created_at=created_at_iso, metadata={"container": {"tags": [f"git-commit-${i}"]}}) 
+            for i in range(6)
+        ]
+        
+        cleanup_actions = find_versions_to_clean(
+            versions = with_tags + without_tags + with_git_commit_only_tags,
+            tagged_max_age=datetime.now().timestamp() - created_at.timestamp() + 1,
+            keep_tags_pattern="^preserve-"  # Different pattern
+        )
+        
+        # All untagged versions should be marked for deletion
+        self.assertEqual(len(cleanup_actions), len(with_tags) + len(without_tags) + len(with_git_commit_only_tags))
+
+        to_remove = [action for action in cleanup_actions if action["action"] == "delete"]
+        self.assertEqual({a["version"]["id"] for a in to_remove}, {a["id"] for a in (without_tags + with_git_commit_only_tags)})
+        
+        # Verify the reason for deletion
+        for action in cleanup_actions:
+            if action["action"] == "delete":
+                self.assertEqual(action["reason"], "Orphan version")
 
     def test_delete_old_tagged_versions(self):
         """Test to delete old tagged versions"""
@@ -418,8 +413,6 @@ class TestFindVersionsToClean(unittest.TestCase):
         now = datetime.now(timezone.utc)
         old_date = (now - timedelta(days=30)).isoformat()
         test_pattern = "^(archive-|stable-)"
-        
-        versions = []
         
         old_matching_versions = []
         for i in range(3):
