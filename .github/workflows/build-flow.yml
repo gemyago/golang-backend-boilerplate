@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build-artifacts:
-    name: Build Artifacts
+    name: Artifacts
     uses: ./.github/workflows/build-artifacts.yml
 
   run-tests:
@@ -25,5 +25,5 @@ jobs:
 
   docker-image:
     needs: build-artifacts
-    name: Build Docker Image
+    name: Docker Image
     uses: ./.github/workflows/build-docker-image.yml
