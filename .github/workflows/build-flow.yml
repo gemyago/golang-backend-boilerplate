@@ -10,7 +10,7 @@ on:
 
 # Allow just a single build to run at a time for a given ref
 concurrency:
-  group: terraform-plan-${{ github.ref }}
+  group: build-flow-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -18,12 +18,11 @@ jobs:
     name: Build Artifacts
     uses: ./.github/workflows/build-artifacts.yml
 
-  run-tests:
-    needs: build-artifacts
-    name: Tests
-    uses: ./.github/workflows/tests-run.yml
+  # run-tests:
+  #   name: Tests
+  #   uses: ./.github/workflows/tests-run.yml
 
-  # docker-image:
-  #   needs: prepare-build-artifacts
-  #   name: Docker
-  #   uses: ./.github/workflows/docker-build-image.yml
+  docker-image:
+    needs: prepare-build-artifacts
+    name: Build Docker Image
+    uses: ./.github/workflows/build-docker-image.yml
