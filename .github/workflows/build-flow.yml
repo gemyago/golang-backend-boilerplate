@@ -22,13 +22,8 @@ jobs:
     needs: build-artifacts
     name: Tests
     uses: ./.github/workflows/tests-run.yml
-    secrets:
-      FC_READ_PACKAGES_TOKEN: ${{ secrets.FC_READ_PACKAGES_TOKEN }}
-      FC_PRIVATE_ACTIONS: ${{ secrets.FC_PRIVATE_ACTIONS }}
 
   # docker-image:
   #   needs: prepare-build-artifacts
   #   name: Docker
   #   uses: ./.github/workflows/docker-build-image.yml
-  #   secrets:
-  #     FC_READ_PACKAGES_TOKEN: ${{ secrets.FC_READ_PACKAGES_TOKEN }}
