@@ -11,6 +11,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+        cache-dependency-path: 'go.sum'
+
     - name: Build
       run: make build-artifacts.tar.bz2
       working-directory: build
