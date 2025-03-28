@@ -27,8 +27,9 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Cleanup Docker Images
+        working-directory: build
         run: |
-          echo env
+          env
           ./scripts/ghcr.py cleanup-versions --namespace "users/gemyago" --package golang-backend-boilerplate-jobs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
