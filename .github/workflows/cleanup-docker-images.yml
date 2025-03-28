@@ -28,8 +28,10 @@ jobs:
 
       - name: Cleanup Docker Images
         working-directory: build
+        # TODO - docker build step should produce list of images
+        # Here we should do the cleanup, probably via makefile.
         run: |
-          env
-          ./scripts/ghcr.py cleanup-versions --namespace "users/gemyago" --package golang-backend-boilerplate-jobs
+          ./scripts/ghcr.py cleanup-versions --namespace "users/${GITHUB_REPOSITORY_OWNER}" --package golang-backend-boilerplate-jobs
+          ./scripts/ghcr.py cleanup-versions --namespace "users/${GITHUB_REPOSITORY_OWNER}" --package golang-backend-boilerplate-service
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
