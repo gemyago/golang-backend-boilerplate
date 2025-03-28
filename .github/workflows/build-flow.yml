@@ -1,0 +1,34 @@
+name: Build
+
+on: 
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+    # This is target branch filter, not current branch
+    branches:
+      - 'main'
+
+# Allow just a single build to run at a time for a given ref
+concurrency:
+  group: terraform-plan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-artifacts:
+    name: Build Artifacts
+    uses: ./.github/workflows/build-artifacts.yml
+
+  run-tests:
+    needs: build-artifacts
+    name: Tests
+    uses: ./.github/workflows/run-tests.yml
+    secrets:
+      FC_READ_PACKAGES_TOKEN: ${{ secrets.FC_READ_PACKAGES_TOKEN }}
+      FC_PRIVATE_ACTIONS: ${{ secrets.FC_PRIVATE_ACTIONS }}
+
+  docker-image:
+    needs: prepare-build-artifacts
+    name: Docker
+    uses: ./.github/workflows/docker-build-image.yml
+    secrets:
+      FC_READ_PACKAGES_TOKEN: ${{ secrets.FC_READ_PACKAGES_TOKEN }}
