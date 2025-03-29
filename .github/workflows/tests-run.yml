@@ -25,7 +25,16 @@ jobs:
       with:
         version: '${{ steps.golangci-version.outputs.value }}'
 
-    - run: make test
+    - name: Run Tests
+      run: make test
+
+    - name: Store Test Logs
+      uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      with:
+        path: test.log
+        retention-days: 2 # We don't really need them for very long
+        overwrite: true
 
     - name: Store Test Artifacts
       uses: actions/upload-artifact@v4
