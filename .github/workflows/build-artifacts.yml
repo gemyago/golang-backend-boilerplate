@@ -16,6 +16,11 @@ jobs:
         go-version-file: 'go.mod'
         cache-dependency-path: 'go.sum'
 
+    - name: Setup Dependencies
+      run: |
+        go mod download
+        go install tool
+
     - name: Build
       run: make build-artifacts.tar.bz2
       working-directory: build
