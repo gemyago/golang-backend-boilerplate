@@ -14,7 +14,8 @@ image:
   tag: HEAD
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-registry
 # This is to override the chart name.
 nameOverride: "golang-backend-boilerplate-api"
 fullnameOverride: "golang-backend-boilerplate-api"
