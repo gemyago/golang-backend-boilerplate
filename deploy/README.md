@@ -37,4 +37,14 @@ helm install api-service helm/api-service --namespace golang-backend-boilerplate
   -f ./helm/api-service/values.yaml \
   --create-namespace \
    --dry-run
+
+# Or upgrade the chart
+helm upgrade api-service helm/api-service --namespace golang-backend-boilerplate \
+  -f ./helm/api-service/values.yaml \
+  --create-namespace \
+  --install \
+  --dry-run
+
+# Uninstall the chart
+helm uninstall api-service --namespace golang-backend-boilerplate
 ```
