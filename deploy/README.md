@@ -7,6 +7,13 @@ make tools
 
 ## Kubernetes
 
+Interacting with kubernetes directly is usually done in a local environment. Non local scenarios should usually go via CI/CD pipeline. Use commands below to interact with kubernetes cluster:
+
+```sh
+# Create a namespace for the application
+kubectl create namespace golang-backend-boilerplate
+```
+
 Secret to pull images from a private registry may have to be created. The secret must be created in every namespace where the registry is used.
 ```sh
 # Generic format of the command
@@ -26,7 +33,9 @@ kubectl create secret docker-registry ghcr-registry \
 
 ## Helm 
 
-Working with template:
+Interacting with helm directly is usually done in a local environment. Non local scenarios should usually go via CI/CD pipeline.
+
+Below are the most typical commands you would need to iterate on the charts:
 ```sh
 # Render all templates with specific value files to review the output
 helm template helm/api-service --debug --name-template api-service -f ./helm/api-service/values.yaml
@@ -46,5 +55,6 @@ helm upgrade api-service helm/api-service --namespace golang-backend-boilerplate
   --dry-run
 
 # Uninstall the chart
-helm uninstall api-service --namespace golang-backend-boilerplate
+helm uninstall api-service --namespace golang-backend-boilerplate \
+  --dry-run
 ```
