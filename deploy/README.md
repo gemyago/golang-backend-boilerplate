@@ -14,7 +14,7 @@ Interacting with kubernetes directly is usually done in a local environment. Non
 kubectl create namespace golang-backend-boilerplate
 ```
 
-Secret to pull images from a private registry may have to be created. The secret must be created in every namespace where the registry is used.
+Secret to pull images from a private registry may have to be created. The secret must be created in every namespace where the registry is used. Make sure the token has at least `read:packages` scope.
 ```sh
 # Generic format of the command
 kubectl create secret docker-registry ghcr-registry \
@@ -29,6 +29,9 @@ kubectl create secret docker-registry ghcr-registry \
   --docker-username="$(gh auth status | grep -o "account [^ ]*" | cut -d ' ' -f 2)" \
   --docker-password="$(gh auth token)" \
   --namespace golang-backend-boilerplate
+
+# If you want to delete the secret
+kubectl delete secret ghcr-registry --namespace golang-backend-boilerplate
 ```
 
 ## Helm 
