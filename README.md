@@ -58,6 +58,9 @@ This step is required if you plan to work on the build tooling. In this case ple
 * [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation).
 
 ```sh
+# Install required python version
+pyenv install -s
+
 # Setup python environment
 python -m venv .venv
 
