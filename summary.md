@@ -21,7 +21,6 @@ This is a production-ready Golang backend boilerplate that follows clean archite
 ### Supporting Directories
 - `deploy/` - Deployment configurations and scripts
 - `build/` - Build artifacts and scripts
-- `dist/` - Distribution files
 - `.github/` - GitHub workflows and configurations
 
 ## Key Configuration Files
@@ -61,12 +60,79 @@ The project follows clean architecture principles:
 - Structured logging
 - Configuration management
 - Error handling patterns
+- Container best practices
+  - Multi-stage builds
+  - Minimal base images
+  - Security scanning
+- Deployment best practices
+  - Infrastructure as Code
+  - Secret management
+  - Rolling updates
+  - Health checks
 
 ## TODO and Future Improvements
 - [ ] Document API endpoints
 - [ ] Add more example services
 - [ ] Enhance monitoring setup
 - [ ] Add performance benchmarks
+
+## Build System
+The build system is located in the `build/` directory and provides:
+
+### Build Configuration
+- `build.cfg` - Central configuration file defining:
+  - Target platforms for binaries
+  - Docker-related settings
+  - Build parameters
+
+### Build Components
+- `scripts/` - Build automation scripts
+  - Python-based build tools
+  - Bash utility scripts
+  - Test suite for build scripts
+- `docker/` - Docker build configurations
+  - Multi-platform build support
+  - Local and remote image building
+- `Makefile` - Build automation commands
+  - `make dist` - Build artifacts
+  - `make docker/local-images` - Build local Docker images
+  - `make docker/remote-images` - Push to registry
+
+### Build Artifacts
+- `dist/` - Compiled binaries and assets
+- `build-artifacts.tar.gz` - Packaged build outputs
+- `.build-artifacts` - Build metadata
+
+## Deployment System
+The deployment system is located in the `deploy/` directory and provides:
+
+### Kubernetes Support
+- Complete Kubernetes deployment configuration
+- Namespace management
+- Private registry authentication
+- Secret management
+
+### Helm Charts (`deploy/helm/`)
+- Production-ready Helm charts
+- Environment-specific value files
+- Deployment templates for:
+  - API services
+  - Background jobs
+  - Supporting services
+
+### Deployment Tools
+- `Makefile` - Deployment automation
+- `bin/` - Deployment binary tools
+- `.helm-version` - Helm version lock
+- Environment configuration (`.envrc`)
+
+### Deployment Workflows
+- Local development deployment
+- CI/CD pipeline integration
+- Multi-environment support
+  - Development
+  - Staging
+  - Production
 
 ---
 *This summary is maintained by the development team through Cursor AI. Last updated: [Current Date]* 
