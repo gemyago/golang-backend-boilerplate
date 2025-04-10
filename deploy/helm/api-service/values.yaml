@@ -74,9 +74,17 @@ serviceGatewayRoutes:
     namespace: gateway
     sectionName: http
     matchRules:
-      - path:
-          type: PathPrefix
-          value: /golang-backend-boilerplate-api
+      # backendRefs are added automatically to point to the service
+      - matches:
+        - path:
+            type: PathPrefix
+            value: /golang-backend-boilerplate-api
+        filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

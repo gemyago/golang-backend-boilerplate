@@ -14,11 +14,11 @@ spec:
   rules:
     {{- range .matchRules }}
     - matches:
-        {{- if .path }}
-        - path:
-            type: {{ .path.type }}
-            value: {{ .path.value }}
-        {{- end }}
+        {{- toYaml .matches | nindent 8 }}
+      {{- if .filters }}
+      filters:
+        {{- toYaml .filters | nindent 8 }}
+      {{- end }}
       backendRefs:
         - name: {{ include "api-service.fullname" $ }}
           port: {{ $.Values.service.port }}
