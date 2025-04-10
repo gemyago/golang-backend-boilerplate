@@ -75,17 +75,25 @@ serviceGatewayRoutes:
     sectionName: http
     matchRules:
       # backendRefs are added automatically to point to the service
-      - matches:
-        - path:
-            type: PathPrefix
-            value: /golang-backend-boilerplate-api
-        filters:
-        - type: URLRewrite
-          urlRewrite:
-            path:
-              type: ReplacePrefixMatch
-              replacePrefixMatch: /
 
+      # Example of a path route
+      # - matches:
+      #   - path:
+      #       type: PathPrefix
+      #       value: /golang-backend-boilerplate-api
+      #   filters:
+      #   - type: URLRewrite
+      #     urlRewrite:
+      #       path:
+      #         type: ReplacePrefixMatch
+      #         replacePrefixMatch: /
+
+      # Example of a hostname route. Regex matching may be gateway specific.
+      - matches:
+        - headers:
+            - name: host
+              type: RegularExpression
+              value: ^golang-backend-boilerplate-api\..*$
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
