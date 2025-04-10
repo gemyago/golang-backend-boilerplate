@@ -69,7 +69,7 @@ service:
 # It is assumed the the gateway resources are provisioned by common infrastructure layer.
 serviceGatewayRoutes:
   - enabled: true
-    nameSuffix: api-service
+    nameSuffix: routes
     gatewayName: application-gw
     namespace: gateway
     sectionName: http
