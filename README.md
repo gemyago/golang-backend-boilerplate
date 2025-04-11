@@ -46,7 +46,7 @@ git rm -rf .
 rm -f .gitignore
 echo '# Test Artifacts' > README.md
 git add README.md
-git commit -m 'init'
+git commit -m 'Init test artifacts branch'
 git push origin test-artifacts
 ```
 Feel free to use any other branch name. In this case please make sure to update all references and [push-test-artifact.yml](.github/workflows/push-test-artifacts.yml) action.
