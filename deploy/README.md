@@ -38,24 +38,19 @@ kubectl delete secret ghcr-registry --namespace golang-backend-boilerplate
 
 Interacting with helm directly is usually done in a local environment. Non local scenarios should usually go via CI/CD pipeline.
 
-Below are the most typical commands you would need to iterate on the charts:
+Below are the most typical commands you would need to iterate on the charts. Run them from [deploy](.) directory:
 ```sh
 # Render all templates with specific value files to review the output
 helm template helm/api-service --debug --name-template api-service -f ./helm/api-service/values.yaml
 
 # Install the chart. Most often you would do it in a local scenario
 # Non local scenario should usually go via CI/CD pipeline
-helm install api-service helm/api-service --namespace golang-backend-boilerplate \
+helm upgrade api-service helm/api-service \
+  --install \
+  --namespace golang-backend-boilerplate \
   -f ./helm/api-service/values.yaml \
   --create-namespace \
    --dry-run
-
-# Or upgrade the chart
-helm upgrade api-service helm/api-service --namespace golang-backend-boilerplate \
-  -f ./helm/api-service/values.yaml \
-  --create-namespace \
-  --install \
-  --dry-run
 
 # Uninstall the chart
 helm uninstall api-service --namespace golang-backend-boilerplate \
