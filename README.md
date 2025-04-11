@@ -36,7 +36,6 @@ Initial cleanup step:
   find . -name "*.go" -o -name "go.mod" | xargs gsed -i "s|github.com/gemyago/golang-backend-boilerplate|${module_name}|g";
   ```
   Note: on osx you may have to install and use [gnu sed](https://formulae.brew.sh/formula/gnu-sed). In such case you may need to replace `sed` with `gsed` above.
-* Review and actualize [.testcoverage.yaml](./.testcoverage.yaml)
 * Review and actualize deployment related files:
   * [deploy/README.md](deploy/README.md)
   * [deploy/helm/api-service/values.yaml](deploy/helm/api-service/values.yaml)
