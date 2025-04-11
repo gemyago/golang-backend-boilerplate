@@ -36,6 +36,11 @@ Initial cleanup step:
   find . -name "*.go" -o -name "go.mod" | xargs gsed -i "s|github.com/gemyago/golang-backend-boilerplate|${module_name}|g";
   ```
   Note: on osx you may have to install and use [gnu sed](https://formulae.brew.sh/formula/gnu-sed). In such case you may need to replace `sed` with `gsed` above.
+* Review and actualize [.testcoverage.yaml](./.testcoverage.yaml)
+* Review and actualize deployment related files:
+  * [deploy/README.md](deploy/README.md)
+  * [deploy/helm/api-service/values.yaml](deploy/helm/api-service/values.yaml)
+* Adjust docker images cleanup to list your images [cleanup-docker-images.yml](.github/workflows/cleanup-docker-images.yml)
 * Review and actualize [README.md](/README.md) to match your project
   * Make sure to update status badge links at the top o this file to include your repo path.
 
