@@ -18,6 +18,7 @@ Key features:
 
 ## Starting a new project
 
+Initial cleanup step:
 * Clone the repo with a new name
 * Replace module name with desired one. Example:
 
@@ -36,6 +37,19 @@ Key features:
   ```
   Note: on osx you may have to install and use [gnu sed](https://formulae.brew.sh/formula/gnu-sed). In such case you may need to replace `sed` with `gsed` above.
 * Review and actualize [README.md](/README.md) to match your project
+  * Make sure to update status badge links at the top o this file to include your repo path.
+
+Some test artifacts (like coverage and badges) are pushed to a separate orphan branch. Please follow steps below to prepare such a branch:
+```sh
+git checkout --orphan test-artifacts
+git rm -rf .
+rm -f .gitignore
+echo '# Test Artifacts' > README.md
+git add README.md
+git commit -m 'init'
+git push origin test-artifacts
+```
+Feel free to use any other branch name. In this case please make sure to update all references and [push-test-artifact.yml](.github/workflows/push-test-artifacts.yml) action.
 
 ## Project structure
 
