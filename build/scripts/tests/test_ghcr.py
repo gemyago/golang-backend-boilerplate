@@ -299,14 +299,15 @@ class TestFindVersionsToClean(unittest.TestCase):
     def test_find_untagged_versions(self):
         """Test finding versions with no tags"""
         created_at = fake.past_datetime(tzinfo=timezone.utc)
-        created_at_iso = created_at.isoformat()
+        tagged_created_at_iso = created_at.isoformat()
+        orphan_created_at_iso = (created_at - timedelta(days=1)).isoformat()
         with_tags = [
-            create_random_package_version(created_at=created_at_iso, metadata={"container": {"tags": ["tag1", "latest"]}})
+            create_random_package_version(created_at=tagged_created_at_iso, metadata={"container": {"tags": ["tag1", "latest"]}})
             for _ in range(6)
         ]
 
         without_tags = [
-            create_random_package_version(created_at=created_at_iso, metadata={"container": {"tags": []}}) 
+            create_random_package_version(created_at=orphan_created_at_iso, metadata={"container": {"tags": []}}) 
             for _ in range(6)
         ]
         
@@ -330,19 +331,21 @@ class TestFindVersionsToClean(unittest.TestCase):
     def test_find_versions_with_git_commit_only(self):
         """Test finding versions with git commit only"""
         created_at = fake.past_datetime(tzinfo=timezone.utc)
-        created_at_iso = created_at.isoformat()
+        tagged_created_at_iso = created_at.isoformat()
+        orphan_created_at_iso = (created_at - timedelta(days=1)).isoformat()
+        git_commit_orphan_created_at_iso = (created_at - timedelta(days=2)).isoformat()
         with_tags = [
-            create_random_package_version(created_at=created_at_iso, metadata={"container": {"tags": ["tag1", "latest"]}})
+            create_random_package_version(created_at=tagged_created_at_iso, metadata={"container": {"tags": ["tag1", "latest"]}})
             for _ in range(6)
         ]
 
         without_tags = [
-            create_random_package_version(created_at=created_at_iso, metadata={"container": {"tags": []}}) 
+            create_random_package_version(created_at=orphan_created_at_iso, metadata={"container": {"tags": []}}) 
             for _ in range(6)
         ]
 
         with_git_commit_only_tags = [
-            create_random_package_version(created_at=created_at_iso, metadata={"container": {"tags": [f"git-commit-${i}"]}}) 
+            create_random_package_version(created_at=git_commit_orphan_created_at_iso, metadata={"container": {"tags": [f"git-commit-{i}"]}}) 
             for i in range(6)
         ]
         
@@ -463,6 +466,85 @@ class TestFindVersionsToClean(unittest.TestCase):
         for action in to_keep:
             self.assertIn("Tagged version matches keep pattern", action["reason"])
             self.assertIn(test_pattern, action["reason"])
+
+    def test_keep_untagged_matching_timestamp(self):
+        """Test keeping untagged versions if timestamp matches a kept tagged version"""
+        now = datetime.now(timezone.utc)
+        shared_timestamp = (now - timedelta(days=1))
+        shared_timestamp_iso = shared_timestamp.isoformat()
+        
+        different_timestamp_iso = (now - timedelta(days=2)).isoformat()
+        another_different_timestamp_iso = (now - timedelta(days=3)).isoformat()
+        
+        # Tagged version to keep (recent)
+        manifest_list = create_random_package_version(
+            id=1001,
+            created_at=shared_timestamp_iso,
+            metadata={"container": {"tags": ["latest", f"git-commit-{fake.sha1()[:7]}"]}}
+        )
+        
+        # Untagged versions with matching timestamp (should be kept)
+        orphan_amd64 = create_random_package_version(
+            id=2001,
+            created_at=(shared_timestamp + timedelta(seconds=3)).isoformat(),
+            metadata={"container": {"tags": []}}
+        )
+        orphan_arm64 = create_random_package_version(
+            id=2002,
+            created_at=(shared_timestamp + timedelta(seconds=7)).isoformat(),
+            metadata={"container": {"tags": []}}
+        )
+        
+        # Untagged version with different timestamp (should be deleted)
+        unrelated_orphan = create_random_package_version(
+            id=3001,
+            created_at=different_timestamp_iso,
+            metadata={"container": {"tags": []}}
+        )
+
+        # Version tagged only with git-commit-* (treated as orphan, should be deleted)
+        git_commit_orphan = create_random_package_version(
+            id=3002,
+            created_at=another_different_timestamp_iso,
+            metadata={"container": {"tags": [f"git-commit-{fake.sha1()[:7]}"]}}
+        )
+
+        versions = [
+            manifest_list, 
+            orphan_amd64, 
+            orphan_arm64, 
+            unrelated_orphan, 
+            git_commit_orphan
+        ]
+        
+        # Set max age to keep the manifest list (e.g., 2 days)
+        cleanup_actions = find_versions_to_clean(
+            versions=versions,
+            tagged_max_age=60 * 60 * 24 * 2, 
+            keep_tags_pattern="^never-match-" 
+        )
+
+        self.assertEqual(len(cleanup_actions), 5)
+
+        actions_by_id = {action["version"]["id"]: action for action in cleanup_actions}
+
+        # Check manifest list (kept because recent)
+        self.assertEqual(actions_by_id[1001]["action"], "keep")
+        self.assertIn("Tagged version newer than", actions_by_id[1001]["reason"])
+
+        # Check orphans with matching timestamp (kept due to correlation)
+        self.assertEqual(actions_by_id[2001]["action"], "keep")
+        self.assertEqual(actions_by_id[2001]["reason"], f"Untagged version matches timestamp of kept version {manifest_list['id']}")
+        self.assertEqual(actions_by_id[2002]["action"], "keep")
+        self.assertEqual(actions_by_id[2002]["reason"], f"Untagged version matches timestamp of kept version {manifest_list['id']}")
+
+        # Check unrelated orphan (deleted)
+        self.assertEqual(actions_by_id[3001]["action"], "delete")
+        self.assertEqual(actions_by_id[3001]["reason"], "Orphan version")
+        
+        # Check git-commit only orphan (deleted)
+        self.assertEqual(actions_by_id[3002]["action"], "delete")
+        self.assertEqual(actions_by_id[3002]["reason"], "Orphan version")
 
 class TestRemoveVersion(unittest.TestCase):
     def test_remove_version_dry_run(self):
