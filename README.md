@@ -18,14 +18,43 @@ Key features:
 
 ## Starting a new project
 
+Initial cleanup step:
 * Clone the repo with a new name
-
 * Replace module name with desired one. Example:
 
   ```bash
+  # Manually specify desired module name
   find . -name "*.go" -o -name "go.mod" | xargs sed -i 's|github.com/gemyago/golang-backend-boilerplate|<YOUR-MODULE-PATH>|g';
+
+  # Or optionally get module name matching repo
+  export module_name=$(git remote get-url origin | sed -E \
+    -e 's|^git@([^:]+):|\1/|' \
+    -e 's|^https?://||' \
+    -e 's|\.git$||')
+  
+  # and specify module name matching repo name
+  find . -name "*.go" -o -name "go.mod" | xargs gsed -i "s|github.com/gemyago/golang-backend-boilerplate|${module_name}|g";
   ```
   Note: on osx you may have to install and use [gnu sed](https://formulae.brew.sh/formula/gnu-sed). In such case you may need to replace `sed` with `gsed` above.
+* Review and actualize deployment related files:
+  * [deploy/README.md](deploy/README.md)
+  * [deploy/helm/api-service/values.yaml](deploy/helm/api-service/values.yaml)
+* Adjust docker images cleanup to list your images [cleanup-docker-images.yml](.github/workflows/cleanup-docker-images.yml)
+* Review and actualize [README.md](/README.md) to match your project
+  * Make sure to update status badge links at the top o this file to include your repo path.
+
+Some test artifacts (like coverage and badges) are pushed to a separate orphan branch. Please follow steps below to prepare such a branch:
+```sh
+git checkout --orphan test-artifacts
+git rm -rf .
+rm -f .gitignore
+echo $'# Test Artifacts\n' > README.md
+echo 'This is an orphan branch that holds test artifacts produced by CI' >> README.md
+git add README.md
+git commit -m 'init'
+git push origin test-artifacts
+```
+Feel free to use any other branch name. In this case please make sure to update all references and [push-test-artifact.yml](.github/workflows/push-test-artifacts.yml) action.
 
 ## Project structure
 
