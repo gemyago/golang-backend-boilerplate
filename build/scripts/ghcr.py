@@ -167,82 +167,98 @@ def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int, 
     Find package versions that should be cleaned up/removed.
     Keeps tagged versions newer than 'tagged_max_age' seconds.
     Keeps tagged versions with tags matching keep_tags_pattern.
+    Keeps untagged versions if their creation timestamp closely matches a kept tagged version.
     
     Args:
         versions: List of package versions to analyze
         tagged_max_age: Maximum age in seconds for tagged versions to keep
         keep_tags_pattern: Regex pattern for tags to always keep regardless of age
+        timestamp_tolerance_seconds: Tolerance in seconds for matching untagged to tagged timestamps
     
     Returns:
         List of cleanup actions with version, action ("keep" or "delete"), and reason
     """
-    # Separate versions into tagged and untagged
+    # Separate versions into tagged and initially classified orphans
     tagged_versions = []
-    orphan_versions = []
+    potential_orphan_versions = [] # Initially includes truly untagged and git-commit-only
 
     git_commit_regex = re.compile(r"^git-commit-")
+    timestamp_tolerance_seconds = 10 # Tolerance for timestamp matching
     
     for version in versions:
         tags = version.get('metadata', {}).get('container', {}).get('tags', [])
-        has_tags = len(tags) > 0
+        has_real_tags = len(tags) > 0
 
-        # Version with git-commit-xxx only is considered orphan and should be deleted
-        if has_tags and len(tags) == 1 and git_commit_regex.match(tags[0]):
-            has_tags = False
+        # Treat versions with only git-commit-* tags as untagged for initial classification
+        if has_real_tags and len(tags) == 1 and git_commit_regex.match(tags[0]):
+            has_real_tags = False
 
-        if has_tags:
+        if has_real_tags:
             tagged_versions.append(version)
         else:
-            orphan_versions.append(version)
+            potential_orphan_versions.append(version)
     
     # Calculate cutoff date
     now = datetime.now(timezone.utc)
     tagged_max_age_delta = timedelta(seconds=tagged_max_age)
     cutoff_date = now - tagged_max_age_delta
     
-    # Initialize result list
+    # Initialize result list and track kept tagged versions
     cleanup_actions = []
+    kept_tagged_versions_info = {} # Store id -> timestamp
     
     # Compile pattern if provided
     pattern = re.compile(keep_tags_pattern)
     
-    # Process tagged versions
+    # Process tagged versions first to determine which ones are kept
     for version in tagged_versions:
         tags = version.get('metadata', {}).get('container', {}).get('tags', [])
-        created_date = datetime.fromisoformat(version['created_at'])
+        created_date = datetime.fromisoformat(version['created_at'].replace('Z', '+00:00')) # Ensure timezone aware
         
-        # Check if any tag matches the keep pattern
         should_keep_due_to_pattern = False
         for tag in tags:
             if pattern.search(tag):
                 should_keep_due_to_pattern = True
                 break
         
+        action = "delete" # Default to delete
+        reason = f"Tagged version older than '{tagged_max_age_delta}'"
+
         if should_keep_due_to_pattern:
-            cleanup_actions.append({
-                "version": version,
-                "action": "keep",
-                "reason": f"Tagged version matches keep pattern '{keep_tags_pattern}'"
-            })
+            action = "keep"
+            reason = f"Tagged version matches keep pattern '{keep_tags_pattern}'"
         elif created_date > cutoff_date:
-            cleanup_actions.append({
-                "version": version,
-                "action": "keep",
-                "reason": f"Tagged version newer than '{tagged_max_age_delta}'"
-            })
-        else:
-            cleanup_actions.append({
-                "version": version,
-                "action": "delete",
-                "reason": f"Tagged version older than '{tagged_max_age_delta}'"
-            })
-    
-    # Process untagged versions (all should be deleted)
-    for version in orphan_versions:
+            action = "keep"
+            reason = f"Tagged version newer than '{tagged_max_age_delta}'"
+
+        if action == "keep":
+            kept_tagged_versions_info[version['id']] = created_date
+
         cleanup_actions.append({
             "version": version,
-            "action": "delete",
-            "reason": "Orphan version"
+            "action": action,
+            "reason": reason
+        })
+
+    # Process potential orphan versions (untagged or git-commit-only)
+    for version in potential_orphan_versions:
+        action = "delete"
+        reason = "Orphan version"
+        
+        # Check if this orphan's timestamp matches any kept tagged version's timestamp
+        orphan_created_date = datetime.fromisoformat(version['created_at'].replace('Z', '+00:00'))
+        time_tolerance = timedelta(seconds=timestamp_tolerance_seconds)
+        
+        for kept_id, kept_timestamp in kept_tagged_versions_info.items():
+            if abs(orphan_created_date - kept_timestamp) <= time_tolerance:
+                action = "keep"
+                reason = f"Untagged version matches timestamp of kept version {kept_id}"
+                break # Found a match, no need to check further kept versions
+
+        cleanup_actions.append({
+            "version": version,
+            "action": action,
+            "reason": reason
         })
     
     return cleanup_actions
