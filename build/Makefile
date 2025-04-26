@@ -90,14 +90,14 @@ docker/.local-%-tags: .git-meta/HEAD .git-meta/repo-name
 		--git-ref $(shell git rev-parse --abbrev-ref HEAD) \
 		--stable-branches $(call read_config,build.cfg,stable_branches) \
 	))
-	@echo $(tag_names) | tr ' ' '\n' | sed 's|^|-t $(image_base_name):|' > $@
+	@echo $(tag_names) | tr ' ' '\n' | sed 's|^|--tag $(image_base_name):|' > $@
 
 # Build local image
 # Target must be in form: docker/.local-<binary>-image
 # Example: make docker/.local-server-image
 docker/.local-%-image: docker/.local-args docker/.local-%-tags
 	@echo "Building local $* image"
-	docker build --build-arg TARGET_BINARY="$*" \
+	docker buildx build --load --build-arg TARGET_BINARY="$*" \
 			--iidfile $@ \
 			--annotation org.opencontainers.image.description="Includes $* binary" \
 			$(shell cat docker/.local-$*-tags) \
@@ -123,23 +123,20 @@ docker/.remote-%-tags: .git-meta/HEAD .git-meta/repo-name .git-meta/repo-namespa
 		--git-ref $(shell git rev-parse --abbrev-ref HEAD) \
 		--stable-branches $(call read_config,build.cfg,stable_branches) \
 	))
-	@echo $(tag_names) | tr ' ' '\n' | sed 's|^|$(image_base_name):|' > $@
+	@echo $(tag_names) | tr ' ' '\n' | sed 's|^|--tag $(image_base_name):|' > $@
 
 # Push image to remote registry
 # Target must be in form: docker/.remote-<registry>-<binary>-image
 # Example: make docker/.remote-ghcr-server-image
 # The registry host is read from build.cfg under docker_<registry>_registry_host key
-docker/.remote-%-image: docker/.local-$$(word 2, $$(subst -, ,$$*))-image docker/.remote-%-tags
+docker/.remote-%-image: docker/.local-args docker/.remote-%-tags
 	$(eval registry_name := $(word 1,$(subst -, ,$*)))
 	$(eval target_binary := $(word 2,$(subst -, ,$*)))
-	$(eval local_image_id := $(shell cat docker/.local-$(target_binary)-image))
-	$(eval remote_tags := $(shell cat docker/.remote-$*-tags))
-	@for tag in $$(cat docker/.remote-$*-tags); do \
-			echo "Pushing $(local_image_id) as $$tag"; \
-			docker tag $(local_image_id) $$tag; \
-			docker push $$tag; \
-	done
-	docker inspect $(local_image_id) > $@
+	@echo "Building and pushing remote $* image for $(target_binary)"
+	docker buildx build --push --build-arg TARGET_BINARY="$(target_binary)" \
+			--annotation org.opencontainers.image.description="Includes $(target_binary) binary" \
+			$(shell cat docker/.remote-$*-tags) \
+			$(shell cat docker/.local-args)
 
 # Push all images to remote registry
 .PHONY: docker/remote-images
