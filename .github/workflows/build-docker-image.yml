@@ -37,10 +37,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build local image
-      working-directory: build
-      run: make docker/local-images
-
-    - name: Push images
+    - name: Build and push images
       working-directory: build
       run: make docker/remote-images
