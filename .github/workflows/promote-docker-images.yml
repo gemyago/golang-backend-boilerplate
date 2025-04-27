@@ -25,7 +25,6 @@ jobs:
         run: |
           gh run download --repo ${{ github.repository }} \
             --name docker-artifacts-pr-${{ github.event.pull_request.node_id }}
-          ls -la
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -47,7 +46,7 @@ jobs:
       - name: Tag and Promote Docker Images
         run: |
           build/scripts/tag-remote-images.sh \
-            --remote-images build/docker/.remote-images \
+            --remote-images-file build/docker/.remote-images \
             --source-commit-sha "${{ github.event.pull_request.head.sha }}" \
             --target-commit-sha "${{ github.event.pull_request.merge_commit_sha || github.event.pull_request.head.sha }}" \
             --git-ref "refs/heads/${{ github.event.pull_request.base.ref }}"
