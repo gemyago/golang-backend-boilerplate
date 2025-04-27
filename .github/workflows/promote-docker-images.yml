@@ -21,10 +21,13 @@ jobs:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
 
       - name: Download docker artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-artifacts-pr-${{ github.event.pull_request.node_id }}
-          path: build
+        run: |
+          gh run download --repo ${{ github.repository }} \
+            --name docker-artifacts-pr-${{ github.event.pull_request.node_id }} \
+            --dir build \
+            --pattern "docker-artifacts.tar.bz2"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract docker artifacts
         working-directory: build
