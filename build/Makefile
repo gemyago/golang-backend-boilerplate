@@ -190,6 +190,7 @@ docker/.remote-%-image: docker/.local-args docker/.remote-%-tags
 	$(eval target_binary := $(word 2,$(subst -, ,$*)))
 	@echo "Building and pushing remote $* image for $(target_binary)"
 	docker buildx build --push --build-arg TARGET_BINARY="$(target_binary)" \
+			--iidfile $@ \
 			--annotation org.opencontainers.image.description="Includes $(target_binary) binary" \
 			$(shell cat docker/.remote-$*-tags) \
 			$(shell cat docker/.local-args)
