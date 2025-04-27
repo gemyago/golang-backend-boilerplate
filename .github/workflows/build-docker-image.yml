@@ -39,4 +39,4 @@ jobs:
 
     - name: Build and push images
       working-directory: build
-      run: make docker/remote-images
+      run: make docker/.remote-images
