@@ -105,8 +105,8 @@ docker/.local-%-image: docker/.local-args docker/.local-%-tags
 
 # Build all local images for each binary in dist/
 # Fill use top folders from cmd folder to understand which binaries to build (wildcard)
-.PHONY: docker/local-images
-docker/local-images: $(patsubst %, docker/.local-%-image, $(notdir $(wildcard ../cmd/*)))
+.PHONY: docker/.local-images
+docker/.local-images: $(patsubst %, docker/.local-%-image, $(notdir $(wildcard ../cmd/*)))
 	@echo "Local images are ready: $?"
 
 # Build image tags for remote registry
@@ -140,12 +140,12 @@ docker/.remote-%-image: docker/.local-args docker/.remote-%-tags
 
 # Push all images to remote registry
 .PHONY: docker/remote-images
-docker/remote-images: .git-meta/repo-name .git-meta/repo-namespace $(eval docker_push_registries := $(call read_config,build.cfg,docker_push_registries))
-docker/remote-images: $(eval binaries := $(notdir $(wildcard ../cmd/*)))
-docker/remote-images: $(eval remote_image_targets := $(patsubst %, docker/.remote-%-image, $(foreach registry_name,$(subst $(comma), ,$(docker_push_registries)),$(foreach binary,$(binaries),$(registry_name)-$(binary)))))
-docker/remote-images: $(remote_image_targets)
-	@echo "Writing unique base image names to docker/remote-images"
-	@rm -f docker/remote-images docker/remote-images.tmp
+docker/.remote-images: .git-meta/repo-name .git-meta/repo-namespace $(eval docker_push_registries := $(call read_config,build.cfg,docker_push_registries))
+docker/.remote-images: $(eval binaries := $(notdir $(wildcard ../cmd/*)))
+docker/.remote-images: $(eval remote_image_targets := $(patsubst %, docker/.remote-%-image, $(foreach registry_name,$(subst $(comma), ,$(docker_push_registries)),$(foreach binary,$(binaries),$(registry_name)-$(binary)))))
+docker/.remote-images: $(remote_image_targets)
+	@echo "Writing unique base image names to docker/.remote-images"
+	@rm -f docker/.remote-images docker/remote-images.tmp
 	@touch docker/remote-images.tmp
 	@$(foreach registry_name,$(subst $(comma), ,$(docker_push_registries)), \
 		$(eval registry := $(call read_config,build.cfg,docker_$(registry_name)_registry)) \
@@ -153,14 +153,14 @@ docker/remote-images: $(remote_image_targets)
 			echo "$(registry)/$(shell cat .git-meta/repo-namespace)/$(shell cat .git-meta/repo-name)-$(binary)" >> docker/remote-images.tmp; \
 		) \
 	)
-	@sort -u docker/remote-images.tmp > docker/remote-images
+	@sort -u docker/remote-images.tmp > docker/.remote-images
 	@rm -f docker/remote-images.tmp
 	@echo "Remote images pushed: $?"
 
 .PHONY: clean docker/clean dist/clean
 
 docker/clean:
-	rm -f docker/.local-* docker/.remote-* docker/.labels docker/remote-images
+	rm -f docker/.local-* docker/.remote-* docker/.labels
 
 dist/clean:
 	rm -rf dist

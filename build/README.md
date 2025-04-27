@@ -30,10 +30,10 @@ Use commands below to build docker images locally:
 make dist
 
 # Build local images (for local testing)
-make docker/local-images
+make docker/.local-images
 
 # Build and push images to a remote registry
-make docker/remote-images
+make docker/.remote-images
 ```
 
 ## Build Scripts
