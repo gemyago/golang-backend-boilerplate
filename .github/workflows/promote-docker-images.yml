@@ -1,0 +1,52 @@
+name: Promote Docker Images
+
+on:
+  pull_request:
+    # types: [closed]
+    types: [labeled] # Use this for testing (comment out the merged condition)
+
+jobs:
+  promote:
+    name: Promote Images
+    if: github.event.pull_request.merged == true # For testing, comment out the merged condition
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: "read"
+      packages: "write"
+
+    steps:
+      - name: Checkout merge commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Download docker artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-artifacts-pr-${{ github.event.pull_request.node_id }}
+          path: build
+
+      - name: Extract docker artifacts
+        working-directory: build
+        run: |
+          if [[ ! -f docker-artifacts.tar.bz2 ]]; then
+            echo "Error: docker-artifacts.tar.bz2 not found in downloaded artifact."
+            exit 1
+          fi
+          tar -xf docker-artifacts.tar.bz2
+          # Ensure the .remote-images file exists after extraction
+          if [[ ! -f docker/.remote-images ]]; then
+            echo "Error: build/docker/.remote-images not found after extracting artifact."
+            ls -la # List files for debugging
+            exit 1
+          fi
+
+      - name: Tag and Promote Docker Images
+        run: |
+          build/scripts/tag-remote-images.sh \
+            --remote-images build/docker/.remote-images \
+            --source-commit-sha "${{ github.event.pull_request.head.sha }}" \
+            --target-commit-sha "${{ github.event.pull_request.merge_commit_sha || github.event.pull_request.head.sha }}" \
+            --git-ref "refs/heads/${{ github.event.pull_request.base.ref }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
