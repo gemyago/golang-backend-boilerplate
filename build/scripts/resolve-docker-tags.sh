@@ -100,11 +100,11 @@ process_branch_tags() {
   done
   
   if [[ "$is_stable" == "true" ]]; then
-    # For stable branches: latest-<branch-name> and git-commit-<commit-sha>
+    # For stable branches: latest-<branch-name>
     if [[ "$is_latest" == "true" ]]; then
-      echo "latest-${sanitized_branch} ${sanitized_commit} latest"
+      echo "latest-${sanitized_branch} latest"
     else
-      echo "latest-${sanitized_branch} ${sanitized_commit}"
+      echo "latest-${sanitized_branch}"
     fi
   else
     # For non-stable branches: <branch-name> and git-commit-<commit-sha>
@@ -168,14 +168,14 @@ run_tests() {
   assert "$resolve_result" "feature-xyz git-commit-$commit_sha" "Non-stable branch resolution with refs/heads prefix" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "refs/heads/main" "$commit_sha" "main,develop" "false")
-  assert "$resolve_result" "latest-main git-commit-$commit_sha" "Stable branch resolution with refs/heads prefix" || ((failures++))
+  assert "$resolve_result" "latest-main" "Stable branch resolution with refs/heads prefix" || ((failures++))
   
   # Test without refs prefix
   resolve_result=$(resolve_docker_tags "feature/xyz" "$commit_sha" "main,develop")
   assert "$resolve_result" "feature-xyz git-commit-$commit_sha" "Non-stable branch resolution without refs prefix" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "main" "$commit_sha" "main,develop")
-  assert "$resolve_result" "latest-main git-commit-$commit_sha" "Stable branch resolution without refs prefix" || ((failures++))
+  assert "$resolve_result" "latest-main" "Stable branch resolution without refs prefix" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "tags/v1.0.0" "$commit_sha" "main,develop")
   assert "$resolve_result" "git-tag-v1.0.0" "Tag resolution with tags/ prefix but no refs/" || ((failures++))
@@ -195,7 +195,7 @@ run_tests() {
   assert "$resolve_result" "feature-xyz git-commit-$commit_sha latest" "Non-stable branch with is-latest flag" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "refs/heads/main" "$commit_sha" "main,develop" "true")
-  assert "$resolve_result" "latest-main git-commit-$commit_sha latest" "Stable branch with is-latest flag" || ((failures++))
+  assert "$resolve_result" "latest-main latest" "Stable branch with is-latest flag" || ((failures++))
   
   if [[ $failures -eq 0 ]]; then
     echo ""
