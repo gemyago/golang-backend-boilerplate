@@ -15,6 +15,54 @@ platforms:=$(call read_config,build.cfg,platforms)
 
 comma:=,
 
+# Detect OS and ARCH for host machine
+os_lower := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+ifeq ($(os_lower),darwin)
+	detected_os ?= Darwin
+else
+	detected_os ?= Linux
+endif
+
+detected_arch ?= $(shell uname -m)
+ifeq ($(detected_arch),x86_64)
+	detected_arch := x86_64
+else ifeq ($(detected_arch),aarch64)
+	detected_arch := arm64
+else ifeq ($(detected_arch),arm64)
+	detected_arch := arm64
+endif
+
+# Tool Binaries (local to build directory)
+bin_dir := $(CURDIR)/bin
+tmp_dir := $(CURDIR)/tmp
+
+# Crane Installation
+crane_version := $(shell cat .crane-version)
+crane_archive_name := go-containerregistry_$(detected_os)_$(detected_arch).tar.gz
+crane_archive_url := https://github.com/google/go-containerregistry/releases/download/$(crane_version)/$(crane_archive_name)
+crane_archive := $(tmp_dir)/$(crane_archive_name)
+crane := $(bin_dir)/crane
+
+$(tmp_dir):
+	mkdir -p $(tmp_dir)
+
+$(bin_dir):
+	mkdir -p $(bin_dir)
+
+$(crane_archive): .crane-version $(tmp_dir)
+	@echo "Downloading crane v$(crane_version) for $(detected_os)/$(detected_arch)..."
+	curl -sL $(crane_archive_url) -o $(crane_archive)
+
+$(crane): $(crane_archive) $(bin_dir)
+	@echo "Extracting crane binary..."
+	tar -zxvf $(crane_archive) -C $(bin_dir)/ crane
+	@echo "crane installed to $(crane)"
+	touch $(crane) # Update timestamp for Make
+
+# Target to ensure crane is installed
+.PHONY: install-crane
+install-crane: $(crane)
+
 # platforms in config are in form linux/amd64,linux/arm64...
 # transforming to dist/linux/amd64 dist/linux/arm64...
 dist_platforms:=$(patsubst %,dist/%,$(subst $(comma), ,$(platforms)))
@@ -169,6 +217,9 @@ clean: docker/clean dist/clean
 	rm -rf .git-meta
 	rm -f .build-artifacts
 	rm -f build-artifacts.tar.*
+	# Clean crane artifacts
+	rm -rf $(bin_dir)
+	rm -rf $(tmp_dir)
 
 .PHONY: test
 test:
