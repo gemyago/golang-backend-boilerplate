@@ -140,15 +140,27 @@ docker/.remote-%-image: docker/.local-args docker/.remote-%-tags
 
 # Push all images to remote registry
 .PHONY: docker/remote-images
-docker/remote-images: $(eval docker_push_registries := $(call read_config,build.cfg,docker_push_registries))
+docker/remote-images: .git-meta/repo-name .git-meta/repo-namespace $(eval docker_push_registries := $(call read_config,build.cfg,docker_push_registries))
 docker/remote-images: $(eval binaries := $(notdir $(wildcard ../cmd/*)))
-docker/remote-images: $(patsubst %, docker/.remote-%-image, $(foreach registry,$(subst $(comma), ,$(docker_push_registries)),$(foreach binary,$(binaries),$(registry)-$(binary))))
-		@echo "Remote images pushed: $?"
+docker/remote-images: $(eval remote_image_targets := $(patsubst %, docker/.remote-%-image, $(foreach registry_name,$(subst $(comma), ,$(docker_push_registries)),$(foreach binary,$(binaries),$(registry_name)-$(binary)))))
+docker/remote-images: $(remote_image_targets)
+	@echo "Writing unique base image names to docker/remote-images"
+	@rm -f docker/remote-images docker/remote-images.tmp
+	@touch docker/remote-images.tmp
+	@$(foreach registry_name,$(subst $(comma), ,$(docker_push_registries)), \
+		$(eval registry := $(call read_config,build.cfg,docker_$(registry_name)_registry)) \
+		$(foreach binary,$(binaries), \
+			echo "$(registry)/$(shell cat .git-meta/repo-namespace)/$(shell cat .git-meta/repo-name)-$(binary)" >> docker/remote-images.tmp; \
+		) \
+	)
+	@sort -u docker/remote-images.tmp > docker/remote-images
+	@rm -f docker/remote-images.tmp
+	@echo "Remote images pushed: $?"
 
 .PHONY: clean docker/clean dist/clean
 
 docker/clean:
-	rm -f docker/.local-* docker/.remote-* docker/.labels
+	rm -f docker/.local-* docker/.remote-* docker/.labels docker/remote-images
 
 dist/clean:
 	rm -rf dist
