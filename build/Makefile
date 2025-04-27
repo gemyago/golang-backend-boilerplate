@@ -68,14 +68,18 @@ install-crane: $(crane)
 dist_platforms:=$(patsubst %,dist/%,$(subst $(comma), ,$(platforms)))
 
 # Example: dist/linux/amd64
+# If you care of the size, add -ldflags="-s -w"
+# but keep in mind that profiling will be challenging.
+# Disabled CGO explicitly speeds up the build. Remove if you need CGO.
 dist/%: FORCE
 	$(eval GOOS:=$(word 1,$(subst /, ,$*)))
 	$(eval GOARCH:=$(word 2,$(subst /, ,$*)))
-	GOOS=$(GOOS) GOARCH=$(GOARCH) go build -C .. \
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -C .. \
 			-tags=release \
 			-o build/dist/$(GOOS)/$(GOARCH)/ ./cmd/...;
 
-dist: $(dist_platforms)
+dist: FORCE
+	@make -j4 $(dist_platforms)
 
 .build-artifacts: dist
 	@echo ./dist > $@
