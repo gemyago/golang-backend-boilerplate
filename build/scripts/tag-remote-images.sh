@@ -13,11 +13,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # --- Configuration ---
 # Assumed relative paths from the repository root
-readonly CRANE_PATH="${SCRIPT_DIR}/../build/bin/crane"
+readonly CRANE_PATH="${SCRIPT_DIR}/../bin/crane"
 readonly RESOLVE_TAGS_SCRIPT_PATH="${SCRIPT_DIR}/resolve-docker-tags.sh"
-readonly BUILD_CFG_PATH="${SCRIPT_DIR}/../build/build.cfg"
+readonly BUILD_CFG_PATH="${SCRIPT_DIR}/../build.cfg"
 # Default location for the file listing remote image base names
-DEFAULT_REMOTE_IMAGES_FILE="${SCRIPT_DIR}/../build/docker/.remote-images"
+DEFAULT_REMOTE_IMAGES_FILE="${SCRIPT_DIR}/../docker/.remote-images"
 
 # --- Script Functions ---
 
