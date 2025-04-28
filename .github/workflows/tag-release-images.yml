@@ -1,5 +1,18 @@
 name: Tag Release Images
 
+# --- Testing Instructions ---
+# To test this workflow manually:
+# 1. Temporarily change the trigger type below from `published` to `created` or `edited`.
+#    For example: `types: [edited]`
+# 2. Commit and push the change to a test branch.
+# 3. Create a draft release using the GitHub CLI:
+#    gh release create v0.0.0-test --draft --generate-notes
+# 4. If using `types: [edited]`, edit the draft release via the GitHub UI.
+# 5. Observe the workflow run in the Actions tab for your test branch/commit.
+# 6. Remember to revert the `types` change in the workflow file afterwards.
+# 7. Prior to running, make sure there are docker images pushed for this commit.
+# --- End Testing Instructions ---
+
 on:
   release:
     types: [published]
