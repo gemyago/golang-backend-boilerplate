@@ -162,22 +162,36 @@ def list_versions(namespace: str, package_name: str, token_provider=default_toke
     
     return all_versions
 
-def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int, keep_tags_pattern: str) -> List[CleanupAction]:
+def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int, keep_tags_pattern: str, remove_all: bool = False) -> List[CleanupAction]:
     """
     Find package versions that should be cleaned up/removed.
     Keeps tagged versions newer than 'tagged_max_age' seconds.
     Keeps tagged versions with tags matching keep_tags_pattern.
     Keeps untagged versions if their creation timestamp closely matches a kept tagged version.
+    If remove_all is True, marks all versions for deletion.
     
     Args:
         versions: List of package versions to analyze
         tagged_max_age: Maximum age in seconds for tagged versions to keep
         keep_tags_pattern: Regex pattern for tags to always keep regardless of age
+        remove_all: If True, mark all versions for deletion (default: False)
         timestamp_tolerance_seconds: Tolerance in seconds for matching untagged to tagged timestamps
     
     Returns:
         List of cleanup actions with version, action ("keep" or "delete"), and reason
     """
+    cleanup_actions = []
+    
+    # If remove_all flag is set, mark everything for deletion
+    if remove_all:
+        for version in versions:
+            cleanup_actions.append({
+                "version": version,
+                "action": "delete",
+                "reason": "Marked for deletion by --all=yes-remove-all flag"
+            })
+        return cleanup_actions
+
     # Separate versions into tagged and initially classified orphans
     tagged_versions = []
     potential_orphan_versions = [] # Initially includes truly untagged and git-commit-only
@@ -204,7 +218,6 @@ def find_versions_to_clean(versions: List[PackageVersion], tagged_max_age: int, 
     cutoff_date = now - tagged_max_age_delta
     
     # Initialize result list and track kept tagged versions
-    cleanup_actions = []
     kept_tagged_versions_info = {} # Store id -> timestamp
     
     # Compile pattern if provided
@@ -315,10 +328,11 @@ class CleanupArgs(Protocol):
     tagged_max_age: int
     really_remove: bool
     keep_tags_pattern: str
+    all: Optional[str]
 
 def cleanup_versions_command(args: CleanupArgs, 
                            list_versions_func: Callable[[str, str], List[PackageVersion]] = list_versions, 
-                           find_versions_func: Callable[[List[PackageVersion], int, str], List[CleanupAction]] = find_versions_to_clean, 
+                           find_versions_func: Callable[[List[PackageVersion], int, str, bool], List[CleanupAction]] = find_versions_to_clean, 
                            remove_version_func: Callable[[str, str, int, bool], bool] = remove_version):
     """
     Handle the cleanup-versions command logic.
@@ -329,6 +343,12 @@ def cleanup_versions_command(args: CleanupArgs,
         find_versions_func: Function to find versions to clean (default: find_versions_to_clean)
         remove_version_func: Function to remove a version (default: remove_version)
     """
+    # Determine if all versions should be removed
+    should_remove_all = args.all == "yes-remove-all"
+    if args.all is not None and not should_remove_all:
+      logging.error("Invalid value for --all flag. Must be '--all=yes-remove-all'.")
+      sys.exit(1)
+    
     # Get all versions
     all_versions = list_versions_func(args.namespace, args.package)
     
@@ -336,7 +356,8 @@ def cleanup_versions_command(args: CleanupArgs,
     cleanup_actions = find_versions_func(
         all_versions, 
         tagged_max_age=args.tagged_max_age,
-        keep_tags_pattern=args.keep_tags_pattern
+        keep_tags_pattern=args.keep_tags_pattern,
+        remove_all=should_remove_all
     )
     
     logging.info(f"Found {len(cleanup_actions)} versions from {args.namespace}/{args.package}:")
@@ -379,6 +400,7 @@ def main():
     cleanup_parser.add_argument("--really-remove", action="store_true", help="Actually perform deletion (without this flag, dry run is performed)")
     cleanup_parser.add_argument("--keep-tags-pattern", type=str, default="^(latest-|git-tag-)", 
                               help="Regex pattern for tags to always keep regardless of age (default: '^(latest-|git-tag-)')")
+    cleanup_parser.add_argument("--all", type=str, default=None, help="If set to 'yes-remove-all', ignores all other rules and removes all versions.")
     
     args = parser.parse_args()
     

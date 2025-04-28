@@ -1,0 +1,82 @@
+name: Promote Docker Images
+
+on:
+  pull_request:
+    types: [closed]
+    # types: [labeled] # Use this for testing (comment out the merged condition)
+
+jobs:
+  promote:
+    name: Promote Images
+    if: github.event.pull_request.merged == true # For testing, comment out the merged condition
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: "read"
+      packages: "write"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup deps
+        working-directory: build
+        run: |
+          make install-crane
+
+      - name: Download docker artifacts
+        working-directory: build
+        run: |
+          gh run download --repo ${{ github.repository }} \
+            --name docker-artifacts-pr-${{ github.event.pull_request.node_id }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract docker artifacts
+        working-directory: build
+        run: |
+          if [[ ! -f docker-artifacts.tar.bz2 ]]; then
+            echo "Error: docker-artifacts.tar.bz2 not found in downloaded artifact."
+            exit 1
+          fi
+          tar -xf docker-artifacts.tar.bz2
+          # Ensure the .remote-images file exists after extraction
+          if [[ ! -f docker/.remote-images ]]; then
+            echo "Error: build/docker/.remote-images not found after extracting artifact."
+            ls -la # List files for debugging
+            exit 1
+          fi
+
+      - name: Authenticate crane to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | build/bin/crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calculate Target Tags
+        id: calculate_tags
+        run: |
+          STABLE_BRANCHES=$(build/scripts/read-build-config.sh --key stable_branches)
+          if [[ -z "$STABLE_BRANCHES" ]]; then
+            echo "Error: Could not read stable_branches from build/build.cfg"
+            exit 1
+          fi
+          echo "Resolved stable branches: $STABLE_BRANCHES"
+
+          TARGET_TAGS=$(build/scripts/resolve-docker-tags.sh \
+            --commit-sha "${{ github.event.pull_request.base.sha }}" \
+            --git-ref "refs/heads/${{ github.event.pull_request.base.ref }}" \
+            --stable-branches "$STABLE_BRANCHES")
+
+          if [[ -z "$TARGET_TAGS" ]]; then
+            echo "Error: resolve-docker-tags.sh did not produce any tags."
+            exit 1
+          fi
+          echo "Resolved target tags: $TARGET_TAGS"
+          echo "TARGET_DOCKER_TAGS=$TARGET_TAGS" >> $GITHUB_ENV
+
+      - name: Tag and Promote Docker Images
+        run: |
+          build/scripts/tag-remote-images.sh \
+            --remote-images-file build/docker/.remote-images \
+            --source-commit-sha "${{ github.event.pull_request.head.sha }}" \
+            --target-tags "${{ env.TARGET_DOCKER_TAGS }}"
