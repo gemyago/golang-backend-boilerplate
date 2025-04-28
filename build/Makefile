@@ -99,9 +99,15 @@ docker-artifacts.tar.%: .docker-artifacts
 	rm -f $@
 	tar -a -cf $@ $(shell cat $<)
 
+# GITHUB_SHA is used since github may checkout on the temporary PR branch
+# that will have a different commit SHA than the merge commit SHA
 .git-meta/HEAD: FORCE
 	@mkdir -p .git-meta
-	@git rev-parse --short HEAD > $@.tmp
+	@if [ -n "$$GITHUB_SHA" ]; then \
+		echo "$$GITHUB_SHA" > $@.tmp; \
+	else \
+		git rev-parse --short HEAD > $@.tmp; \
+	fi
 	@if cmp -s $@ $@.tmp; then \
 		rm $@.tmp; \
 	else \
