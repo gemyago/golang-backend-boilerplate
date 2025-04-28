@@ -25,12 +25,11 @@ DEFAULT_REMOTE_IMAGES_FILE="${SCRIPT_DIR}/../docker/.remote-images"
 
 # Function to print usage information
 usage() {
-  echo "Usage: $0 --source-commit-sha <sha> --target-commit-sha <sha> --git-ref <ref> [options]"
+  echo "Usage: $0 --source-commit-sha <sha> --target-tags \"<tag1> <tag2> ...\" [options]"
   echo ""
   echo "Required Arguments:"
   echo "  --source-commit-sha <sha>   The commit SHA the images are currently tagged with."
-  echo "  --target-commit-sha <sha>   The commit SHA to use for calculating the target tags."
-  echo "  --git-ref <ref>               The Git reference (branch or tag) corresponding to the target commit."
+  echo "  --target-tags \"<tags>\"      A space-separated list of tags to apply."
   echo ""
   echo "Options:"
   echo "  --remote-images-file <path> Path to the file containing base image names (default: ${DEFAULT_REMOTE_IMAGES_FILE})"
@@ -54,8 +53,7 @@ read_config() {
 # --- Argument Parsing ---
 REMOTE_IMAGES_FILE="${DEFAULT_REMOTE_IMAGES_FILE}"
 SOURCE_COMMIT_SHA=""
-TARGET_COMMIT_SHA=""
-GIT_REF=""
+TARGET_TAGS=""
 NOOP=false
 
 while [[ $# -gt 0 ]]; do
@@ -68,12 +66,8 @@ while [[ $# -gt 0 ]]; do
       SOURCE_COMMIT_SHA="$2"
       shift 2
       ;;
-    --target-commit-sha)
-      TARGET_COMMIT_SHA="$2"
-      shift 2
-      ;;
-    --git-ref)
-      GIT_REF="$2"
+    --target-tags)
+      TARGET_TAGS="$2"
       shift 2
       ;;
     --noop)
@@ -99,21 +93,14 @@ if [[ -z "$SOURCE_COMMIT_SHA" ]]; then
   exit 1
 fi
 
-if [[ -z "$TARGET_COMMIT_SHA" ]]; then
-  echo "Error: --target-commit-sha is required" >&2
-  usage
-  exit 1
-fi
-
-if [[ -z "$GIT_REF" ]]; then
-  echo "Error: --git-ref is required" >&2
+if [[ -z "$TARGET_TAGS" ]]; then
+  echo "Error: --target-tags is required" >&2
   usage
   exit 1
 fi
 
 # --- Derive Short SHAs ---
 SHORT_SOURCE_COMMIT_SHA="${SOURCE_COMMIT_SHA:0:7}"
-SHORT_TARGET_COMMIT_SHA="${TARGET_COMMIT_SHA:0:7}"
 
 if [[ ! -f "$REMOTE_IMAGES_FILE" ]]; then
     echo "Error: Remote images file not found: ${REMOTE_IMAGES_FILE}" >&2
@@ -146,13 +133,8 @@ fi
 echo "Using stable branches: ${STABLE_BRANCHES}"
 
 echo ""
-echo "--- Determining Target Tags ---"
-echo "Calculating tags for Ref: ${GIT_REF}, Commit: ${SHORT_TARGET_COMMIT_SHA}"
-TARGET_TAGS=$("${RESOLVE_TAGS_SCRIPT_PATH}" \
-    --commit-sha "${SHORT_TARGET_COMMIT_SHA}" \
-    --git-ref "${GIT_REF}" \
-    --stable-branches "${STABLE_BRANCHES}")
-echo "Target tags to apply: ${TARGET_TAGS}"
+echo "--- Target Tags ---"
+echo "Provided target tags: ${TARGET_TAGS}"
 
 echo ""
 echo "--- Tagging Remote Images ---"

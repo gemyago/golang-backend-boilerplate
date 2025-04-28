@@ -52,10 +52,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Calculate Target Tags
+        id: calculate_tags
+        run: |
+          STABLE_BRANCHES=$(grep \'^stable_branches\\s*=\' build/build.cfg | cut -d\'=\' -f2 | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\')
+          if [[ -z "$STABLE_BRANCHES" ]]; then
+            echo "Error: Could not read stable_branches from build/build.cfg"
+            exit 1
+          fi
+          echo "Resolved stable branches: $STABLE_BRANCHES"
+
+          TARGET_TAGS=$(build/scripts/resolve-docker-tags.sh \\
+            --commit-sha "${{ github.event.pull_request.base.sha }}" \\
+            --git-ref "refs/heads/${{ github.event.pull_request.base.ref }}" \\
+            --stable-branches "$STABLE_BRANCHES")
+
+          if [[ -z "$TARGET_TAGS" ]]; then
+            echo "Error: resolve-docker-tags.sh did not produce any tags."
+            exit 1
+          fi
+          echo "Resolved target tags: $TARGET_TAGS"
+          echo "TARGET_DOCKER_TAGS=$TARGET_TAGS" >> $GITHUB_ENV
+
       - name: Tag and Promote Docker Images
         run: |
-          build/scripts/tag-remote-images.sh \
-            --remote-images-file build/docker/.remote-images \
-            --source-commit-sha "${{ github.event.pull_request.head.sha }}" \
-            --target-commit-sha "${{ github.event.pull_request.base.sha }}" \
-            --git-ref "refs/heads/${{ github.event.pull_request.base.ref }}"
+          build/scripts/tag-remote-images.sh \\
+            --remote-images-file build/docker/.remote-images \\
+            --source-commit-sha "${{ github.event.pull_request.head.sha }}" \\
+            --target-tags "${{ env.TARGET_DOCKER_TAGS }}"
