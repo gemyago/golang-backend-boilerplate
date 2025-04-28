@@ -173,13 +173,12 @@ while IFS= read -r base_image || [[ -n "$base_image" ]]; do
     echo "Processing base image: ${base_image}"
 
     for target_tag in $TARGET_TAGS; do
-        target_image_tag="${base_image}:${target_tag}"
-        tag_command="'${CRANE_PATH}' tag '${source_image}' '${target_image_tag}'"
+        tag_command="'${CRANE_PATH}' tag '${source_image}' '${target_tag}'"
 
         if [[ "$NOOP" == "true" ]]; then
             echo "  [NOOP] Would run: ${tag_command}"
         else
-            echo "  Attempting tag: ${source_image} -> ${target_image_tag}"
+            echo "  Attempting tag: ${source_image} -> ${target_tag}"
             if eval "${tag_command}"; then # Use eval to correctly handle quotes in paths/tags
                 echo "    Success."
             else
