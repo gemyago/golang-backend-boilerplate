@@ -15,10 +15,8 @@ jobs:
       packages: "write"
 
     steps:
-      - name: Checkout merge commit
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
 
       - name: Setup deps
         working-directory: build
