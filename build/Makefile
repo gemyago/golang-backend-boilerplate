@@ -104,7 +104,7 @@ docker-artifacts.tar.%: .docker-artifacts
 .git-meta/HEAD: FORCE
 	@mkdir -p .git-meta
 	@if [ -n "$$GITHUB_SHA" ]; then \
-		echo "$$GITHUB_SHA" > $@.tmp; \
+		echo "$${GITHUB_SHA:0:7}" > $@.tmp; \
 	else \
 		git rev-parse --short HEAD > $@.tmp; \
 	fi
