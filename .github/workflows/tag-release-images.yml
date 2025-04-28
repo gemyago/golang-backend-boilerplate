@@ -1,0 +1,78 @@
+name: Tag Release Images
+
+# --- Testing Instructions ---
+# To test this workflow manually:
+# 1. Temporarily change the trigger type below from `published` to `created` or `edited`.
+#    For example: `types: [edited]`
+# 2. Commit and push the change to a test branch.
+# 3. Create a draft release using the GitHub CLI:
+#    gh release create v0.0.0-test --draft --generate-notes
+# 4. If using `types: [edited]`, edit the draft release via the GitHub UI.
+# 5. Observe the workflow run in the Actions tab for your test branch/commit.
+# 6. Remember to revert the `types` change in the workflow file afterwards.
+# 7. Prior to running, make sure there are docker images pushed for this commit.
+# --- End Testing Instructions ---
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: "read" # Needed for checkout
+  packages: "write" # Needed to push docker images to ghcr.io
+
+concurrency:
+  group: tag-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Tag Release Images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }} 
+
+      - name: Set up build dependencies (crane)
+        working-directory: build
+        run: make install-crane
+
+      - name: Authenticate crane to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | ./build/bin/crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare and Tag Images
+        env:
+          SOURCE_COMMIT_SHA: ${{ github.event.release.target_commitish }}
+          GIT_REF: ${{ github.ref }} 
+        run: |
+          echo "Determining base image names..."
+          make -C build docker/.remote-image-names
+          echo "Base image names generated in build/docker/.remote-image-names"
+          cat build/docker/.remote-image-names
+          
+          echo "Reading stable branches..."
+          build/scripts/read-build-config.sh --key stable_branches > /tmp/stable_branches.txt
+          echo "Stable branches: $(cat /tmp/stable_branches.txt)"
+          
+          echo "Calculating target tags (always including latest)..."
+          build/scripts/resolve-docker-tags.sh \
+            --commit-sha "$SOURCE_COMMIT_SHA" \
+            --git-ref "$GIT_REF" \
+            --stable-branches "$(cat /tmp/stable_branches.txt)" \
+            --latest > /tmp/target-tags.txt
+          
+          echo "Raw target tags calculated:"
+          cat /tmp/target-tags.txt
+          
+          echo "Tagging remote images..."
+          build/scripts/tag-remote-images.sh \
+            --source-commit-sha "$SOURCE_COMMIT_SHA" \
+            --target-tags "$(cat /tmp/target-tags.txt)" \
+            --remote-images-file build/docker/.remote-image-names
+          
+          echo "Image tagging process finished."

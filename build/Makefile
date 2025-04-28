@@ -237,6 +237,24 @@ docker/.remote-images: $(remote_image_targets)
 	@rm -f docker/remote-images.tmp
 	@echo "Remote images pushed: $?"
 
+# Target to generate a file containing the list of remote image base names
+# without building/pushing the images.
+docker/.remote-image-names: .git-meta/repo-name .git-meta/repo-namespace
+	@echo "Generating list of remote image names to $@..."
+	@rm -f $@ $@.tmp
+	@touch $@.tmp
+	$(eval docker_push_registries := $(call read_config,build.cfg,docker_push_registries))
+	$(eval binaries := $(notdir $(wildcard ../cmd/*)))
+	@$(foreach registry_name,$(subst $(comma), ,$(docker_push_registries)), \
+		$(eval registry := $(call read_config,build.cfg,docker_$(registry_name)_registry)) \
+		$(foreach binary,$(binaries), \
+			echo "$(registry)/$(shell cat .git-meta/repo-namespace)/$(shell cat .git-meta/repo-name)-$(binary)" >> $@.tmp; \
+		) \
+	)
+	@sort -u $@.tmp > $@
+	@rm -f $@.tmp
+	@echo "List of remote image names written to $@"
+
 .PHONY: clean docker/clean dist/clean
 
 docker/clean:
