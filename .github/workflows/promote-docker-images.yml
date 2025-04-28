@@ -2,13 +2,13 @@ name: Promote Docker Images
 
 on:
   pull_request:
-    # types: [closed]
-    types: [labeled] # Use this for testing (comment out the merged condition)
+    types: [closed]
+    # types: [labeled] # Use this for testing (comment out the merged condition)
 
 jobs:
   promote:
     name: Promote Images
-    # if: github.event.pull_request.merged == true # For testing, comment out the merged condition
+    if: github.event.pull_request.merged == true # For testing, comment out the merged condition
     runs-on: ubuntu-24.04
     permissions:
       contents: "read"
