@@ -15,7 +15,7 @@ name: Tag Release Images
 
 on:
   release:
-    types: [edited]
+    types: [published]
 
 permissions:
   contents: "read" # Needed for checkout
