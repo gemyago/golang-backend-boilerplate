@@ -40,6 +40,8 @@ jobs:
     - name: Build and push images
       working-directory: build
       run: make docker/.remote-images
+      env:
+        COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
 
     - name: Prepare docker artifacts
       working-directory: build
