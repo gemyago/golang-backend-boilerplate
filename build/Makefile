@@ -176,7 +176,7 @@ docker/.local-%-tags: .git-meta/HEAD .git-meta/repo-name .git-meta/ref
 docker/.local-%-image: docker/.local-args docker/.local-%-tags
 	@echo "Building local $* image"
 	docker buildx build --load --build-arg TARGET_BINARY="$*" \
-			--iidfile $@ \
+			--metadata-file $@ \
 			--annotation org.opencontainers.image.description="Includes $* binary" \
 			$(shell cat docker/.local-$*-tags) \
 			$(shell cat docker/.local-args)
@@ -212,7 +212,8 @@ docker/.remote-%-image: docker/.local-args docker/.remote-%-tags
 	$(eval target_binary := $(word 2,$(subst -, ,$*)))
 	@echo "Building and pushing remote $* image for $(target_binary)"
 	docker buildx build --push --build-arg TARGET_BINARY="$(target_binary)" \
-			--iidfile $@ \
+			--debug \
+			--metadata-file $@ \
 			--annotation org.opencontainers.image.description="Includes $(target_binary) binary" \
 			$(shell cat docker/.remote-$*-tags) \
 			$(shell cat docker/.local-args)
