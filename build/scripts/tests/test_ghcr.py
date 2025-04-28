@@ -293,7 +293,7 @@ class TestListVersions(unittest.TestCase):
 class TestFindVersionsToClean(unittest.TestCase):
     def test_empty_versions_list(self):
         """Test with an empty list of versions"""
-        cleanup_actions = find_versions_to_clean(versions=[], tagged_max_age=0, keep_tags_pattern="^test-pattern-")
+        cleanup_actions = find_versions_to_clean(versions=[], tagged_max_age=0, keep_tags_pattern="^test-pattern-", remove_all=False)
         self.assertEqual(len(cleanup_actions), 0)
     
     def test_find_untagged_versions(self):
@@ -314,7 +314,8 @@ class TestFindVersionsToClean(unittest.TestCase):
         cleanup_actions = find_versions_to_clean(
             versions = with_tags + without_tags,
             tagged_max_age=datetime.now().timestamp() - created_at.timestamp() + 1,
-            keep_tags_pattern="^preserve-"  # Different pattern
+            keep_tags_pattern="^preserve-",  # Different pattern
+            remove_all=False
         )
         
         # All untagged versions should be marked for deletion
@@ -352,7 +353,8 @@ class TestFindVersionsToClean(unittest.TestCase):
         cleanup_actions = find_versions_to_clean(
             versions = with_tags + without_tags + with_git_commit_only_tags,
             tagged_max_age=datetime.now().timestamp() - created_at.timestamp() + 1,
-            keep_tags_pattern="^preserve-"  # Different pattern
+            keep_tags_pattern="^preserve-",  # Different pattern
+            remove_all=False
         )
         
         # All untagged versions should be marked for deletion
@@ -390,7 +392,8 @@ class TestFindVersionsToClean(unittest.TestCase):
         cleanup_actions = find_versions_to_clean(
             versions = older_versions + newer_versions,
             tagged_max_age=now.timestamp() - base_past.timestamp(),
-            keep_tags_pattern="^keep-me-"  # Different pattern
+            keep_tags_pattern="^keep-me-",  # Different pattern
+            remove_all=False
         )
         
         to_remove = [action for action in cleanup_actions if action["action"] == "delete"]
@@ -446,7 +449,8 @@ class TestFindVersionsToClean(unittest.TestCase):
         cleanup_actions = find_versions_to_clean(
             versions=old_matching_versions + old_not_matching_versions,
             tagged_max_age=60 * 60 * 24 * 7,  # 7 days
-            keep_tags_pattern=test_pattern
+            keep_tags_pattern=test_pattern,
+            remove_all=False
         )
         
         to_keep = [action for action in cleanup_actions if action["action"] == "keep"]
@@ -521,7 +525,8 @@ class TestFindVersionsToClean(unittest.TestCase):
         cleanup_actions = find_versions_to_clean(
             versions=versions,
             tagged_max_age=60 * 60 * 24 * 2, 
-            keep_tags_pattern="^never-match-" 
+            keep_tags_pattern="^never-match-",
+            remove_all=False
         )
 
         self.assertEqual(len(cleanup_actions), 5)
@@ -545,6 +550,38 @@ class TestFindVersionsToClean(unittest.TestCase):
         # Check git-commit only orphan (deleted)
         self.assertEqual(actions_by_id[3002]["action"], "delete")
         self.assertEqual(actions_by_id[3002]["reason"], "Orphan version")
+
+    def test_remove_all_versions(self):
+        """Test the remove_all=True flag marks all versions for deletion"""
+        now = datetime.now(timezone.utc)
+        
+        # Create a diverse set of versions
+        versions = [
+            # Old tagged, matching pattern
+            create_random_package_version(id=1001, created_at=(now - timedelta(days=30)).isoformat(), metadata={"container": {"tags": ["keep-me-old"]}}),
+            # New tagged, not matching pattern
+            create_random_package_version(id=1002, created_at=(now - timedelta(days=1)).isoformat(), metadata={"container": {"tags": ["new-tag"]}}),
+            # Old untagged
+            create_random_package_version(id=1003, created_at=(now - timedelta(days=40)).isoformat(), metadata={"container": {"tags": []}}),
+            # New untagged (timestamp close to a tagged one, but should still be deleted)
+            create_random_package_version(id=1004, created_at=(now - timedelta(days=1, seconds=-5)).isoformat(), metadata={"container": {"tags": []}}),
+            # Old git-commit only
+            create_random_package_version(id=1005, created_at=(now - timedelta(days=50)).isoformat(), metadata={"container": {"tags": ["git-commit-abcdef"]}})
+        ]
+        
+        cleanup_actions = find_versions_to_clean(
+            versions=versions,
+            tagged_max_age=60 * 60 * 24 * 7, # 7 days (irrelevant)
+            keep_tags_pattern="^keep-me-",   # (irrelevant)
+            remove_all=True
+        )
+        
+        # Check that all versions are marked for deletion
+        self.assertEqual(len(cleanup_actions), len(versions))
+        
+        for action in cleanup_actions:
+            self.assertEqual(action["action"], "delete")
+            self.assertEqual(action["reason"], "Marked for deletion by --all=yes-remove-all flag")
 
 class TestRemoveVersion(unittest.TestCase):
     def test_remove_version_dry_run(self):
