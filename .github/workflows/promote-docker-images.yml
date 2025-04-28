@@ -55,7 +55,7 @@ jobs:
       - name: Calculate Target Tags
         id: calculate_tags
         run: |
-          STABLE_BRANCHES=$(grep \'^stable_branches\\s*=\' build/build.cfg | cut -d\'=\' -f2 | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\')
+          STABLE_BRANCHES=$(build/scripts/read-build-config.sh --key stable_branches)
           if [[ -z "$STABLE_BRANCHES" ]]; then
             echo "Error: Could not read stable_branches from build/build.cfg"
             exit 1
