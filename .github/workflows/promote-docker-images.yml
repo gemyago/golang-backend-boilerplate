@@ -46,6 +46,12 @@ jobs:
             exit 1
           fi
 
+      - name: Authenticate crane to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | build/bin/crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Tag and Promote Docker Images
         run: |
           build/scripts/tag-remote-images.sh \
@@ -53,5 +59,3 @@ jobs:
             --source-commit-sha "${{ github.event.pull_request.head.sha }}" \
             --target-commit-sha "${{ github.event.pull_request.merge_commit_sha || github.event.pull_request.head.sha }}" \
             --git-ref "refs/heads/${{ github.event.pull_request.base.ref }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
