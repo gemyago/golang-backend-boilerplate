@@ -83,7 +83,6 @@ dist: FORCE
 
 .build-artifacts: dist
 	@echo ./dist > $@
-	@echo ./.git-meta >> $@
 
 # Create a tarball of build artifacts
 # Example: make build-artifacts.tar.gz
@@ -94,6 +93,7 @@ build-artifacts.tar.%: .build-artifacts
 .docker-artifacts: docker/.remote-images
 	@rm -f $@
 	@echo "docker/.remote-images" > $@
+	@echo ./.git-meta >> $@
 
 docker-artifacts.tar.%: .docker-artifacts
 	rm -f $@
