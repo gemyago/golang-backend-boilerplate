@@ -132,12 +132,17 @@ docker-artifacts.tar.%: .docker-artifacts
 	@cmp -s $@.tmp $@ || mv $@.tmp $@
 	@rm -f $@.tmp
 
-docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/remote-url
+.git-meta/ref: .git-meta/HEAD
+	@git rev-parse --abbrev-ref HEAD > $@.tmp
+	@cmp -s $@.tmp $@ || mv $@.tmp $@
+	@rm -f $@.tmp
+
+docker/.labels: .git-meta/HEAD .git-meta/repo-name .git-meta/remote-url .git-meta/ref
 	@echo "org.opencontainers.image.created=\"$(shell git show -s --format=%cI HEAD)\"" > $@
 	@echo "org.opencontainers.image.source=\"$(shell cat .git-meta/remote-url)\"" >> $@
 	@echo "org.opencontainers.image.version=\"$(shell git describe --tags --always)\"" >> $@
 	@echo "org.opencontainers.image.revision=\"$(shell cat .git-meta/HEAD)\"" >> $@
-	@echo "org.opencontainers.image.ref.name=\"$(shell git rev-parse --abbrev-ref HEAD)\"" >> $@
+	@echo "org.opencontainers.image.ref.name=\"$(shell cat .git-meta/ref)\"" >> $@
 	@echo "org.opencontainers.image.title=\"$(shell cat .git-meta/repo-name)\"" >> $@
 	@echo "org.opencontainers.image.url=\"$(shell cat .git-meta/remote-url)\"" >> $@
 
@@ -148,13 +153,13 @@ docker/.local-args: docker/.labels
 	@sed 's/^/--label /' docker/.labels >> $@
 	@echo "../" >> $@
 
-docker/.local-%-tags: .git-meta/HEAD .git-meta/repo-name
+docker/.local-%-tags: .git-meta/HEAD .git-meta/repo-name .git-meta/ref
 	$(eval registry := $(call read_config,build.cfg,docker_local_registry))
 	$(eval image_base_name := $(registry)/$(shell cat .git-meta/repo-name)-$*)
 	$(eval tag_names=$(shell ./scripts/resolve-docker-tags.sh \
 		--latest \
 		--commit-sha $(shell cat .git-meta/HEAD) \
-		--git-ref $(shell git rev-parse --abbrev-ref HEAD) \
+		--git-ref $(shell cat .git-meta/ref) \
 		--stable-branches $(call read_config,build.cfg,stable_branches) \
 	))
 	@echo $(tag_names) | tr ' ' '\n' | sed 's|^|--tag $(image_base_name):|' > $@
@@ -180,14 +185,14 @@ docker/.local-images: $(patsubst %, docker/.local-%-image, $(notdir $(wildcard .
 # Target must be in form: docker/.remote-<registry>-<binary>-tags
 # Example: make docker/.remote-ghcr-server-tags
 # The registry host is read from build.cfg under docker_<registry>_registry key
-docker/.remote-%-tags: .git-meta/HEAD .git-meta/repo-name .git-meta/repo-namespace
+docker/.remote-%-tags: .git-meta/HEAD .git-meta/repo-name .git-meta/repo-namespace .git-meta/ref
 	$(eval registry_name = $(word 1,$(subst -, ,$*)))
 	$(eval target_binary = $(word 2,$(subst -, ,$*)))
 	$(eval registry := $(call read_config,build.cfg,docker_$(registry_name)_registry))
 	$(eval image_base_name := $(registry)/$(shell cat .git-meta/repo-namespace)/$(shell cat .git-meta/repo-name)-$(target_binary))
 	$(eval tag_names=$(shell ./scripts/resolve-docker-tags.sh \
 		--commit-sha $(shell cat .git-meta/HEAD) \
-		--git-ref $(shell git rev-parse --abbrev-ref HEAD) \
+		--git-ref $(shell cat .git-meta/ref) \
 		--stable-branches $(call read_config,build.cfg,stable_branches) \
 	))
 	@echo $(tag_names) | tr ' ' '\n' | sed 's|^|--tag $(image_base_name):|' > $@
