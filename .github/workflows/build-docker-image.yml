@@ -41,7 +41,8 @@ jobs:
       working-directory: build
       run: make docker/.remote-images
       env:
-        COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+        GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+        GIT_REF: ${{ github.event.pull_request.head.ref }}
 
     - name: Prepare docker artifacts
       working-directory: build
