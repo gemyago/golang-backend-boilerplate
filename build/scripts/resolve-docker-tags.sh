@@ -138,7 +138,7 @@ process_branch_tags() {
   local is_latest=${4:-false}
   local is_stable=false
   local sanitized_branch="$(sanitize_docker_tag "$branch_name")"
-  local sanitized_commit="git-commit-$(sanitize_docker_tag "$sha")"
+  local sanitized_commit="git-commit-$(sanitize_docker_tag "${sha:0:7}")"
   
   # Check if branch is in the list of stable branches
   IFS=',' read -ra STABLE_BRANCHES <<< "$stable_branches"
@@ -206,6 +206,7 @@ run_tests() {
   
   local resolve_result
   local commit_sha="abc1234567890"
+  local short_commit_sha="${commit_sha:0:7}" # Use the first 7 characters for tests
 
   echo ""
   echo "Running resolve_docker_tags tests:"
@@ -230,14 +231,14 @@ run_tests() {
   
   # Test with refs/heads prefix
   resolve_result=$(resolve_docker_tags "refs/heads/feature/xyz" "$commit_sha" "main,develop" "false")
-  assert "$resolve_result" "feature-xyz git-commit-$commit_sha" "Non-stable branch resolution with refs/heads prefix" || ((failures++))
+  assert "$resolve_result" "feature-xyz git-commit-$short_commit_sha" "Non-stable branch resolution with refs/heads prefix" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "refs/heads/main" "$commit_sha" "main,develop" "false")
   assert "$resolve_result" "latest-main" "Stable branch resolution with refs/heads prefix" || ((failures++))
   
   # Test without refs prefix
   resolve_result=$(resolve_docker_tags "feature/xyz" "$commit_sha" "main,develop")
-  assert "$resolve_result" "feature-xyz git-commit-$commit_sha" "Non-stable branch resolution without refs prefix" || ((failures++))
+  assert "$resolve_result" "feature-xyz git-commit-$short_commit_sha" "Non-stable branch resolution without refs prefix" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "main" "$commit_sha" "main,develop")
   assert "$resolve_result" "latest-main" "Stable branch resolution without refs prefix" || ((failures++))
@@ -250,7 +251,7 @@ run_tests() {
   assert "$resolve_result" "git-tag-v1.0.0-special v1.0.0 v1.0-latest v1-latest" "SemVer Tag with special characters in suffix" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "feature/special@chars#here" "$commit_sha" "main,develop")
-  assert "$resolve_result" "feature-special-chars-here git-commit-$commit_sha" "Branch with special characters without refs prefix" || ((failures++))
+  assert "$resolve_result" "feature-special-chars-here git-commit-$short_commit_sha" "Branch with special characters without refs prefix" || ((failures++))
   
   # Test --latest flag
   resolve_result=$(resolve_docker_tags "refs/tags/v1.2.3" "$commit_sha" "main,develop" "true")
@@ -260,7 +261,7 @@ run_tests() {
   assert "$resolve_result" "git-tag-my-tag latest" "Non-SemVer Tag resolution with is-latest flag" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "refs/heads/feature/xyz" "$commit_sha" "main,develop" "true")
-  assert "$resolve_result" "feature-xyz git-commit-$commit_sha latest" "Non-stable branch with is-latest flag" || ((failures++))
+  assert "$resolve_result" "feature-xyz git-commit-$short_commit_sha latest" "Non-stable branch with is-latest flag" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "refs/heads/main" "$commit_sha" "main,develop" "true")
   assert "$resolve_result" "latest-main latest" "Stable branch with is-latest flag" || ((failures++))
