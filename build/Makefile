@@ -103,8 +103,8 @@ docker-artifacts.tar.%: .docker-artifacts
 # that will have a different commit SHA than the merge commit SHA
 .git-meta/HEAD: FORCE
 	@mkdir -p .git-meta
-	@if [ -n "$$COMMIT_SHA" ]; then \
-		echo "$$COMMIT_SHA" | cut -c1-7 > $@.tmp; \
+	@if [ -n "$$GIT_COMMIT_SHA" ]; then \
+		echo "$$GIT_COMMIT_SHA" | cut -c1-7 > $@.tmp; \
 	else \
 		git rev-parse --short HEAD > $@.tmp; \
 	fi
@@ -113,6 +113,17 @@ docker-artifacts.tar.%: .docker-artifacts
 	else \
 		mv $@.tmp $@; \
 	fi
+
+# COMMIT_REF is used since github may checkout on the temporary PR branch
+# that will always have HEAD as a ref name
+.git-meta/ref: .git-meta/HEAD
+	@if [ -n "$$GIT_REF" ]; then \
+		echo "$$GIT_REF" > $@.tmp; \
+	else \
+		git rev-parse --abbrev-ref HEAD > $@.tmp; \
+	fi
+	@cmp -s $@.tmp $@ || mv $@.tmp $@
+	@rm -f $@.tmp
 
 .git-meta/repo-name: .git-meta/HEAD
 	@basename $(shell git rev-parse --show-toplevel) > $@
@@ -129,11 +140,6 @@ docker-artifacts.tar.%: .docker-artifacts
 	@cat .git-meta/remote-url | sed -E \
 		-e 's|^https://[^/]+/||' \
 		-e 's|/[^/]+$$||' > $@.tmp
-	@cmp -s $@.tmp $@ || mv $@.tmp $@
-	@rm -f $@.tmp
-
-.git-meta/ref: .git-meta/HEAD
-	@git rev-parse --abbrev-ref HEAD > $@.tmp
 	@cmp -s $@.tmp $@ || mv $@.tmp $@
 	@rm -f $@.tmp
 
