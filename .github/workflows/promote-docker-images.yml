@@ -48,10 +48,12 @@ jobs:
 
       - name: Tag and Promote Docker Images
         run: |
+          git_head_sha=$(cat build/.git-meta/HEAD)
+          target_commit_sha="${{ github.event.pull_request.merge_commit_sha || $git_head_sha }}"
           build/scripts/tag-remote-images.sh \
             --remote-images-file build/docker/.remote-images \
-            --source-commit-sha "${{ github.event.pull_request.head.sha }}" \
-            --target-commit-sha "${{ github.event.pull_request.merge_commit_sha || github.event.pull_request.head.sha }}" \
+            --source-commit-sha "${git_head_sha}" \
+            --target-commit-sha "${target_commit_sha}" \
             --git-ref "refs/heads/${{ github.event.pull_request.base.ref }}"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
