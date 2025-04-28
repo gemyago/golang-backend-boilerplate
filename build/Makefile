@@ -83,6 +83,7 @@ dist: FORCE
 
 .build-artifacts: dist
 	@echo ./dist > $@
+	@echo ./.git-meta >> $@
 
 # Create a tarball of build artifacts
 # Example: make build-artifacts.tar.gz
