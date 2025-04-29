@@ -47,8 +47,9 @@ jobs:
 
       - name: Prepare and Tag Images
         env:
-          SOURCE_COMMIT_SHA: ${{ github.event.release.target_commitish }}
-          GIT_REF: ${{ github.ref }} 
+          SOURCE_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GIT_REF: ${{ github.ref }}
+          LATEST_FLAG: ${{ !github.event.release.prerelease && '--latest' || '' }}
         run: |
           echo "Determining base image names..."
           make -C build docker/.remote-image-names
@@ -59,12 +60,12 @@ jobs:
           build/scripts/read-build-config.sh --key stable_branches > /tmp/stable_branches.txt
           echo "Stable branches: $(cat /tmp/stable_branches.txt)"
           
-          echo "Calculating target tags (always including latest)..."
+          echo "Calculating target tags (latest flag: $LATEST_FLAG)..."
           build/scripts/resolve-docker-tags.sh \
             --commit-sha "$SOURCE_COMMIT_SHA" \
             --git-ref "$GIT_REF" \
             --stable-branches "$(cat /tmp/stable_branches.txt)" \
-            --latest > /tmp/target-tags.txt
+            $LATEST_FLAG > /tmp/target-tags.txt
           
           echo "Raw target tags calculated:"
           cat /tmp/target-tags.txt
