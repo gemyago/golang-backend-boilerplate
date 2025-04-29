@@ -17,6 +17,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Explicitly checkout the base to ensure sha is correct
+          # You may want to comment this out for testing
+          ref: ${{ github.event.pull_request.base.ref }}
 
       - name: Setup deps
         working-directory: build
