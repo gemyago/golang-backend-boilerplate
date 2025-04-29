@@ -17,38 +17,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # Explicitly checkout the base to ensure sha is correct
-          # You may want to comment this out for testing
-          ref: ${{ github.event.pull_request.base.ref }}
 
       - name: Setup deps
         working-directory: build
         run: |
           make install-crane
-
-      - name: Download docker artifacts
-        working-directory: build
-        run: |
-          gh run download --repo ${{ github.repository }} \
-            --name docker-artifacts-pr-${{ github.event.pull_request.node_id }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract docker artifacts
-        working-directory: build
-        run: |
-          if [[ ! -f docker-artifacts.tar.bz2 ]]; then
-            echo "Error: docker-artifacts.tar.bz2 not found in downloaded artifact."
-            exit 1
-          fi
-          tar -xf docker-artifacts.tar.bz2
-          # Ensure the .remote-images file exists after extraction
-          if [[ ! -f docker/.remote-images ]]; then
-            echo "Error: build/docker/.remote-images not found after extracting artifact."
-            ls -la # List files for debugging
-            exit 1
-          fi
 
       - name: Authenticate crane to GHCR
         run: |
@@ -56,31 +29,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Calculate Target Tags
-        id: calculate_tags
+      - name: Prepare and Tag Images
+        env:
+          SOURCE_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          TARGET_COMMIT_SHA: ${{ github.event.pull_request.merged == true && github.event.pull_request.merge_commit_sha || github.event.pull_request.base.sha }}
+          TARGET_REF: refs/heads/${{ github.event.pull_request.base.ref }}
         run: |
-          STABLE_BRANCHES=$(build/scripts/read-build-config.sh --key stable_branches)
-          if [[ -z "$STABLE_BRANCHES" ]]; then
-            echo "Error: Could not read stable_branches from build/build.cfg"
-            exit 1
-          fi
-          echo "Resolved stable branches: $STABLE_BRANCHES"
+          make -C build docker/.remote-image-names
+          echo "Base image names generated in build/docker/.remote-image-names"
+          cat build/docker/.remote-image-names
 
-          TARGET_TAGS=$(build/scripts/resolve-docker-tags.sh \
-            --commit-sha "${{ github.event.pull_request.base.sha }}" \
-            --git-ref "refs/heads/${{ github.event.pull_request.base.ref }}" \
-            --stable-branches "$STABLE_BRANCHES")
+          build/scripts/read-build-config.sh --key stable_branches > /tmp/stable-branches.txt
+          echo "Stable branches: $(cat /tmp/stable-branches.txt)"
 
-          if [[ -z "$TARGET_TAGS" ]]; then
-            echo "Error: resolve-docker-tags.sh did not produce any tags."
-            exit 1
-          fi
-          echo "Resolved target tags: $TARGET_TAGS"
-          echo "TARGET_DOCKER_TAGS=$TARGET_TAGS" >> $GITHUB_ENV
+          build/scripts/resolve-docker-tags.sh \
+            --commit-sha "$TARGET_COMMIT_SHA" \
+            --git-ref "$TARGET_REF" \
+            --stable-branches "$(cat /tmp/stable-branches.txt)" > /tmp/target-tags.txt
+          echo "Target tags calculated"
+          cat /tmp/target-tags.txt
 
-      - name: Tag and Promote Docker Images
-        run: |
+          echo "Tagging remote images..."
           build/scripts/tag-remote-images.sh \
-            --remote-images-file build/docker/.remote-images \
-            --source-commit-sha "${{ github.event.pull_request.head.sha }}" \
-            --target-tags "${{ env.TARGET_DOCKER_TAGS }}"
+            --source-commit-sha "$SOURCE_COMMIT_SHA" \
+            --target-tags "$(cat /tmp/target-tags.txt)" \
+            --remote-images-file build/docker/.remote-image-names
+
+          echo "Image tagging process finished."
