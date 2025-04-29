@@ -2,15 +2,14 @@ name: Tag Release Images
 
 # --- Testing Instructions ---
 # To test this workflow manually:
-# 1. Temporarily change the trigger type below from `published` to `created` or `edited`.
-#    For example: `types: [edited]`
-# 2. Commit and push the change to a test branch.
-# 3. Create a draft release using the GitHub CLI:
-#    gh release create v0.0.0-test --draft --generate-notes
-# 4. If using `types: [edited]`, edit the draft release via the GitHub UI.
-# 5. Observe the workflow run in the Actions tab for your test branch/commit.
-# 6. Remember to revert the `types` change in the workflow file afterwards.
-# 7. Prior to running, make sure there are docker images pushed for this commit.
+# 1. Create PR with updates. Wait for CI to pass and docker images are available.
+# 2. Create a latest release using the GitHub CLI using one of the commands:
+#    gh release create v1.2.3 --latest --generate-notes --target "$(git branch --show-current)"
+# 3. Ensure action is triggered and tagged images as follows: git-tag-v1.2.3 v1.2.3 v1.2-latest v1-latest latest
+# 4. Create a pre-release using the GitHub CLI using one of the commands:
+#    gh release create v1.2.3-rc --prerelease --generate-notes --target "$(git branch --show-current)"
+# 5. Ensure action is triggered and tagged images as follows: git-tag-v1.2.3-rc v1.2.3-rc
+# 6. Drop created releases and tags after testing is done
 # --- End Testing Instructions ---
 
 on:
@@ -47,7 +46,7 @@ jobs:
 
       - name: Prepare and Tag Images
         env:
-          SOURCE_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SOURCE_COMMIT_SHA: ${{ github.sha }}
           GIT_REF: ${{ github.ref }}
           LATEST_FLAG: ${{ !github.event.release.prerelease && '--latest' || '' }}
         run: |
