@@ -45,40 +45,50 @@ process_semver_tag() {
   local tag_name="$1"
   local semver_regex='^v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(.*)$' # Regex vX(.Y)(.Z)(suffix)
   local generated_tags=""
-  
+
   if [[ "$tag_name" =~ $semver_regex ]]; then
     # BASH_REMATCH indices: 1=major, 2=.minor, 3=.patch, 4=suffix
-    
-    # Construct SemVer tags in an array
-    local semver_tags=()
-    local tag_v_major="v${BASH_REMATCH[1]}"
+    local suffix="${BASH_REMATCH[4]}"
+
+    # Construct main SemVer tag (vX.Y.Z or vX.Y or vX) + suffix if exists
+    local main_semver_tag="v${BASH_REMATCH[1]}"
     local minor_num=""
     local patch_num=""
     [[ -n "${BASH_REMATCH[2]}" ]] && minor_num="${BASH_REMATCH[2]#.}"
     [[ -n "${BASH_REMATCH[3]}" ]] && patch_num="${BASH_REMATCH[3]#.}"
 
-    # 1. Add main SemVer tag (vX.Y.Z or vX.Y or vX)
-    local main_semver_tag="$tag_v_major"
     if [[ -n "$minor_num" ]]; then
       main_semver_tag="${main_semver_tag}.${minor_num}"
       if [[ -n "$patch_num" ]]; then
         main_semver_tag="${main_semver_tag}.${patch_num}"
       fi
     fi
-    semver_tags+=( "$(sanitize_docker_tag "$main_semver_tag")" )
-    
-    # 2. Add vX.Y-latest tag if minor exists
-    if [[ -n "$minor_num" ]]; then
-      local tag_v_minor_latest="${tag_v_major}.${minor_num}-latest"
-      semver_tags+=( "$(sanitize_docker_tag "$tag_v_minor_latest")" )
+    main_semver_tag="${main_semver_tag}${suffix}" # Append suffix
+
+    # If there is a pre-release suffix (starting with -), only return the full tag
+    if [[ -n "$suffix" && "$suffix" == -* ]]; then
+        generated_tags="$(sanitize_docker_tag "$main_semver_tag")"
+    else
+      # No pre-release suffix, generate broader tags
+      local semver_tags=()
+      # Use the tag *without* the suffix for broader tag generation
+      local base_semver_tag="${main_semver_tag%$suffix}"
+      semver_tags+=( "$(sanitize_docker_tag "$base_semver_tag")" ) # Add vX.Y.Z or vX.Y or vX
+
+      # Add vX.Y-latest tag if minor exists
+      if [[ -n "$minor_num" ]]; then
+        local tag_v_major="v${BASH_REMATCH[1]}"
+        local tag_v_minor_latest="${tag_v_major}.${minor_num}-latest"
+        semver_tags+=( "$(sanitize_docker_tag "$tag_v_minor_latest")" )
+      fi
+
+      # Add vX-latest tag
+      local tag_v_major_latest="v${BASH_REMATCH[1]}-latest"
+      semver_tags+=( "$(sanitize_docker_tag "$tag_v_major_latest")" )
+
+      # Join semver tags
+      generated_tags=$(IFS=' '; echo "${semver_tags[*]}")
     fi
-    
-    # 3. Add vX-latest tag
-    local tag_v_major_latest="v${BASH_REMATCH[1]}-latest"
-    semver_tags+=( "$(sanitize_docker_tag "$tag_v_major_latest")" )
-    
-    # Join semver tags
-    generated_tags=$(IFS=' '; echo "${semver_tags[*]}")
   fi
   echo "$generated_tags"
 }
@@ -224,7 +234,7 @@ run_tests() {
   assert "$resolve_result" "git-tag-v1 v1 v1-latest" "SemVer tag (vX)" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "refs/tags/v1.2.3-alpha1" "$commit_sha" "main,develop" "false")
-  assert "$resolve_result" "git-tag-v1.2.3-alpha1 v1.2.3 v1.2-latest v1-latest" "SemVer tag with suffix" || ((failures++))
+  assert "$resolve_result" "git-tag-v1.2.3-alpha1 v1.2.3-alpha1" "Pre-release SemVer tag (vX.Y.Z-suffix)" || ((failures++))
   
   resolve_result=$(resolve_docker_tags "refs/tags/my-tag" "$commit_sha" "main,develop" "false")
   assert "$resolve_result" "git-tag-my-tag" "Non-SemVer tag" || ((failures++))
