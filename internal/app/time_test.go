@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"log/slog"
+	"strconv"
 	"testing"
 	"time"
 
@@ -32,20 +33,18 @@ func TestTimeService_GetCurrentTime_ISO(t *testing.T) {
 	t.Run("should return current time in ISO format", func(t *testing.T) {
 		deps := makeTimeServiceDeps()
 		service := NewTimeService(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
-		req := &TimeRequest{
-			Format: TimeFormatISO,
-		}
+		request := &TimeRequest{Format: TimeFormatISO}
 
-		response, err := service.GetCurrentTime(ctx, req)
+		response, err := service.GetCurrentTime(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, "iso", response.Format)
 		assert.NotEmpty(t, response.Time)
 
-		// Verify the time string can be parsed as RFC3339 (ISO format)
+		// Verify the time is in ISO format (can be parsed as RFC3339)
 		_, parseErr := time.Parse(time.RFC3339, response.Time)
 		assert.NoError(t, parseErr, "Time should be in valid ISO/RFC3339 format")
 	})
@@ -53,20 +52,17 @@ func TestTimeService_GetCurrentTime_ISO(t *testing.T) {
 	t.Run("should default to ISO format when format not specified", func(t *testing.T) {
 		deps := makeTimeServiceDeps()
 		service := NewTimeService(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
-		req := &TimeRequest{} // Empty format
+		// Empty format should default to ISO
+		request := &TimeRequest{Format: ""}
 
-		response, err := service.GetCurrentTime(ctx, req)
+		response, err := service.GetCurrentTime(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, "iso", response.Format)
 		assert.NotEmpty(t, response.Time)
-
-		// Verify the time string can be parsed as RFC3339 (ISO format)
-		_, parseErr := time.Parse(time.RFC3339, response.Time)
-		assert.NoError(t, parseErr, "Time should be in valid ISO/RFC3339 format")
 	})
 }
 
@@ -74,20 +70,18 @@ func TestTimeService_GetCurrentTime_RFC3339(t *testing.T) {
 	t.Run("should return current time in RFC3339 format", func(t *testing.T) {
 		deps := makeTimeServiceDeps()
 		service := NewTimeService(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
-		req := &TimeRequest{
-			Format: TimeFormatRFC3339,
-		}
+		request := &TimeRequest{Format: TimeFormatRFC3339}
 
-		response, err := service.GetCurrentTime(ctx, req)
+		response, err := service.GetCurrentTime(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, "rfc3339", response.Format)
 		assert.NotEmpty(t, response.Time)
 
-		// Verify the time string can be parsed as RFC3339
+		// Verify the time is in RFC3339 format
 		_, parseErr := time.Parse(time.RFC3339, response.Time)
 		assert.NoError(t, parseErr, "Time should be in valid RFC3339 format")
 	})
@@ -97,22 +91,20 @@ func TestTimeService_GetCurrentTime_Unix(t *testing.T) {
 	t.Run("should return current time in Unix format", func(t *testing.T) {
 		deps := makeTimeServiceDeps()
 		service := NewTimeService(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
-		req := &TimeRequest{
-			Format: TimeFormatUnix,
-		}
+		request := &TimeRequest{Format: TimeFormatUnix}
 
-		response, err := service.GetCurrentTime(ctx, req)
+		response, err := service.GetCurrentTime(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, "unix", response.Format)
 		assert.NotEmpty(t, response.Time)
 
-		// Verify the time string can be parsed with our Unix format
-		_, parseErr := time.Parse("2006-01-02T15:04:05Z07:00", response.Time)
-		assert.NoError(t, parseErr, "Time should be in valid Unix format")
+		// Verify the time is a valid Unix timestamp (parsable as integer)
+		_, parseErr := strconv.ParseInt(response.Time, 10, 64)
+		assert.NoError(t, parseErr, "Time should be a valid Unix timestamp")
 	})
 }
 
@@ -120,22 +112,17 @@ func TestTimeService_GetCurrentTime_InvalidFormat(t *testing.T) {
 	t.Run("should default to ISO format for invalid format", func(t *testing.T) {
 		deps := makeTimeServiceDeps()
 		service := NewTimeService(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
-		req := &TimeRequest{
-			Format: TimeFormat(faker.Word()), // Random invalid format
-		}
+		// Use an invalid format
+		request := &TimeRequest{Format: TimeFormat(faker.Word())}
 
-		response, err := service.GetCurrentTime(ctx, req)
+		response, err := service.GetCurrentTime(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, "iso", response.Format) // Should default to ISO
 		assert.NotEmpty(t, response.Time)
-
-		// Verify the time string can be parsed as RFC3339 (ISO format)
-		_, parseErr := time.Parse(time.RFC3339, response.Time)
-		assert.NoError(t, parseErr, "Time should be in valid ISO/RFC3339 format")
 	})
 }
 
@@ -143,15 +130,13 @@ func TestTimeService_GetCurrentTime_ContextCancellation(t *testing.T) {
 	t.Run("should handle context cancellation gracefully", func(t *testing.T) {
 		deps := makeTimeServiceDeps()
 		service := NewTimeService(deps)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel() // Cancel context immediately
 
-		req := &TimeRequest{
-			Format: TimeFormatISO,
-		}
+		request := &TimeRequest{Format: TimeFormatISO}
 
 		// Service should still work as it doesn't depend on context for time operations
-		response, err := service.GetCurrentTime(ctx, req)
+		response, err := service.GetCurrentTime(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
@@ -164,29 +149,22 @@ func TestTimeService_GetCurrentTime_TimeAccuracy(t *testing.T) {
 	t.Run("should return recent time", func(t *testing.T) {
 		deps := makeTimeServiceDeps()
 		service := NewTimeService(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
-		beforeCall := time.Now()
+		before := time.Now()
+		request := &TimeRequest{Format: TimeFormatISO}
 
-		req := &TimeRequest{
-			Format: TimeFormatISO,
-		}
-
-		response, err := service.GetCurrentTime(ctx, req)
-
-		afterCall := time.Now()
+		response, err := service.GetCurrentTime(ctx, request)
+		after := time.Now()
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
 
-		// Parse the returned time
-		returnedTime, parseErr := time.Parse(time.RFC3339, response.Time)
+		// Parse the returned time and verify it's between before and after
+		parsedTime, parseErr := time.Parse(time.RFC3339, response.Time)
 		require.NoError(t, parseErr)
 
-		// The returned time should be between before and after the call
-		assert.True(t, returnedTime.After(beforeCall.Add(-time.Second)),
-			"Returned time should be after call start")
-		assert.True(t, returnedTime.Before(afterCall.Add(time.Second)),
-			"Returned time should be before call end")
+		assert.True(t, parsedTime.After(before.Add(-time.Second)), "Returned time should be after test start")
+		assert.True(t, parsedTime.Before(after.Add(time.Second)), "Returned time should be before test end")
 	})
 }

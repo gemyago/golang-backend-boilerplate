@@ -8,36 +8,36 @@ import (
 	"go.uber.org/dig"
 )
 
-// ControllersRegistryDeps contains dependencies for the controllers registry.
-type ControllersRegistryDeps struct {
+// RegistryDeps contains dependencies for the controllers registry.
+type RegistryDeps struct {
 	dig.In
 
 	RootLogger  *slog.Logger
 	TimeService *app.TimeService
 }
 
-// ControllersRegistry manages all MCP controllers and their registration.
-type ControllersRegistry struct {
+// Registry manages all MCP controllers and their registration.
+type Registry struct {
 	logger         *slog.Logger
 	timeController *TimeController
 }
 
 // NewControllersRegistry creates a new controllers registry.
-func NewControllersRegistry(deps ControllersRegistryDeps) *ControllersRegistry {
+func NewControllersRegistry(deps RegistryDeps) *Registry {
 	// Create individual controllers
 	timeController := NewTimeController(TimeControllerDeps{
 		RootLogger:  deps.RootLogger,
 		TimeService: deps.TimeService,
 	})
 
-	return &ControllersRegistry{
+	return &Registry{
 		logger:         deps.RootLogger.WithGroup("mcp.controllers-registry"),
 		timeController: timeController,
 	}
 }
 
 // RegisterAllControllers registers all available MCP controllers with the given server.
-func (cr *ControllersRegistry) RegisterAllControllers(ctx context.Context, server ToolRegistrar) error {
+func (cr *Registry) RegisterAllControllers(ctx context.Context, server ToolRegistrar) error {
 	cr.logger.InfoContext(ctx, "Registering all MCP controllers")
 
 	// Register time controller
@@ -57,11 +57,11 @@ func (cr *ControllersRegistry) RegisterAllControllers(ctx context.Context, serve
 }
 
 // GetTimeController returns the time controller instance.
-func (cr *ControllersRegistry) GetTimeController() *TimeController {
+func (cr *Registry) GetTimeController() *TimeController {
 	return cr.timeController
 }
 
 // TODO: Add GetMathController when implemented
-// func (cr *ControllersRegistry) GetMathController() *MathController {
+// func (cr *Registry) GetMathController() *MathController {
 //     return cr.mathController
 // }

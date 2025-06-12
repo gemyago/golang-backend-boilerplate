@@ -45,47 +45,57 @@ func (tc *TimeController) GetTimeTool() mcp.Tool {
 	)
 }
 
-// HandleGetCurrentTime handles MCP tool calls for getting current time.
-func (tc *TimeController) HandleGetCurrentTime(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+// ToolRegistrar interface for registering tools with MCP server.
+// This allows us to decouple the controller from the specific server implementation.
+type ToolRegistrar interface {
+	RegisterTool(tool mcp.Tool, handler ToolHandler) error
+}
+
+// ToolHandler represents a function that handles tool calls.
+type ToolHandler = server.ToolHandlerFunc
+
+// HandleGetCurrentTime handles the get_current_time tool call.
+func (tc *TimeController) HandleGetCurrentTime(ctx context.Context,
+	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	tc.logger.InfoContext(ctx, "Handling get_current_time tool call",
 		slog.String("tool", request.Params.Name))
 
-	// Extract format parameter using mcp helper
-	format := mcp.ParseString(request, "format", "iso")
-
-	// Convert to app layer format
-	var appFormat app.TimeFormat
-	switch format {
-	case "iso":
-		appFormat = app.TimeFormatISO
-	case "rfc3339":
-		appFormat = app.TimeFormatRFC3339
-	case "unix":
-		appFormat = app.TimeFormatUnix
-	default:
-		appFormat = app.TimeFormatISO // Default to ISO
+	// Parse format from arguments
+	format := app.TimeFormatISO // default
+	if request.Params.Arguments != nil {
+		if args, argsOk := request.Params.Arguments.(map[string]interface{}); argsOk {
+			if formatStr, formatOk := args["format"].(string); formatOk {
+				switch formatStr {
+				case string(app.TimeFormatRFC3339):
+					format = app.TimeFormatRFC3339
+				case string(app.TimeFormatUnix):
+					format = app.TimeFormatUnix
+				case string(app.TimeFormatISO):
+					format = app.TimeFormatISO
+				default:
+					// Invalid format, fallback to ISO
+					format = app.TimeFormatISO
+				}
+			}
+		}
 	}
 
-	// Call the time service
-	timeReq := &app.TimeRequest{
-		Format: appFormat,
-	}
-
-	timeResponse, err := tc.timeService.GetCurrentTime(ctx, timeReq)
+	// Get current time using the time service
+	timeRequest := &app.TimeRequest{Format: format}
+	timeResponse, err := tc.timeService.GetCurrentTime(ctx, timeRequest)
 	if err != nil {
 		tc.logger.ErrorContext(ctx, "Failed to get current time",
-			slog.String("error", err.Error()),
-			slog.String("format", format))
-		return mcp.NewToolResultErrorFromErr("Failed to get current time", err), nil
+			slog.String("error", err.Error()))
+		return mcp.NewToolResultError(fmt.Sprintf("Failed to get current time: %v", err)), nil
 	}
 
 	tc.logger.InfoContext(ctx, "Successfully retrieved current time",
 		slog.String("time", timeResponse.Time),
 		slog.String("format", timeResponse.Format))
 
-	// Create MCP tool result using helper
-	resultText := fmt.Sprintf("Current time: %s (format: %s)", timeResponse.Time, timeResponse.Format)
-	return mcp.NewToolResultText(resultText), nil
+	// Return the result
+	return mcp.NewToolResultText(fmt.Sprintf("Current time: %s (format: %s)",
+		timeResponse.Time, timeResponse.Format)), nil
 }
 
 // RegisterWithServer registers the time tool with the MCP server.
@@ -98,12 +108,3 @@ func (tc *TimeController) RegisterWithServer(server ToolRegistrar) error {
 
 	return server.RegisterTool(tool, tc.HandleGetCurrentTime)
 }
-
-// ToolRegistrar interface for registering tools with MCP server
-// This allows us to decouple the controller from the specific server implementation
-type ToolRegistrar interface {
-	RegisterTool(tool mcp.Tool, handler ToolHandler) error
-}
-
-// Import the ToolHandler type alias from the server package
-type ToolHandler = server.ToolHandlerFunc

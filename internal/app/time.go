@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"go.uber.org/dig"
@@ -61,7 +62,7 @@ func (svc *TimeService) GetCurrentTime(ctx context.Context, req *TimeRequest) (*
 	case TimeFormatRFC3339:
 		timeStr = now.Format(time.RFC3339)
 	case TimeFormatUnix:
-		timeStr = now.Format("2006-01-02T15:04:05Z07:00")
+		timeStr = strconv.FormatInt(now.Unix(), 10)
 	default:
 		timeStr = now.Format(time.RFC3339)
 		format = TimeFormatISO

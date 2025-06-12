@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,6 +13,14 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"go.uber.org/dig"
+)
+
+// Constants for server configuration.
+const (
+	httpReadTimeout  = 30 * time.Second
+	httpWriteTimeout = 30 * time.Second
+	httpIdleTimeout  = 120 * time.Second
+	shutdownTimeout  = 10 * time.Second
 )
 
 // MCPServerDeps contains dependencies for creating the MCP server.
@@ -32,7 +41,7 @@ type MCPServerDeps struct {
 	*services.ShutdownHooks
 
 	// controllers
-	ControllersRegistry *controllers.ControllersRegistry
+	ControllersRegistry *controllers.Registry
 }
 
 // ToolHandler represents a function that handles tool calls.
@@ -68,8 +77,6 @@ type MCPServer struct {
 	tools     map[string]ToolInfo
 	resources map[string]ResourceInfo
 }
-
-const defaultHTTPPort = 8080
 
 // NewMCPServer creates a new MCP server instance.
 func NewMCPServer(deps MCPServerDeps) *MCPServer {
@@ -169,9 +176,9 @@ func (s *MCPServer) StartHTTP(ctx context.Context) error {
 	s.httpServer = &http.Server{
 		Addr:         address,
 		Handler:      s.sseServer,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		ReadTimeout:  httpReadTimeout,
+		WriteTimeout: httpWriteTimeout,
+		IdleTimeout:  httpIdleTimeout,
 	}
 
 	s.logger.InfoContext(ctx, "MCP HTTP server configured",
@@ -190,7 +197,7 @@ func (s *MCPServer) StartHTTP(ctx context.Context) error {
 		s.logger.InfoContext(ctx, "Context cancelled, shutting down HTTP server")
 		return s.shutdownHTTPServer(context.Background())
 	case err := <-serverErr:
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return fmt.Errorf("HTTP server error: %w", err)
 		}
 		s.logger.InfoContext(ctx, "HTTP server terminated gracefully")
@@ -207,7 +214,7 @@ func (s *MCPServer) shutdownHTTPServer(ctx context.Context) error {
 	s.logger.InfoContext(ctx, "Shutting down HTTP server")
 
 	// Give the server 10 seconds to finish serving connections
-	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
 	if err := s.httpServer.Shutdown(shutdownCtx); err != nil {

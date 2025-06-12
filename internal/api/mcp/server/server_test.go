@@ -25,7 +25,7 @@ func makeMockDeps() MCPServerDeps {
 	timeService := app.NewTimeService(timeServiceDeps)
 
 	// Create mock controllers registry
-	controllersRegistryDeps := controllers.ControllersRegistryDeps{
+	controllersRegistryDeps := controllers.RegistryDeps{
 		RootLogger:  slog.Default(),
 		TimeService: timeService,
 	}

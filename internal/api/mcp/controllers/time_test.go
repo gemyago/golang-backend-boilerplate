@@ -53,7 +53,7 @@ func TestTimeController_HandleGetCurrentTime_ISO(t *testing.T) {
 	t.Run("should handle ISO format request", func(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
@@ -85,7 +85,7 @@ func TestTimeController_HandleGetCurrentTime_RFC3339(t *testing.T) {
 	t.Run("should handle RFC3339 format request", func(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
@@ -117,7 +117,7 @@ func TestTimeController_HandleGetCurrentTime_Unix(t *testing.T) {
 	t.Run("should handle Unix format request", func(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
@@ -149,7 +149,7 @@ func TestTimeController_HandleGetCurrentTime_DefaultFormat(t *testing.T) {
 	t.Run("should default to ISO format when no format specified", func(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
@@ -179,7 +179,7 @@ func TestTimeController_HandleGetCurrentTime_InvalidFormat(t *testing.T) {
 	t.Run("should default to ISO format for invalid format", func(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
@@ -211,7 +211,7 @@ func TestTimeController_HandleGetCurrentTime_ContextCancellation(t *testing.T) {
 	t.Run("should handle context cancellation gracefully", func(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel() // Cancel context immediately
 
 		request := mcp.CallToolRequest{
@@ -233,7 +233,7 @@ func TestTimeController_HandleGetCurrentTime_ContextCancellation(t *testing.T) {
 	})
 }
 
-// Mock ToolRegistrar for testing
+// Mock ToolRegistrar for testing.
 type mockToolRegistrar struct {
 	registeredTools    []mcp.Tool
 	registeredHandlers []ToolHandler
@@ -268,7 +268,7 @@ func TestTimeController_Integration(t *testing.T) {
 	t.Run("should work end-to-end", func(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		// Get the tool
 		tool := controller.GetTimeTool()
