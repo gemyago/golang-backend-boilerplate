@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/api/mcp/controllers"
+	"github.com/gemyago/golang-backend-boilerplate/internal/api/mcp/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/gemyago/golang-backend-boilerplate/internal/config"
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
@@ -70,6 +72,12 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 
 			// services
 			services.Register(container),
+
+			// mcp components
+			di.ProvideAll(container,
+				controllers.NewControllersRegistry,
+				server.NewMCPServer,
+			),
 
 			di.ProvideAll(container,
 				di.ProvideValue(rootLogger),

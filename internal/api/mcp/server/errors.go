@@ -10,9 +10,6 @@ var (
 	// ErrHTTPNotEnabled is returned when trying to start HTTP transport when it's disabled.
 	ErrHTTPNotEnabled = errors.New("HTTP transport is not enabled")
 
-	// ErrHTTPNotImplemented is returned when HTTP transport is not yet implemented.
-	ErrHTTPNotImplemented = errors.New("HTTP transport is not yet implemented")
-
 	// ErrServerNotInitialized is returned when trying to use server before initialization.
 	ErrServerNotInitialized = errors.New("MCP server is not initialized")
 

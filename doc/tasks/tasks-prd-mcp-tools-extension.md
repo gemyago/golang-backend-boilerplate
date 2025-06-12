@@ -65,28 +65,28 @@
   - [x] 1.6 Write unit tests for command parsing and basic functionality
   - [x] 1.7 Verify commands are properly registered and accessible via CLI
 
-- [ ] 2.0 Implement MCP server infrastructure with stdio/HTTP transport support using mcp-go framework
+- [x] 2.0 Implement MCP server infrastructure with stdio/HTTP transport support using mcp-go framework
   - [x] 2.1 Create `internal/api/mcp/server/server.go` with stub MCP server struct
   - [x] 2.2 Write test for server initialization with stdio transport
   - [x] 2.3 Implement stdio transport server initialization using mcp-go
   - [x] 2.4 Write test for server initialization with HTTP transport
-  - [ ] 2.5 Implement HTTP transport server initialization using mcp-go
-  - [ ] 2.6 Add server lifecycle management (start, stop, graceful shutdown)
-  - [ ] 2.7 Write integration tests for both transport methods
-  - [ ] 2.8 Implement tool discovery and registration mechanism
-  - [ ] 2.9 Add error handling and logging for server operations
+  - [x] 2.5 Implement HTTP transport server initialization using mcp-go
+  - [x] 2.6 Add server lifecycle management (start, stop, graceful shutdown)
+  - [x] 2.7 Write integration tests for both transport methods
+  - [x] 2.8 Implement tool discovery and registration mechanism
+  - [x] 2.9 Add error handling and logging for server operations
 
-- [ ] 3.0 Create time tool implementation following mcp-go patterns
-  - [ ] 3.1 Create stub `internal/app/time.go` with time service interface
-  - [ ] 3.2 Write test for getting current time in ISO format
-  - [ ] 3.3 Implement current time functionality in app layer
-  - [ ] 3.4 Write test for getting current time in different formats (Unix, RFC3339)
-  - [ ] 3.5 Implement multiple time format support
-  - [ ] 3.6 Create `internal/api/mcp/controllers/time.go` MCP controller stub
-  - [ ] 3.7 Write test for MCP time tool registration and parameter handling
-  - [ ] 3.8 Implement MCP time tool controller with mcp-go framework
-  - [ ] 3.9 Write test for time tool execution through MCP protocol
-  - [ ] 3.10 Test integration with MCP server and verify JSON schema generation
+- [x] 3.0 Create time tool implementation following mcp-go patterns
+  - [x] 3.1 Create stub `internal/app/time.go` with time service interface
+  - [x] 3.2 Write test for getting current time in ISO format
+  - [x] 3.3 Implement current time functionality in app layer
+  - [x] 3.4 Write test for getting current time in different formats (Unix, RFC3339)
+  - [x] 3.5 Implement multiple time format support
+  - [x] 3.6 Create `internal/api/mcp/controllers/time.go` MCP controller stub
+  - [x] 3.7 Write test for MCP time tool registration and parameter handling
+  - [x] 3.8 Implement MCP time tool controller with mcp-go framework
+  - [x] 3.9 Write test for time tool execution through MCP protocol
+  - [x] 3.10 Test integration with MCP server and verify JSON schema generation
 
 - [ ] 4.0 Create math tool implementation following mcp-go patterns
   - [ ] 4.1 Create stub `internal/app/math.go` with math service interface
@@ -104,11 +104,11 @@
   - [ ] 4.13 Write test for math tool execution through MCP protocol
   - [ ] 4.14 Test integration with MCP server and verify parameter type safety
 
-- [ ] 5.0 Integrate MCP configuration with existing config system
-  - [ ] 5.1 Add MCP configuration structure to existing config types
-  - [ ] 5.2 Update `config/default.json` with MCP server settings (port, host)
-  - [ ] 5.3 Update `config/provide.go` to inject MCP configuration
-  - [ ] 5.4 Update `internal/di/container.go` to register MCP dependencies
+- [x] 5.0 Integrate MCP configuration with existing config system
+  - [x] 5.1 Add MCP configuration structure to existing config types
+  - [x] 5.2 Update `config/default.json` with MCP server settings (port, host)
+  - [x] 5.3 Update `config/provide.go` to inject MCP configuration
+  - [x] 5.4 Update `cmd/mcp/root.go` to register MCP dependencies
 
 - [ ] 6.0 Add comprehensive testing and documentation
   - [ ] 6.1 Create end-to-end test script for stdio transport
