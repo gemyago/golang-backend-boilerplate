@@ -5,6 +5,7 @@ go 1.24
 require (
 	github.com/go-faker/faker/v4 v4.6.1
 	github.com/gofrs/uuid/v5 v5.3.2
+	github.com/mark3labs/mcp-go v0.32.0
 	github.com/samber/lo v1.51.0
 	github.com/samber/slog-http v1.7.0
 	github.com/spf13/cobra v1.9.1
@@ -34,7 +35,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/mark3labs/mcp-go v0.32.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -55,6 +55,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/vektra/mockery/v2 v2.53.0 // indirect
 	github.com/vladopajic/go-test-coverage/v2 v2.13.1 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.opentelemetry.io/otel v1.36.0 // indirect
 	go.opentelemetry.io/otel/trace v1.36.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

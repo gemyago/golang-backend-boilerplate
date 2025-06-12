@@ -66,7 +66,7 @@
   - [x] 1.7 Verify commands are properly registered and accessible via CLI
 
 - [ ] 2.0 Implement MCP server infrastructure with stdio/HTTP transport support using mcp-go framework
-  - [ ] 2.1 Create `internal/api/mcp/server/server.go` with stub MCP server struct
+  - [x] 2.1 Create `internal/api/mcp/server/server.go` with stub MCP server struct
   - [ ] 2.2 Write test for server initialization with stdio transport
   - [ ] 2.3 Implement stdio transport server initialization using mcp-go
   - [ ] 2.4 Write test for server initialization with HTTP transport

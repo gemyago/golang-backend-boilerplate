@@ -84,7 +84,7 @@ func TestNewHTTPCmd(t *testing.T) {
 
 		require.Equal(t, "http", cmd.Use)
 		require.Equal(t, "Start MCP server with HTTP transport", cmd.Short)
-		require.Contains(t, cmd.Long, "HTTP transport for communication")
+		require.Contains(t, cmd.Long, "HTTP transport for web-based")
 		require.NotNil(t, cmd.RunE)
 	})
 

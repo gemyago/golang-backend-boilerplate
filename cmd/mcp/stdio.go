@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"log/slog"
 
+	mcpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/mcp/server"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
 )
@@ -11,20 +11,13 @@ import (
 type stdioServerParams struct {
 	dig.In `ignore-unexported:"true"`
 
-	RootLogger *slog.Logger
-	// TODO: Add MCP server dependencies in later tasks
+	MCPServer *mcpserver.MCPServer
 }
 
 func startStdioServer(params stdioServerParams) error {
-	rootLogger := params.RootLogger
 	rootCtx := context.Background()
 
-	rootLogger.InfoContext(rootCtx, "Starting MCP server with stdio transport")
-
-	// TODO: Implement actual MCP stdio server in task 2.0
-	rootLogger.InfoContext(rootCtx, "MCP stdio server would start here")
-
-	return nil
+	return params.MCPServer.StartStdio(rootCtx)
 }
 
 func newStdioCmd(container *dig.Container) *cobra.Command {
