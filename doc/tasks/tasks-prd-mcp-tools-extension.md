@@ -56,14 +56,14 @@
 
 ## Tasks
 
-- [ ] 1.0 Set up MCP command structure and add mark3labs/mcp-go framework dependency
-  - [ ] 1.1 Add `github.com/mark3labs/mcp-go` dependency to go.mod
-  - [ ] 1.2 Create basic `cmd/mcp/main.go` entry point with cobra CLI setup
-  - [ ] 1.3 Create `cmd/mcp/root.go` with root command configuration
-  - [ ] 1.4 Create stub `cmd/mcp/stdio.go` command handler
-  - [ ] 1.5 Create stub `cmd/mcp/http.go` command handler
-  - [ ] 1.6 Write unit tests for command parsing and basic functionality
-  - [ ] 1.7 Verify commands are properly registered and accessible via CLI
+- [x] 1.0 Set up MCP command structure and add mark3labs/mcp-go framework dependency
+  - [x] 1.1 Add `github.com/mark3labs/mcp-go` dependency to go.mod
+  - [x] 1.2 Create basic `cmd/mcp/main.go` entry point with cobra CLI setup
+  - [x] 1.3 Create `cmd/mcp/root.go` with root command configuration
+  - [x] 1.4 Create stub `cmd/mcp/stdio.go` command handler
+  - [x] 1.5 Create stub `cmd/mcp/http.go` command handler
+  - [x] 1.6 Write unit tests for command parsing and basic functionality
+  - [x] 1.7 Verify commands are properly registered and accessible via CLI
 
 - [ ] 2.0 Implement MCP server infrastructure with stdio/HTTP transport support using mcp-go framework
   - [ ] 2.1 Create `internal/api/mcp/server/server.go` with stub MCP server struct
