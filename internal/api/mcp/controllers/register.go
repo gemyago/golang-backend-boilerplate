@@ -14,12 +14,14 @@ type RegistryDeps struct {
 
 	RootLogger  *slog.Logger
 	TimeService *app.TimeService
+	MathService *app.MathService
 }
 
 // Registry manages all MCP controllers and their registration.
 type Registry struct {
 	logger         *slog.Logger
 	timeController *TimeController
+	mathController *MathController
 }
 
 // NewControllersRegistry creates a new controllers registry.
@@ -30,9 +32,15 @@ func NewControllersRegistry(deps RegistryDeps) *Registry {
 		TimeService: deps.TimeService,
 	})
 
+	mathController := NewMathController(MathControllerDeps{
+		RootLogger:  deps.RootLogger,
+		MathService: deps.MathService,
+	})
+
 	return &Registry{
 		logger:         deps.RootLogger.WithGroup("mcp.controllers-registry"),
 		timeController: timeController,
+		mathController: mathController,
 	}
 }
 
@@ -47,10 +55,12 @@ func (cr *Registry) RegisterAllControllers(ctx context.Context, server ToolRegis
 		return err
 	}
 
-	// TODO: Add math controller registration when implemented
-	// if err := cr.mathController.RegisterWithServer(server); err != nil {
-	//     return err
-	// }
+	// Register math controller
+	if err := cr.mathController.RegisterWithServer(server); err != nil {
+		cr.logger.ErrorContext(ctx, "Failed to register math controller",
+			slog.String("error", err.Error()))
+		return err
+	}
 
 	cr.logger.InfoContext(ctx, "Successfully registered all MCP controllers")
 	return nil
@@ -61,7 +71,7 @@ func (cr *Registry) GetTimeController() *TimeController {
 	return cr.timeController
 }
 
-// TODO: Add GetMathController when implemented
-// func (cr *Registry) GetMathController() *MathController {
-//     return cr.mathController
-// }
+// GetMathController returns the math controller instance.
+func (cr *Registry) GetMathController() *MathController {
+	return cr.mathController
+}

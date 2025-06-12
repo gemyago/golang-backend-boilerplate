@@ -88,21 +88,21 @@
   - [x] 3.9 Write test for time tool execution through MCP protocol
   - [x] 3.10 Test integration with MCP server and verify JSON schema generation
 
-- [ ] 4.0 Create math tool implementation following mcp-go patterns
-  - [ ] 4.1 Create stub `internal/app/math.go` with math service interface
-  - [ ] 4.2 Write test for basic addition operation
-  - [ ] 4.3 Implement addition functionality in app layer
-  - [ ] 4.4 Write test for subtraction operation
-  - [ ] 4.5 Implement subtraction functionality
-  - [ ] 4.6 Write test for multiplication operation
-  - [ ] 4.7 Implement multiplication functionality
-  - [ ] 4.8 Write test for division operation with error handling
-  - [ ] 4.9 Implement division functionality with zero-division protection
-  - [ ] 4.10 Create `internal/api/mcp/controllers/math.go` MCP controller stub
-  - [ ] 4.11 Write test for MCP math tool registration and parameter validation
-  - [ ] 4.12 Implement MCP math tool controller with mcp-go framework
-  - [ ] 4.13 Write test for math tool execution through MCP protocol
-  - [ ] 4.14 Test integration with MCP server and verify parameter type safety
+- [x] 4.0 Create math tool implementation following mcp-go patterns
+  - [x] 4.1 Create stub `internal/app/math.go` with math service interface
+  - [x] 4.2 Write test for basic addition operation
+  - [x] 4.3 Implement addition functionality in app layer
+  - [x] 4.4 Write test for subtraction operation
+  - [x] 4.5 Implement subtraction functionality
+  - [x] 4.6 Write test for multiplication operation
+  - [x] 4.7 Implement multiplication functionality
+  - [x] 4.8 Write test for division operation with error handling
+  - [x] 4.9 Implement division functionality with zero-division protection
+  - [x] 4.10 Create `internal/api/mcp/controllers/math.go` MCP controller stub
+  - [x] 4.11 Write test for MCP math tool registration and parameter validation
+  - [x] 4.12 Implement MCP math tool controller with mcp-go framework
+  - [x] 4.13 Write test for math tool execution through MCP protocol
+  - [x] 4.14 Test integration with MCP server and verify parameter type safety
 
 - [x] 5.0 Integrate MCP configuration with existing config system
   - [x] 5.1 Add MCP configuration structure to existing config types
@@ -110,9 +110,9 @@
   - [x] 5.3 Update `config/provide.go` to inject MCP configuration
   - [x] 5.4 Update `cmd/mcp/root.go` to register MCP dependencies
 
-- [ ] 6.0 Add comprehensive testing and documentation
-  - [ ] 6.1 Create end-to-end test script for stdio transport
-  - [ ] 6.2 Create end-to-end test script for HTTP transport
-  - [ ] 6.3 Create usage examples and integration guide
-  - [ ] 6.4 Document MCP tool development patterns
-  - [ ] 6.5 Verify all tests pass and coverage meets requirements 
+- [x] 6.0 Add comprehensive testing and documentation
+  - [x] 6.1 Create end-to-end test script for stdio transport
+  - [x] 6.2 Create end-to-end test script for HTTP transport
+  - [x] 6.3 Create usage examples and integration guide
+  - [x] 6.4 Document MCP tool development patterns
+  - [x] 6.5 Verify all tests pass and coverage meets requirements 
