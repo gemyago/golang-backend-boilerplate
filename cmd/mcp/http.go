@@ -8,6 +8,8 @@ import (
 	"go.uber.org/dig"
 )
 
+const defaultHTTPPort = 8080
+
 type httpServerParams struct {
 	dig.In `ignore-unexported:"true"`
 
@@ -25,7 +27,7 @@ func newHTTPCmd(container *dig.Container) *cobra.Command {
 		Use:   "http",
 		Short: "Start MCP server with HTTP transport",
 		Long:  "Start MCP server using HTTP transport for web-based MCP clients",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			var params httpServerParams
 			if err := container.Invoke(func(p httpServerParams) {
 				params = p
@@ -37,7 +39,7 @@ func newHTTPCmd(container *dig.Container) *cobra.Command {
 	}
 
 	cmd.Flags().StringP("host", "H", "localhost", "Host to bind HTTP server to")
-	cmd.Flags().IntP("port", "p", 8080, "Port to bind HTTP server to")
+	cmd.Flags().IntP("port", "p", defaultHTTPPort, "Port to bind HTTP server to")
 
 	return cmd
 }

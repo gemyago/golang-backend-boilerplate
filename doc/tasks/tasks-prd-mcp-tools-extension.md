@@ -67,9 +67,9 @@
 
 - [ ] 2.0 Implement MCP server infrastructure with stdio/HTTP transport support using mcp-go framework
   - [x] 2.1 Create `internal/api/mcp/server/server.go` with stub MCP server struct
-  - [ ] 2.2 Write test for server initialization with stdio transport
-  - [ ] 2.3 Implement stdio transport server initialization using mcp-go
-  - [ ] 2.4 Write test for server initialization with HTTP transport
+  - [x] 2.2 Write test for server initialization with stdio transport
+  - [x] 2.3 Implement stdio transport server initialization using mcp-go
+  - [x] 2.4 Write test for server initialization with HTTP transport
   - [ ] 2.5 Implement HTTP transport server initialization using mcp-go
   - [ ] 2.6 Add server lifecycle management (start, stop, graceful shutdown)
   - [ ] 2.7 Write integration tests for both transport methods

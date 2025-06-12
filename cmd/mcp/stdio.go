@@ -28,9 +28,7 @@ func newStdioCmd(container *dig.Container) *cobra.Command {
 	}
 
 	cmd.RunE = func(_ *cobra.Command, _ []string) error {
-		return container.Invoke(func(params stdioServerParams) error {
-			return startStdioServer(params)
-		})
+		return container.Invoke(startStdioServer)
 	}
 
 	return cmd

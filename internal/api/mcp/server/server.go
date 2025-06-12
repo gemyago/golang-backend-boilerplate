@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/services"
@@ -81,21 +82,25 @@ func (s *MCPServer) Initialize(ctx context.Context) error {
 // StartStdio starts the MCP server with stdio transport.
 func (s *MCPServer) StartStdio(ctx context.Context) error {
 	if !s.deps.StdioEnabled {
+		s.logger.WarnContext(ctx, "Attempted to start stdio transport but it is disabled")
 		return ErrStdioNotEnabled
 	}
 
 	if err := s.Initialize(ctx); err != nil {
-		return err
+		return fmt.Errorf("failed to initialize MCP server for stdio transport: %w", err)
 	}
 
-	s.logger.InfoContext(ctx, "Starting MCP server with stdio transport")
+	s.logger.InfoContext(ctx, "Starting MCP server with stdio transport",
+		slog.String("name", s.deps.Name),
+		slog.String("version", s.deps.Version))
 
-	// Start the stdio server
+	// Start the stdio server - this will block until the connection is closed
+	// The mcp-go framework handles all the protocol details
 	if err := server.ServeStdio(s.mcpServer); err != nil {
-		s.logger.ErrorContext(ctx, "Failed to start stdio server", "error", err)
-		return err
+		return fmt.Errorf("MCP stdio server terminated with error: %w", err)
 	}
 
+	s.logger.InfoContext(ctx, "MCP stdio server terminated gracefully")
 	return nil
 }
 
@@ -106,7 +111,7 @@ func (s *MCPServer) StartHTTP(ctx context.Context) error {
 	}
 
 	if err := s.Initialize(ctx); err != nil {
-		return err
+		return fmt.Errorf("failed to initialize MCP server for HTTP transport: %w", err)
 	}
 
 	s.logger.InfoContext(ctx, "Starting MCP server with HTTP transport",
@@ -129,13 +134,19 @@ func (s *MCPServer) Stop(ctx context.Context) error {
 }
 
 // AddTool adds a tool to the MCP server.
-func (s *MCPServer) AddTool(tool mcp.Tool, handler func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error)) {
+func (s *MCPServer) AddTool(
+	tool mcp.Tool,
+	handler func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error),
+) {
 	s.mcpServer.AddTool(tool, handler)
 	s.logger.Debug("Added tool to MCP server", "tool", tool.Name)
 }
 
 // AddResource adds a resource to the MCP server.
-func (s *MCPServer) AddResource(resource mcp.Resource, handler func(context.Context, mcp.ReadResourceRequest) ([]mcp.ResourceContents, error)) {
+func (s *MCPServer) AddResource(
+	resource mcp.Resource,
+	handler func(context.Context, mcp.ReadResourceRequest) ([]mcp.ResourceContents, error),
+) {
 	s.mcpServer.AddResource(resource, handler)
 	s.logger.Debug("Added resource to MCP server", "resource", resource.Name)
 }

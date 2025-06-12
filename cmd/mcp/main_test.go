@@ -165,7 +165,7 @@ func TestCommandIntegration(t *testing.T) {
 		rootCmd := setupCommands()
 
 		commands := rootCmd.Commands()
-		require.True(t, len(commands) >= 2, "Should have at least stdio and http commands")
+		require.GreaterOrEqual(t, len(commands), 2, "Should have at least stdio and http commands")
 
 		commandNames := make(map[string]bool)
 		for _, cmd := range commands {
