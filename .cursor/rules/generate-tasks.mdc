@@ -9,7 +9,7 @@ alwaysApply: false
 
 To guide an AI assistant in creating a detailed, step-by-step task list in Markdown format based on user provided requirements. The task list should guide a junior developer through implementation.
 
-The implementation should follow incremental TDD approach:
+The implementation should follow incremental TDD approach (when applicable):
 1. Stub implementation first
 2. Write test for single specific case
 3. Run test to make sure it is failing
