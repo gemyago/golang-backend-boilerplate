@@ -209,8 +209,8 @@ func TestMCPServerStop(t *testing.T) {
 	})
 }
 
-func TestMCPServerAddTool(t *testing.T) {
-	t.Run("should add tool to server", func(t *testing.T) {
+func TestMCPServerRegisterTool(t *testing.T) {
+	t.Run("should register tool successfully before initialization", func(t *testing.T) {
 		deps := makeMockDeps()
 		server := NewMCPServer(deps)
 
@@ -220,34 +220,46 @@ func TestMCPServerAddTool(t *testing.T) {
 			Description: faker.Sentence(),
 		}
 
-		// This is more of a smoke test since we can't easily verify
-		// the tool was added without exposing internals
-		require.NotPanics(t, func() {
-			server.AddTool(testTool, func(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-				return &mcp.CallToolResult{}, nil
-			})
+		// Register tool before initialization
+		err := server.RegisterTool(testTool, func(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			return &mcp.CallToolResult{}, nil
 		})
-	})
-}
 
-func TestMCPServerAddResource(t *testing.T) {
-	t.Run("should add resource to server", func(t *testing.T) {
+		require.NoError(t, err)
+	})
+
+	t.Run("should return error when registering after initialization", func(t *testing.T) {
 		deps := makeMockDeps()
 		server := NewMCPServer(deps)
+		ctx := t.Context()
 
-		// Create a basic test resource
-		testResource := mcp.Resource{
-			Name: faker.Word(),
-			URI:  faker.URL(),
+		// Initialize server first
+		err := server.Initialize(ctx)
+		require.NoError(t, err)
+
+		// Try to register tool after initialization
+		testTool := mcp.Tool{
+			Name:        faker.Word(),
+			Description: faker.Sentence(),
 		}
 
-		// This is more of a smoke test since we can't easily verify
-		// the resource was added without exposing internals
-		require.NotPanics(t, func() {
-			server.AddResource(testResource, func(_ context.Context, _ mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
-				return []mcp.ResourceContents{}, nil
-			})
+		err = server.RegisterTool(testTool, func(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			return &mcp.CallToolResult{}, nil
 		})
+
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrServerAlreadyInitialized)
+	})
+
+	t.Run("should handle registration through controllers workflow", func(t *testing.T) {
+		deps := makeMockDeps()
+		server := NewMCPServer(deps)
+		ctx := t.Context()
+
+		// This tests the actual workflow: controllers register tools, then server initializes
+		err := server.Initialize(ctx)
+		require.NoError(t, err)
+		require.True(t, server.initialized)
 	})
 }
 

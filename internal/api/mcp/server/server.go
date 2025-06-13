@@ -47,19 +47,10 @@ type MCPServerDeps struct {
 // ToolHandler represents a function that handles tool calls.
 type ToolHandler = server.ToolHandlerFunc
 
-// ResourceHandler represents a function that handles resource reads.
-type ResourceHandler = server.ResourceHandlerFunc
-
 // ToolInfo contains information about a registered tool.
 type ToolInfo struct {
 	Tool    mcp.Tool
 	Handler ToolHandler
-}
-
-// ResourceInfo contains information about a registered resource.
-type ResourceInfo struct {
-	Resource mcp.Resource
-	Handler  ResourceHandler
 }
 
 // MCPServer wraps the mcp-go server with additional functionality.
@@ -73,9 +64,8 @@ type MCPServer struct {
 	httpServer *http.Server
 	sseServer  *server.SSEServer
 
-	// Tool and resource registry
-	tools     map[string]ToolInfo
-	resources map[string]ResourceInfo
+	// Tool registry
+	tools map[string]ToolInfo
 }
 
 // NewMCPServer creates a new MCP server instance.
@@ -94,7 +84,6 @@ func NewMCPServer(deps MCPServerDeps) *MCPServer {
 		logger:      deps.RootLogger.WithGroup("mcp-server"),
 		initialized: false,
 		tools:       make(map[string]ToolInfo),
-		resources:   make(map[string]ResourceInfo),
 	}
 
 	// Register shutdown hook
@@ -118,9 +107,8 @@ func (s *MCPServer) Initialize(ctx context.Context) error {
 		return fmt.Errorf("failed to register MCP controllers: %w", err)
 	}
 
-	// Register all tools and resources with the underlying mcp-go server
+	// Register all tools with the underlying mcp-go server
 	s.registerToolsWithMCPServer()
-	s.registerResourcesWithMCPServer()
 
 	s.initialized = true
 	s.logger.InfoContext(ctx, "MCP server initialized successfully")
@@ -246,24 +234,6 @@ func (s *MCPServer) Stop(ctx context.Context) error {
 	return nil
 }
 
-// AddTool adds a tool to the MCP server.
-func (s *MCPServer) AddTool(
-	tool mcp.Tool,
-	handler func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error),
-) {
-	s.mcpServer.AddTool(tool, handler)
-	s.logger.Debug("Added tool to MCP server", "tool", tool.Name)
-}
-
-// AddResource adds a resource to the MCP server.
-func (s *MCPServer) AddResource(
-	resource mcp.Resource,
-	handler func(context.Context, mcp.ReadResourceRequest) ([]mcp.ResourceContents, error),
-) {
-	s.mcpServer.AddResource(resource, handler)
-	s.logger.Debug("Added resource to MCP server", "resource", resource.Name)
-}
-
 // RegisterTool registers a tool with the MCP server.
 func (s *MCPServer) RegisterTool(tool mcp.Tool, handler ToolHandler) error {
 	if s.initialized {
@@ -282,84 +252,10 @@ func (s *MCPServer) RegisterTool(tool mcp.Tool, handler ToolHandler) error {
 	return nil
 }
 
-// RegisterResource registers a resource with the MCP server.
-func (s *MCPServer) RegisterResource(resource mcp.Resource, handler ResourceHandler) error {
-	if s.initialized {
-		return fmt.Errorf("cannot register resource after server initialization: %w", ErrServerAlreadyInitialized)
-	}
-
-	s.logger.Debug("Registering resource",
-		slog.String("name", resource.Name),
-		slog.String("uri", resource.URI))
-
-	s.resources[resource.Name] = ResourceInfo{
-		Resource: resource,
-		Handler:  handler,
-	}
-
-	return nil
-}
-
-// GetRegisteredTools returns a list of all registered tools.
-func (s *MCPServer) GetRegisteredTools() []mcp.Tool {
-	tools := make([]mcp.Tool, 0, len(s.tools))
-	for _, toolInfo := range s.tools {
-		tools = append(tools, toolInfo.Tool)
-	}
-	return tools
-}
-
-// GetRegisteredResources returns a list of all registered resources.
-func (s *MCPServer) GetRegisteredResources() []mcp.Resource {
-	resources := make([]mcp.Resource, 0, len(s.resources))
-	for _, resourceInfo := range s.resources {
-		resources = append(resources, resourceInfo.Resource)
-	}
-	return resources
-}
-
-// GetToolByName returns a tool by its name.
-func (s *MCPServer) GetToolByName(name string) (ToolInfo, bool) {
-	toolInfo, exists := s.tools[name]
-	return toolInfo, exists
-}
-
-// GetResourceByName returns a resource by its name.
-func (s *MCPServer) GetResourceByName(name string) (ResourceInfo, bool) {
-	resourceInfo, exists := s.resources[name]
-	return resourceInfo, exists
-}
-
-// DiscoverTools returns information about available tools for discovery.
-func (s *MCPServer) DiscoverTools() map[string]ToolInfo {
-	discovered := make(map[string]ToolInfo)
-	for name, toolInfo := range s.tools {
-		discovered[name] = toolInfo
-	}
-	return discovered
-}
-
-// DiscoverResources returns information about available resources for discovery.
-func (s *MCPServer) DiscoverResources() map[string]ResourceInfo {
-	discovered := make(map[string]ResourceInfo)
-	for name, resourceInfo := range s.resources {
-		discovered[name] = resourceInfo
-	}
-	return discovered
-}
-
 // registerToolsWithMCPServer registers all tools with the underlying mcp-go server.
 func (s *MCPServer) registerToolsWithMCPServer() {
 	for _, toolInfo := range s.tools {
 		s.mcpServer.AddTool(toolInfo.Tool, toolInfo.Handler)
 		s.logger.Debug("Registered tool with MCP server", slog.String("name", toolInfo.Tool.Name))
-	}
-}
-
-// registerResourcesWithMCPServer registers all resources with the underlying mcp-go server.
-func (s *MCPServer) registerResourcesWithMCPServer() {
-	for _, resourceInfo := range s.resources {
-		s.mcpServer.AddResource(resourceInfo.Resource, resourceInfo.Handler)
-		s.logger.Debug("Registered resource with MCP server", slog.String("name", resourceInfo.Resource.Name))
 	}
 }
