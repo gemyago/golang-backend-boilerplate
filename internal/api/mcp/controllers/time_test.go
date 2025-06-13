@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -261,6 +263,21 @@ func TestTimeController_RegisterWithServer(t *testing.T) {
 		tool := mockServer.registeredTools[0]
 		assert.Equal(t, "get_current_time", tool.Name)
 		assert.Equal(t, "Get the current date and time in various formats", tool.Description)
+	})
+
+	t.Run("should handle registration error", func(t *testing.T) {
+		deps := makeTimeControllerDeps()
+		controller := NewTimeController(deps)
+
+		mockRegistrar := &MockToolRegistrar{}
+		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
+			Return(errors.New("time tool registration failed")).Once()
+
+		err := controller.RegisterWithServer(mockRegistrar)
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "time tool registration failed")
+		mockRegistrar.AssertExpectations(t)
 	})
 }
 

@@ -227,6 +227,62 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		}
 	})
 
+	t.Run("should handle non-object arguments for calculate", func(t *testing.T) {
+		deps := makeMathControllerDeps()
+		controller := NewMathController(deps)
+		ctx := t.Context()
+
+		request := mcp.CallToolRequest{
+			Params: mcp.CallToolParams{
+				Name:      "calculate",
+				Arguments: "not_an_object", // Invalid arguments type
+			},
+		}
+
+		result, err := controller.HandleCalculate(ctx, request)
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result.IsError)
+		assert.NotEmpty(t, result.Content)
+
+		if len(result.Content) > 0 {
+			content, ok := mcp.AsTextContent(result.Content[0])
+			require.True(t, ok, "Error content should be text content")
+			assert.Contains(t, content.Text, "Invalid parameters")
+		}
+	})
+
+	t.Run("should handle missing operation parameter", func(t *testing.T) {
+		deps := makeMathControllerDeps()
+		controller := NewMathController(deps)
+		ctx := t.Context()
+
+		request := mcp.CallToolRequest{
+			Params: mcp.CallToolParams{
+				Name: "calculate",
+				Arguments: map[string]interface{}{
+					"a": 5.0,
+					"b": 3.0,
+					// Missing "operation" parameter
+				},
+			},
+		}
+
+		result, err := controller.HandleCalculate(ctx, request)
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result.IsError)
+		assert.NotEmpty(t, result.Content)
+
+		if len(result.Content) > 0 {
+			content, ok := mcp.AsTextContent(result.Content[0])
+			require.True(t, ok, "Error content should be text content")
+			assert.Contains(t, content.Text, "Invalid parameters")
+		}
+	})
+
 	t.Run("should handle division by zero error", func(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
@@ -347,6 +403,35 @@ func TestMathController_HandleSubtract(t *testing.T) {
 			assert.Contains(t, content.Text, "10 - 4 = 6")
 		}
 	})
+
+	t.Run("should handle invalid parameters", func(t *testing.T) {
+		deps := makeMathControllerDeps()
+		controller := NewMathController(deps)
+		ctx := t.Context()
+
+		request := mcp.CallToolRequest{
+			Params: mcp.CallToolParams{
+				Name: "subtract",
+				Arguments: map[string]interface{}{
+					"a": "invalid", // Invalid type
+					"b": 3.0,
+				},
+			},
+		}
+
+		result, err := controller.HandleSubtract(ctx, request)
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result.IsError)
+		assert.NotEmpty(t, result.Content)
+
+		if len(result.Content) > 0 {
+			content, ok := mcp.AsTextContent(result.Content[0])
+			require.True(t, ok, "Error content should be text content")
+			assert.Contains(t, content.Text, "Invalid parameters")
+		}
+	})
 }
 
 func TestMathController_HandleMultiply(t *testing.T) {
@@ -376,6 +461,35 @@ func TestMathController_HandleMultiply(t *testing.T) {
 			content, ok := mcp.AsTextContent(result.Content[0])
 			require.True(t, ok, "First content should be text content")
 			assert.Contains(t, content.Text, "6 × 7 = 42")
+		}
+	})
+
+	t.Run("should handle invalid parameters", func(t *testing.T) {
+		deps := makeMathControllerDeps()
+		controller := NewMathController(deps)
+		ctx := t.Context()
+
+		request := mcp.CallToolRequest{
+			Params: mcp.CallToolParams{
+				Name: "multiply",
+				Arguments: map[string]interface{}{
+					"a": 6.0,
+					"b": "invalid", // Invalid type
+				},
+			},
+		}
+
+		result, err := controller.HandleMultiply(ctx, request)
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result.IsError)
+		assert.NotEmpty(t, result.Content)
+
+		if len(result.Content) > 0 {
+			content, ok := mcp.AsTextContent(result.Content[0])
+			require.True(t, ok, "Error content should be text content")
+			assert.Contains(t, content.Text, "Invalid parameters")
 		}
 	})
 }
@@ -436,6 +550,93 @@ func TestMathController_HandleDivide(t *testing.T) {
 			content, ok := mcp.AsTextContent(result.Content[0])
 			require.True(t, ok, "Error content should be text content")
 			assert.Contains(t, content.Text, "Division failed")
+		}
+	})
+
+	t.Run("should handle invalid parameters", func(t *testing.T) {
+		deps := makeMathControllerDeps()
+		controller := NewMathController(deps)
+		ctx := t.Context()
+
+		request := mcp.CallToolRequest{
+			Params: mcp.CallToolParams{
+				Name: "divide",
+				Arguments: map[string]interface{}{
+					"a": "invalid", // Invalid type
+					"b": 4.0,
+				},
+			},
+		}
+
+		result, err := controller.HandleDivide(ctx, request)
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result.IsError)
+		assert.NotEmpty(t, result.Content)
+
+		if len(result.Content) > 0 {
+			content, ok := mcp.AsTextContent(result.Content[0])
+			require.True(t, ok, "Error content should be text content")
+			assert.Contains(t, content.Text, "Invalid parameters")
+		}
+	})
+}
+
+// Test for HandleAdd missing parameter error cases
+func TestMathController_HandleAdd_ParameterErrors(t *testing.T) {
+	t.Run("should handle missing 'a' parameter", func(t *testing.T) {
+		deps := makeMathControllerDeps()
+		controller := NewMathController(deps)
+		ctx := t.Context()
+
+		request := mcp.CallToolRequest{
+			Params: mcp.CallToolParams{
+				Name: "add",
+				Arguments: map[string]interface{}{
+					"b": 3.0,
+					// Missing "a" parameter
+				},
+			},
+		}
+
+		result, err := controller.HandleAdd(ctx, request)
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result.IsError)
+		assert.NotEmpty(t, result.Content)
+
+		if len(result.Content) > 0 {
+			content, ok := mcp.AsTextContent(result.Content[0])
+			require.True(t, ok, "Error content should be text content")
+			assert.Contains(t, content.Text, "Invalid parameters")
+		}
+	})
+
+	t.Run("should handle non-object arguments", func(t *testing.T) {
+		deps := makeMathControllerDeps()
+		controller := NewMathController(deps)
+		ctx := t.Context()
+
+		request := mcp.CallToolRequest{
+			Params: mcp.CallToolParams{
+				Name:      "add",
+				Arguments: "invalid_arguments", // Not an object
+			},
+		}
+
+		result, err := controller.HandleAdd(ctx, request)
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.True(t, result.IsError)
+		assert.NotEmpty(t, result.Content)
+
+		if len(result.Content) > 0 {
+			content, ok := mcp.AsTextContent(result.Content[0])
+			require.True(t, ok, "Error content should be text content")
+			assert.Contains(t, content.Text, "Invalid parameters")
 		}
 	})
 }
@@ -549,6 +750,25 @@ func TestMathController_RegisterWithServer(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to register tool")
+		mockRegistrar.AssertExpectations(t)
+	})
+
+	t.Run("should handle registration error for specific tool", func(t *testing.T) {
+		deps := makeMathControllerDeps()
+		controller := NewMathController(deps)
+
+		mockRegistrar := &MockToolRegistrar{}
+		// First tool succeeds, second fails
+		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
+			Return(nil).Once()
+		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
+			Return(errors.New("specific tool registration failed")).Once()
+
+		err := controller.RegisterWithServer(mockRegistrar)
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to register tool")
+		assert.Contains(t, err.Error(), "specific tool registration failed")
 		mockRegistrar.AssertExpectations(t)
 	})
 }
