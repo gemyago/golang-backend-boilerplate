@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-
 	mcpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/mcp/server"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
@@ -16,25 +14,15 @@ type httpServerParams struct {
 	MCPServer *mcpserver.MCPServer
 }
 
-func startHTTPServer(params httpServerParams) error {
-	rootCtx := context.Background()
-
-	return params.MCPServer.StartHTTP(rootCtx)
-}
-
 func newHTTPCmd(container *dig.Container) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "http",
 		Short: "Start MCP server with HTTP transport",
 		Long:  "Start MCP server using HTTP transport for web-based MCP clients",
-		RunE: func(_ *cobra.Command, _ []string) error {
-			var params httpServerParams
-			if err := container.Invoke(func(p httpServerParams) {
-				params = p
-			}); err != nil {
-				return err
-			}
-			return startHTTPServer(params)
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return container.Invoke(func(p httpServerParams) error {
+				return p.MCPServer.StartHTTP(cmd.Context())
+			})
 		},
 	}
 

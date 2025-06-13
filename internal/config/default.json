@@ -12,8 +12,6 @@
   "mcpServer": {
     "name": "golang-backend-boilerplate-mcp",
     "version": "1.0.0",
-    "stdioEnabled": true,
-    "httpEnabled": true,
     "httpHost": "localhost",
     "httpPort": 8080
   }

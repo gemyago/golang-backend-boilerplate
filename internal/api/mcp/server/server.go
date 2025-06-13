@@ -30,12 +30,10 @@ type MCPServerDeps struct {
 	RootLogger *slog.Logger
 
 	// config
-	Name         string `name:"config.mcpServer.name"`
-	Version      string `name:"config.mcpServer.version"`
-	StdioEnabled bool   `name:"config.mcpServer.stdioEnabled"`
-	HTTPEnabled  bool   `name:"config.mcpServer.httpEnabled"`
-	HTTPHost     string `name:"config.mcpServer.httpHost"`
-	HTTPPort     int    `name:"config.mcpServer.httpPort"`
+	Name     string `name:"config.mcpServer.name"`
+	Version  string `name:"config.mcpServer.version"`
+	HTTPHost string `name:"config.mcpServer.httpHost"`
+	HTTPPort int    `name:"config.mcpServer.httpPort"`
 
 	// services
 	*services.ShutdownHooks
@@ -60,9 +58,7 @@ type MCPServer struct {
 	logger      *slog.Logger
 	initialized bool
 
-	// HTTP server lifecycle management
 	httpServer *http.Server
-	sseServer  *server.SSEServer
 
 	// Tool registry
 	tools map[string]ToolInfo
@@ -118,11 +114,6 @@ func (s *MCPServer) Initialize(ctx context.Context) error {
 
 // StartStdio starts the MCP server with stdio transport.
 func (s *MCPServer) StartStdio(ctx context.Context) error {
-	if !s.deps.StdioEnabled {
-		s.logger.WarnContext(ctx, "Attempted to start stdio transport but it is disabled")
-		return ErrStdioNotEnabled
-	}
-
 	if err := s.Initialize(ctx); err != nil {
 		return fmt.Errorf("failed to initialize MCP server for stdio transport: %w", err)
 	}
@@ -143,39 +134,27 @@ func (s *MCPServer) StartStdio(ctx context.Context) error {
 
 // StartHTTP starts the MCP server with HTTP transport.
 func (s *MCPServer) StartHTTP(ctx context.Context) error {
-	if !s.deps.HTTPEnabled {
-		return ErrHTTPNotEnabled
-	}
-
 	if err := s.Initialize(ctx); err != nil {
 		return fmt.Errorf("failed to initialize MCP server for HTTP transport: %w", err)
 	}
-
-	s.logger.InfoContext(ctx, "Starting MCP server with HTTP transport",
-		slog.String("host", s.deps.HTTPHost),
-		slog.Int("port", s.deps.HTTPPort))
-
-	// Create SSE server
-	s.sseServer = server.NewSSEServer(s.mcpServer)
 
 	// Set up HTTP server
 	address := fmt.Sprintf("%s:%d", s.deps.HTTPHost, s.deps.HTTPPort)
 
 	s.httpServer = &http.Server{
 		Addr:         address,
-		Handler:      s.sseServer,
+		Handler:      server.NewSSEServer(s.mcpServer),
 		ReadTimeout:  httpReadTimeout,
 		WriteTimeout: httpWriteTimeout,
 		IdleTimeout:  httpIdleTimeout,
 	}
 
-	s.logger.InfoContext(ctx, "MCP HTTP server configured",
-		slog.String("address", address))
-
 	// Start server in a goroutine so we can handle shutdown
 	serverErr := make(chan error, 1)
 	go func() {
-		s.logger.InfoContext(ctx, "Starting HTTP server")
+		s.logger.InfoContext(ctx, "Starting MCP server with HTTP transport",
+			slog.String("host", s.deps.HTTPHost),
+			slog.Int("port", s.deps.HTTPPort))
 		serverErr <- s.httpServer.ListenAndServe()
 	}()
 
@@ -213,7 +192,6 @@ func (s *MCPServer) shutdownHTTPServer(ctx context.Context) error {
 
 	s.logger.InfoContext(ctx, "HTTP server shutdown completed")
 	s.httpServer = nil
-	s.sseServer = nil
 	return nil
 }
 
