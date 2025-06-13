@@ -1,9 +1,10 @@
 package controllers
 
 import (
-	"fmt"
 	"log/slog"
 	"testing"
+
+	"errors"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -451,8 +452,8 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 		}
 		a, b, err := controller.extractNumberParams(args)
 		require.NoError(t, err)
-		assert.Equal(t, 5.5, a)
-		assert.Equal(t, 3.2, b)
+		assert.InEpsilon(t, 5.5, a, 0.0001)
+		assert.InEpsilon(t, 3.2, b, 0.0001)
 
 		// Test with int
 		args = map[string]interface{}{
@@ -461,8 +462,8 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 		}
 		a, b, err = controller.extractNumberParams(args)
 		require.NoError(t, err)
-		assert.Equal(t, 5.0, a)
-		assert.Equal(t, 3.0, b)
+		assert.InEpsilon(t, 5.0, a, 0.0001)
+		assert.InEpsilon(t, 3.0, b, 0.0001)
 
 		// Test with int64
 		args = map[string]interface{}{
@@ -471,8 +472,8 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 		}
 		a, b, err = controller.extractNumberParams(args)
 		require.NoError(t, err)
-		assert.Equal(t, 5.0, a)
-		assert.Equal(t, 3.0, b)
+		assert.InEpsilon(t, 5.0, a, 0.0001)
+		assert.InEpsilon(t, 3.0, b, 0.0001)
 	})
 
 	t.Run("should handle invalid argument types", func(t *testing.T) {
@@ -516,8 +517,8 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 		operation, a, b, err := controller.extractCalculateParams(args)
 		require.NoError(t, err)
 		assert.Equal(t, "multiply", operation)
-		assert.Equal(t, 6.0, a)
-		assert.Equal(t, 7.0, b)
+		assert.InEpsilon(t, 6.0, a, 0.0001)
+		assert.InEpsilon(t, 7.0, b, 0.0001)
 	})
 }
 
@@ -542,7 +543,7 @@ func TestMathController_RegisterWithServer(t *testing.T) {
 
 		mockRegistrar := &MockToolRegistrar{}
 		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
-			Return(fmt.Errorf("registration failed")).Once()
+			Return(errors.New("registration failed")).Once()
 
 		err := controller.RegisterWithServer(mockRegistrar)
 
@@ -586,7 +587,7 @@ func TestMathController_ParameterTypeSafety(t *testing.T) {
 					assert.Contains(t, err.Error(), "parameter must be a number")
 				} else {
 					require.NoError(t, err)
-					assert.Equal(t, tc.expected, result)
+					assert.InEpsilon(t, tc.expected, result, 0.0001)
 				}
 			})
 		}

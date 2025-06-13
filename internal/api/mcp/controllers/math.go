@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -246,12 +247,12 @@ func (mc *MathController) HandleDivide(ctx context.Context,
 func (mc *MathController) extractCalculateParams(args interface{}) (string, float64, float64, error) {
 	argsMap, ok := args.(map[string]interface{})
 	if !ok {
-		return "", 0, 0, fmt.Errorf("arguments must be an object")
+		return "", 0, 0, errors.New("arguments must be an object")
 	}
 
 	operation, ok := argsMap["operation"].(string)
 	if !ok {
-		return "", 0, 0, fmt.Errorf("operation parameter is required and must be a string")
+		return "", 0, 0, errors.New("operation parameter is required and must be a string")
 	}
 
 	a, err := mc.extractNumberParam(argsMap, "a")
@@ -271,7 +272,7 @@ func (mc *MathController) extractCalculateParams(args interface{}) (string, floa
 func (mc *MathController) extractNumberParams(args interface{}) (float64, float64, error) {
 	argsMap, ok := args.(map[string]interface{})
 	if !ok {
-		return 0, 0, fmt.Errorf("arguments must be an object")
+		return 0, 0, errors.New("arguments must be an object")
 	}
 
 	a, err := mc.extractNumberParam(argsMap, "a")

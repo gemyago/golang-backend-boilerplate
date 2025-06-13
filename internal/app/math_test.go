@@ -40,10 +40,10 @@ func TestMathService_Add(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, 8.0, response.Result)
+		assert.InEpsilon(t, 8.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationAdd, response.Operation)
-		assert.Equal(t, a, response.A)
-		assert.Equal(t, b, response.B)
+		assert.InEpsilon(t, a, response.A, 0.0001)
+		assert.InEpsilon(t, b, response.B, 0.0001)
 	})
 
 	t.Run("should handle negative numbers in addition", func(t *testing.T) {
@@ -58,7 +58,7 @@ func TestMathService_Add(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, -2.0, response.Result)
+		assert.InEpsilon(t, -2.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationAdd, response.Operation)
 	})
 
@@ -74,7 +74,7 @@ func TestMathService_Add(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.InDelta(t, 6.2, response.Result, 0.001)
+		assert.InEpsilon(t, 6.2, response.Result, 0.001)
 		assert.Equal(t, MathOperationAdd, response.Operation)
 	})
 }
@@ -92,10 +92,10 @@ func TestMathService_Subtract(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, 5.0, response.Result)
+		assert.InEpsilon(t, 5.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationSubtract, response.Operation)
-		assert.Equal(t, a, response.A)
-		assert.Equal(t, b, response.B)
+		assert.InEpsilon(t, a, response.A, 0.0001)
+		assert.InEpsilon(t, b, response.B, 0.0001)
 	})
 
 	t.Run("should handle negative result in subtraction", func(t *testing.T) {
@@ -110,7 +110,7 @@ func TestMathService_Subtract(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, -5.0, response.Result)
+		assert.InEpsilon(t, -5.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationSubtract, response.Operation)
 	})
 
@@ -126,7 +126,7 @@ func TestMathService_Subtract(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.InDelta(t, 6.2, response.Result, 0.001)
+		assert.InEpsilon(t, 6.2, response.Result, 0.001)
 		assert.Equal(t, MathOperationSubtract, response.Operation)
 	})
 }
@@ -144,10 +144,10 @@ func TestMathService_Multiply(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, 20.0, response.Result)
+		assert.InEpsilon(t, 20.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationMultiply, response.Operation)
-		assert.Equal(t, a, response.A)
-		assert.Equal(t, b, response.B)
+		assert.InEpsilon(t, a, response.A, 0.0001)
+		assert.InEpsilon(t, b, response.B, 0.0001)
 	})
 
 	t.Run("should handle multiplication by zero", func(t *testing.T) {
@@ -178,7 +178,7 @@ func TestMathService_Multiply(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, -12.0, response.Result)
+		assert.InEpsilon(t, -12.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationMultiply, response.Operation)
 	})
 
@@ -194,7 +194,7 @@ func TestMathService_Multiply(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.InDelta(t, 8.0, response.Result, 0.001)
+		assert.InEpsilon(t, 8.0, response.Result, 0.001)
 		assert.Equal(t, MathOperationMultiply, response.Operation)
 	})
 }
@@ -212,10 +212,10 @@ func TestMathService_Divide(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, 5.0, response.Result)
+		assert.InEpsilon(t, 5.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationDivide, response.Operation)
-		assert.Equal(t, a, response.A)
-		assert.Equal(t, b, response.B)
+		assert.InEpsilon(t, a, response.A, 0.0001)
+		assert.InEpsilon(t, b, response.B, 0.0001)
 	})
 
 	t.Run("should handle division by zero with error", func(t *testing.T) {
@@ -246,7 +246,7 @@ func TestMathService_Divide(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, 3.0, response.Result)
+		assert.InEpsilon(t, 3.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationDivide, response.Operation)
 	})
 
@@ -262,7 +262,7 @@ func TestMathService_Divide(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.InDelta(t, 3.333333, response.Result, 0.000001)
+		assert.InEpsilon(t, 3.333333, response.Result, 0.000001)
 		assert.Equal(t, MathOperationDivide, response.Operation)
 	})
 
@@ -278,7 +278,7 @@ func TestMathService_Divide(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, -3.0, response.Result)
+		assert.InEpsilon(t, -3.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationDivide, response.Operation)
 	})
 }
@@ -299,7 +299,7 @@ func TestMathService_Calculate(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, 10.0, response.Result)
+		assert.InEpsilon(t, 10.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationAdd, response.Operation)
 	})
 
@@ -318,7 +318,7 @@ func TestMathService_Calculate(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, 6.0, response.Result)
+		assert.InEpsilon(t, 6.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationSubtract, response.Operation)
 	})
 
@@ -337,7 +337,7 @@ func TestMathService_Calculate(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, 42.0, response.Result)
+		assert.InEpsilon(t, 42.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationMultiply, response.Operation)
 	})
 
@@ -356,7 +356,7 @@ func TestMathService_Calculate(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, 5.0, response.Result)
+		assert.InEpsilon(t, 5.0, response.Result, 0.0001)
 		assert.Equal(t, MathOperationDivide, response.Operation)
 	})
 
@@ -409,21 +409,21 @@ func TestMathService_ContextCancellation(t *testing.T) {
 		addResp, addErr := service.Add(ctx, 5.0, 3.0)
 		require.NoError(t, addErr)
 		require.NotNil(t, addResp)
-		assert.Equal(t, 8.0, addResp.Result)
+		assert.InEpsilon(t, 8.0, addResp.Result, 0.0001)
 
 		subResp, subErr := service.Subtract(ctx, 10.0, 3.0)
 		require.NoError(t, subErr)
 		require.NotNil(t, subResp)
-		assert.Equal(t, 7.0, subResp.Result)
+		assert.InEpsilon(t, 7.0, subResp.Result, 0.0001)
 
 		mulResp, mulErr := service.Multiply(ctx, 4.0, 5.0)
 		require.NoError(t, mulErr)
 		require.NotNil(t, mulResp)
-		assert.Equal(t, 20.0, mulResp.Result)
+		assert.InEpsilon(t, 20.0, mulResp.Result, 0.0001)
 
 		divResp, divErr := service.Divide(ctx, 15.0, 3.0)
 		require.NoError(t, divErr)
 		require.NotNil(t, divResp)
-		assert.Equal(t, 5.0, divResp.Result)
+		assert.InEpsilon(t, 5.0, divResp.Result, 0.0001)
 	})
 }
