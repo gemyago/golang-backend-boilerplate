@@ -6,25 +6,10 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/mark3labs/mcp-go/mcp"
-	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
-
-// MockToolRegistrar is a mock implementation of the tool registrar for testing.
-type MockToolRegistrar struct {
-	mock.Mock
-}
-
-func (m *MockToolRegistrar) RegisterTool(tool mcp.Tool, handler mcpserver.ToolHandlerFunc) error {
-	args := m.Called(tool, handler)
-	return args.Error(0)
-}
-
-func (m *MockToolRegistrar) AddTools(tools ...mcpserver.ServerTool) {
-	m.Called(tools)
-}
 
 func makeMathControllerDeps() MathControllerDeps {
 	mathServiceDeps := app.MathServiceDeps{

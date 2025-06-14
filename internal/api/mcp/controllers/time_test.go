@@ -2,14 +2,12 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"testing"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/go-faker/faker/v4"
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -39,16 +37,17 @@ func TestNewTimeController(t *testing.T) {
 	})
 }
 
-func TestTimeController_GetTimeTool(t *testing.T) {
+func TestTimeController_ToolDefinition(t *testing.T) {
 	t.Run("should return valid time tool definition", func(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
 
-		tool := controller.GetTimeTool()
+		serverTool := controller.newGetCurrentTimeServerTool()
 
-		assert.Equal(t, "get_current_time", tool.Name)
-		assert.Equal(t, "Get the current date and time in various formats", tool.Description)
-		assert.NotNil(t, tool.InputSchema)
+		assert.Equal(t, "get_current_time", serverTool.Tool.Name)
+		assert.Equal(t, "Get the current date and time in various formats", serverTool.Tool.Description)
+		assert.NotNil(t, serverTool.Tool.InputSchema)
+		assert.NotNil(t, serverTool.Handler)
 	})
 }
 
@@ -57,6 +56,9 @@ func TestTimeController_HandleGetCurrentTime_ISO(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
 		ctx := t.Context()
+
+		serverTool := controller.newGetCurrentTimeServerTool()
+		handler := serverTool.Handler
 
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
@@ -67,7 +69,7 @@ func TestTimeController_HandleGetCurrentTime_ISO(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleGetCurrentTime(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -90,6 +92,9 @@ func TestTimeController_HandleGetCurrentTime_RFC3339(t *testing.T) {
 		controller := NewTimeController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newGetCurrentTimeServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "get_current_time",
@@ -99,7 +104,7 @@ func TestTimeController_HandleGetCurrentTime_RFC3339(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleGetCurrentTime(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -122,6 +127,9 @@ func TestTimeController_HandleGetCurrentTime_Unix(t *testing.T) {
 		controller := NewTimeController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newGetCurrentTimeServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "get_current_time",
@@ -131,7 +139,7 @@ func TestTimeController_HandleGetCurrentTime_Unix(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleGetCurrentTime(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -154,6 +162,9 @@ func TestTimeController_HandleGetCurrentTime_DefaultFormat(t *testing.T) {
 		controller := NewTimeController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newGetCurrentTimeServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name:      "get_current_time",
@@ -161,7 +172,7 @@ func TestTimeController_HandleGetCurrentTime_DefaultFormat(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleGetCurrentTime(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -184,6 +195,9 @@ func TestTimeController_HandleGetCurrentTime_InvalidFormat(t *testing.T) {
 		controller := NewTimeController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newGetCurrentTimeServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "get_current_time",
@@ -193,7 +207,7 @@ func TestTimeController_HandleGetCurrentTime_InvalidFormat(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleGetCurrentTime(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -217,6 +231,9 @@ func TestTimeController_HandleGetCurrentTime_ContextCancellation(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel() // Cancel context immediately
 
+		serverTool := controller.newGetCurrentTimeServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "get_current_time",
@@ -227,7 +244,7 @@ func TestTimeController_HandleGetCurrentTime_ContextCancellation(t *testing.T) {
 		}
 
 		// Service should still work as it doesn't depend on context for time operations
-		result, err := controller.HandleGetCurrentTime(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -236,52 +253,17 @@ func TestTimeController_HandleGetCurrentTime_ContextCancellation(t *testing.T) {
 	})
 }
 
-// Mock ToolRegistrar for testing.
-type mockToolRegistrar struct {
-	registeredTools    []mcp.Tool
-	registeredHandlers []ToolHandler
-}
-
-func (m *mockToolRegistrar) RegisterTool(tool mcp.Tool, handler ToolHandler) error {
-	m.registeredTools = append(m.registeredTools, tool)
-	m.registeredHandlers = append(m.registeredHandlers, handler)
-	return nil
-}
-
-func (m *mockToolRegistrar) AddTools(tools ...server.ServerTool) {
-	// m.registeredTools = append(m.registeredTools, tools...)
-}
-
 func TestTimeController_RegisterWithServer(t *testing.T) {
 	t.Run("should register time tool with server", func(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
-		mockServer := &mockToolRegistrar{}
-
-		err := controller.RegisterWithServer(mockServer)
-
-		require.NoError(t, err)
-		assert.Len(t, mockServer.registeredTools, 1)
-		assert.Len(t, mockServer.registeredHandlers, 1)
-
-		// Check the registered tool
-		tool := mockServer.registeredTools[0]
-		assert.Equal(t, "get_current_time", tool.Name)
-		assert.Equal(t, "Get the current date and time in various formats", tool.Description)
-	})
-
-	t.Run("should handle registration error", func(t *testing.T) {
-		deps := makeTimeControllerDeps()
-		controller := NewTimeController(deps)
 
 		mockRegistrar := &MockToolRegistrar{}
-		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
-			Return(errors.New("time tool registration failed")).Once()
+		mockRegistrar.On("AddTools", mock.Anything).Return(nil).Once()
 
 		err := controller.RegisterWithServer(mockRegistrar)
 
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "time tool registration failed")
+		require.NoError(t, err)
 		mockRegistrar.AssertExpectations(t)
 	})
 }
@@ -292,14 +274,14 @@ func TestTimeController_Integration(t *testing.T) {
 		controller := NewTimeController(deps)
 		ctx := t.Context()
 
-		// Get the tool
-		tool := controller.GetTimeTool()
-		assert.Equal(t, "get_current_time", tool.Name)
+		// Get the server tool
+		serverTool := controller.newGetCurrentTimeServerTool()
+		assert.Equal(t, "get_current_time", serverTool.Tool.Name)
 
 		// Simulate an MCP tool call
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
-				Name: tool.Name,
+				Name: serverTool.Tool.Name,
 				Arguments: map[string]interface{}{
 					"format": "iso",
 				},
@@ -307,7 +289,7 @@ func TestTimeController_Integration(t *testing.T) {
 		}
 
 		// Handle the tool call
-		result, err := controller.HandleGetCurrentTime(ctx, request)
+		result, err := serverTool.Handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)

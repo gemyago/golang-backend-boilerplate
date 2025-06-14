@@ -1,77 +1,63 @@
 package controllers
 
 import (
-	"context"
 	"log/slog"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/app"
+	"github.com/mark3labs/mcp-go/server"
 	"go.uber.org/dig"
 )
 
-// RegistryDeps contains dependencies for the controllers registry.
-type RegistryDeps struct {
+// ControllersRegistryDeps contains dependencies for the controllers registry.
+type ControllersRegistryDeps struct {
 	dig.In
 
-	RootLogger  *slog.Logger
-	TimeService *app.TimeService
-	MathService *app.MathService
+	RootLogger     *slog.Logger
+	MathController *MathController
+	TimeController *TimeController
 }
 
-// Registry manages all MCP controllers and their registration.
-type Registry struct {
+// ControllersRegistry manages all MCP controllers.
+type ControllersRegistry struct {
 	logger         *slog.Logger
-	timeController *TimeController
 	mathController *MathController
+	timeController *TimeController
 }
 
 // NewControllersRegistry creates a new controllers registry.
-func NewControllersRegistry(deps RegistryDeps) *Registry {
-	// Create individual controllers
-	timeController := NewTimeController(TimeControllerDeps{
-		RootLogger:  deps.RootLogger,
-		TimeService: deps.TimeService,
-	})
-
-	mathController := NewMathController(MathControllerDeps{
-		RootLogger:  deps.RootLogger,
-		MathService: deps.MathService,
-	})
-
-	return &Registry{
+func NewControllersRegistry(deps ControllersRegistryDeps) *ControllersRegistry {
+	return &ControllersRegistry{
 		logger:         deps.RootLogger.WithGroup("mcp.controllers-registry"),
-		timeController: timeController,
-		mathController: mathController,
+		mathController: deps.MathController,
+		timeController: deps.TimeController,
 	}
 }
 
-// RegisterAllControllers registers all available MCP controllers with the given server.
-func (cr *Registry) RegisterAllControllers(ctx context.Context, server ToolRegistrar) error {
-	cr.logger.InfoContext(ctx, "Registering all MCP controllers")
-
-	// Register time controller
-	if err := cr.timeController.RegisterWithServer(server); err != nil {
-		cr.logger.ErrorContext(ctx, "Failed to register time controller",
-			slog.String("error", err.Error()))
-		return err
-	}
+// RegisterAllControllers registers all controllers with the MCP server.
+func (r *ControllersRegistry) RegisterAllControllers(server interface {
+	AddTools(tools ...server.ServerTool)
+}) error {
+	r.logger.Info("Registering all MCP controllers")
 
 	// Register math controller
-	if err := cr.mathController.RegisterWithServer(server); err != nil {
-		cr.logger.ErrorContext(ctx, "Failed to register math controller",
-			slog.String("error", err.Error()))
+	if err := r.mathController.RegisterWithServer(server); err != nil {
 		return err
 	}
 
-	cr.logger.InfoContext(ctx, "Successfully registered all MCP controllers")
+	// Register time controller
+	if err := r.timeController.RegisterWithServer(server); err != nil {
+		return err
+	}
+
+	r.logger.Info("Successfully registered all MCP controllers")
 	return nil
 }
 
-// GetTimeController returns the time controller instance.
-func (cr *Registry) GetTimeController() *TimeController {
-	return cr.timeController
+// GetMathController returns the math controller instance.
+func (r *ControllersRegistry) GetMathController() *MathController {
+	return r.mathController
 }
 
-// GetMathController returns the math controller instance.
-func (cr *Registry) GetMathController() *MathController {
-	return cr.mathController
+// GetTimeController returns the time controller instance.
+func (r *ControllersRegistry) GetTimeController() *TimeController {
+	return r.timeController
 }
