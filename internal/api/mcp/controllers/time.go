@@ -49,6 +49,7 @@ func (tc *TimeController) GetTimeTool() mcp.Tool {
 // This allows us to decouple the controller from the specific server implementation.
 type ToolRegistrar interface {
 	RegisterTool(tool mcp.Tool, handler ToolHandler) error
+	AddTools(tools ...server.ServerTool)
 }
 
 // ToolHandler represents a function that handles tool calls.

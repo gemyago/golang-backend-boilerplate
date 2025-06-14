@@ -230,6 +230,11 @@ func (s *MCPServer) RegisterTool(tool mcp.Tool, handler ToolHandler) error {
 	return nil
 }
 
+// AddTools adds tools to the MCP server.
+func (s *MCPServer) AddTools(tools ...server.ServerTool) {
+	s.mcpServer.AddTools(tools...)
+}
+
 // registerToolsWithMCPServer registers all tools with the underlying mcp-go server.
 func (s *MCPServer) registerToolsWithMCPServer() {
 	for _, toolInfo := range s.tools {

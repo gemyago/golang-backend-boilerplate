@@ -9,6 +9,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/go-faker/faker/v4"
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -245,6 +246,10 @@ func (m *mockToolRegistrar) RegisterTool(tool mcp.Tool, handler ToolHandler) err
 	m.registeredTools = append(m.registeredTools, tool)
 	m.registeredHandlers = append(m.registeredHandlers, handler)
 	return nil
+}
+
+func (m *mockToolRegistrar) AddTools(tools ...server.ServerTool) {
+	// m.registeredTools = append(m.registeredTools, tools...)
 }
 
 func TestTimeController_RegisterWithServer(t *testing.T) {

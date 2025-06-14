@@ -35,8 +35,8 @@ func NewMathController(deps MathControllerDeps) *MathController {
 	}
 }
 
-// GetCalculateTool returns the MCP tool definition for generic calculations.
-func (mc *MathController) GetCalculateTool() mcp.Tool {
+// newCalculateTool returns the MCP tool definition for generic calculations.
+func (mc *MathController) newCalculateTool() mcp.Tool {
 	return mcp.NewTool(
 		"calculate",
 		mcp.WithDescription("Perform mathematical calculations (add, subtract, multiply, divide)"),
@@ -49,8 +49,8 @@ func (mc *MathController) GetCalculateTool() mcp.Tool {
 	)
 }
 
-// GetAddTool returns the MCP tool definition for addition.
-func (mc *MathController) GetAddTool() mcp.Tool {
+// newAddTool returns the MCP tool definition for addition.
+func (mc *MathController) newAddTool() mcp.Tool {
 	return mcp.NewTool(
 		"add",
 		mcp.WithDescription("Add two numbers together"),
@@ -59,8 +59,8 @@ func (mc *MathController) GetAddTool() mcp.Tool {
 	)
 }
 
-// GetSubtractTool returns the MCP tool definition for subtraction.
-func (mc *MathController) GetSubtractTool() mcp.Tool {
+// newSubtractTool returns the MCP tool definition for subtraction.
+func (mc *MathController) newSubtractTool() mcp.Tool {
 	return mcp.NewTool(
 		"subtract",
 		mcp.WithDescription("Subtract second number from first number"),
@@ -69,8 +69,8 @@ func (mc *MathController) GetSubtractTool() mcp.Tool {
 	)
 }
 
-// GetMultiplyTool returns the MCP tool definition for multiplication.
-func (mc *MathController) GetMultiplyTool() mcp.Tool {
+// newMultiplyTool returns the MCP tool definition for multiplication.
+func (mc *MathController) newMultiplyTool() mcp.Tool {
 	return mcp.NewTool(
 		"multiply",
 		mcp.WithDescription("Multiply two numbers together"),
@@ -79,8 +79,8 @@ func (mc *MathController) GetMultiplyTool() mcp.Tool {
 	)
 }
 
-// GetDivideTool returns the MCP tool definition for division.
-func (mc *MathController) GetDivideTool() mcp.Tool {
+// newDivideTool returns the MCP tool definition for division.
+func (mc *MathController) newDivideTool() mcp.Tool {
 	return mcp.NewTool(
 		"divide",
 		mcp.WithDescription("Divide first number by second number"),
@@ -89,8 +89,8 @@ func (mc *MathController) GetDivideTool() mcp.Tool {
 	)
 }
 
-// HandleCalculate handles the calculate tool call.
-func (mc *MathController) HandleCalculate(ctx context.Context,
+// handleCalculate handles the calculate tool call.
+func (mc *MathController) handleCalculate(ctx context.Context,
 	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	mc.logger.InfoContext(ctx, "Handling calculate tool call",
 		slog.String("tool", request.Params.Name))
@@ -127,8 +127,8 @@ func (mc *MathController) HandleCalculate(ctx context.Context,
 	return mcp.NewToolResultText(resultText), nil
 }
 
-// HandleAdd handles the add tool call.
-func (mc *MathController) HandleAdd(ctx context.Context,
+// handleAdd handles the add tool call.
+func (mc *MathController) handleAdd(ctx context.Context,
 	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	mc.logger.InfoContext(ctx, "Handling add tool call",
 		slog.String("tool", request.Params.Name))
@@ -156,8 +156,8 @@ func (mc *MathController) HandleAdd(ctx context.Context,
 	return mcp.NewToolResultText(resultText), nil
 }
 
-// HandleSubtract handles the subtract tool call.
-func (mc *MathController) HandleSubtract(ctx context.Context,
+// handleSubtract handles the subtract tool call.
+func (mc *MathController) handleSubtract(ctx context.Context,
 	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	mc.logger.InfoContext(ctx, "Handling subtract tool call",
 		slog.String("tool", request.Params.Name))
@@ -185,8 +185,8 @@ func (mc *MathController) HandleSubtract(ctx context.Context,
 	return mcp.NewToolResultText(resultText), nil
 }
 
-// HandleMultiply handles the multiply tool call.
-func (mc *MathController) HandleMultiply(ctx context.Context,
+// handleMultiply handles the multiply tool call.
+func (mc *MathController) handleMultiply(ctx context.Context,
 	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	mc.logger.InfoContext(ctx, "Handling multiply tool call",
 		slog.String("tool", request.Params.Name))
@@ -214,8 +214,8 @@ func (mc *MathController) HandleMultiply(ctx context.Context,
 	return mcp.NewToolResultText(resultText), nil
 }
 
-// HandleDivide handles the divide tool call.
-func (mc *MathController) HandleDivide(ctx context.Context,
+// handleDivide handles the divide tool call.
+func (mc *MathController) handleDivide(ctx context.Context,
 	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	mc.logger.InfoContext(ctx, "Handling divide tool call",
 		slog.String("tool", request.Params.Name))
@@ -316,11 +316,11 @@ func (mc *MathController) RegisterWithServer(server ToolRegistrar) error {
 		tool    mcp.Tool
 		handler ToolHandler
 	}{
-		{mc.GetCalculateTool(), mc.HandleCalculate},
-		{mc.GetAddTool(), mc.HandleAdd},
-		{mc.GetSubtractTool(), mc.HandleSubtract},
-		{mc.GetMultiplyTool(), mc.HandleMultiply},
-		{mc.GetDivideTool(), mc.HandleDivide},
+		{mc.newCalculateTool(), mc.handleCalculate},
+		{mc.newAddTool(), mc.handleAdd},
+		{mc.newSubtractTool(), mc.handleSubtract},
+		{mc.newMultiplyTool(), mc.handleMultiply},
+		{mc.newDivideTool(), mc.handleDivide},
 	}
 
 	for _, toolInfo := range tools {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -21,6 +22,10 @@ type MockToolRegistrar struct {
 func (m *MockToolRegistrar) RegisterTool(tool mcp.Tool, handler ToolHandler) error {
 	args := m.Called(tool, handler)
 	return args.Error(0)
+}
+
+func (m *MockToolRegistrar) AddTools(tools ...server.ServerTool) {
+	m.Called(tools)
 }
 
 func makeMathControllerDeps() MathControllerDeps {
@@ -52,7 +57,7 @@ func TestMathController_ToolDefinitions(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		tool := controller.GetCalculateTool()
+		tool := controller.newCalculateTool()
 
 		assert.Equal(t, "calculate", tool.Name)
 		assert.Equal(t, "Perform mathematical calculations (add, subtract, multiply, divide)", tool.Description)
@@ -63,7 +68,7 @@ func TestMathController_ToolDefinitions(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		tool := controller.GetAddTool()
+		tool := controller.newAddTool()
 
 		assert.Equal(t, "add", tool.Name)
 		assert.Equal(t, "Add two numbers together", tool.Description)
@@ -74,7 +79,7 @@ func TestMathController_ToolDefinitions(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		tool := controller.GetSubtractTool()
+		tool := controller.newSubtractTool()
 
 		assert.Equal(t, "subtract", tool.Name)
 		assert.Equal(t, "Subtract second number from first number", tool.Description)
@@ -85,7 +90,7 @@ func TestMathController_ToolDefinitions(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		tool := controller.GetMultiplyTool()
+		tool := controller.newMultiplyTool()
 
 		assert.Equal(t, "multiply", tool.Name)
 		assert.Equal(t, "Multiply two numbers together", tool.Description)
@@ -96,7 +101,7 @@ func TestMathController_ToolDefinitions(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		tool := controller.GetDivideTool()
+		tool := controller.newDivideTool()
 
 		assert.Equal(t, "divide", tool.Name)
 		assert.Equal(t, "Divide first number by second number", tool.Description)
@@ -121,7 +126,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleCalculate(ctx, request)
+		result, err := controller.handleCalculate(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -152,7 +157,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleCalculate(ctx, request)
+		result, err := controller.handleCalculate(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -183,7 +188,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleCalculate(ctx, request)
+		result, err := controller.handleCalculate(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -213,7 +218,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleCalculate(ctx, request)
+		result, err := controller.handleCalculate(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -239,7 +244,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleCalculate(ctx, request)
+		result, err := controller.handleCalculate(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -269,7 +274,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleCalculate(ctx, request)
+		result, err := controller.handleCalculate(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -299,7 +304,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleCalculate(ctx, request)
+		result, err := controller.handleCalculate(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -330,7 +335,7 @@ func TestMathController_HandleAdd(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleAdd(ctx, request)
+		result, err := controller.handleAdd(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -359,7 +364,7 @@ func TestMathController_HandleAdd(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleAdd(ctx, request)
+		result, err := controller.handleAdd(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -390,7 +395,7 @@ func TestMathController_HandleSubtract(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleSubtract(ctx, request)
+		result, err := controller.handleSubtract(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -419,7 +424,7 @@ func TestMathController_HandleSubtract(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleSubtract(ctx, request)
+		result, err := controller.handleSubtract(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -450,7 +455,7 @@ func TestMathController_HandleMultiply(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleMultiply(ctx, request)
+		result, err := controller.handleMultiply(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -479,7 +484,7 @@ func TestMathController_HandleMultiply(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleMultiply(ctx, request)
+		result, err := controller.handleMultiply(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -510,7 +515,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleDivide(ctx, request)
+		result, err := controller.handleDivide(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -539,7 +544,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleDivide(ctx, request)
+		result, err := controller.handleDivide(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -568,7 +573,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleDivide(ctx, request)
+		result, err := controller.handleDivide(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -583,7 +588,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 	})
 }
 
-// Test for HandleAdd missing parameter error cases
+// Test for HandleAdd missing parameter error cases.
 func TestMathController_HandleAdd_ParameterErrors(t *testing.T) {
 	t.Run("should handle missing 'a' parameter", func(t *testing.T) {
 		deps := makeMathControllerDeps()
@@ -600,7 +605,7 @@ func TestMathController_HandleAdd_ParameterErrors(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleAdd(ctx, request)
+		result, err := controller.handleAdd(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -626,7 +631,7 @@ func TestMathController_HandleAdd_ParameterErrors(t *testing.T) {
 			},
 		}
 
-		result, err := controller.HandleAdd(ctx, request)
+		result, err := controller.handleAdd(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)

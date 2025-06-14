@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"context"
 	"errors"
 	"log/slog"
 	"testing"
@@ -12,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockTimeController for testing registry controller
+// MockTimeController for testing registry controller.
 type MockTimeController struct {
 	mock.Mock
 }
@@ -22,7 +21,7 @@ func (m *MockTimeController) RegisterWithServer(server ToolRegistrar) error {
 	return args.Error(0)
 }
 
-// MockMathController for testing registry controller
+// MockMathController for testing registry controller.
 type MockMathController struct {
 	mock.Mock
 }
@@ -68,7 +67,7 @@ func TestRegistry_RegisterAllControllers(t *testing.T) {
 	t.Run("should register all controllers successfully", func(t *testing.T) {
 		deps := makeRegistryDeps()
 		registry := NewControllersRegistry(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		mockRegistrar := &MockToolRegistrar{}
 		// Expect time controller to register (1 tool)
@@ -87,7 +86,7 @@ func TestRegistry_RegisterAllControllers(t *testing.T) {
 	t.Run("should handle time controller registration error", func(t *testing.T) {
 		deps := makeRegistryDeps()
 		registry := NewControllersRegistry(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		mockRegistrar := &MockToolRegistrar{}
 		// Time controller registration fails
@@ -104,7 +103,7 @@ func TestRegistry_RegisterAllControllers(t *testing.T) {
 	t.Run("should handle math controller registration error", func(t *testing.T) {
 		deps := makeRegistryDeps()
 		registry := NewControllersRegistry(deps)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		mockRegistrar := &MockToolRegistrar{}
 		// Time controller succeeds
