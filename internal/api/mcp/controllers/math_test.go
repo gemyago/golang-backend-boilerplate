@@ -4,11 +4,9 @@ import (
 	"log/slog"
 	"testing"
 
-	"errors"
-
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
+	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -19,12 +17,12 @@ type MockToolRegistrar struct {
 	mock.Mock
 }
 
-func (m *MockToolRegistrar) RegisterTool(tool mcp.Tool, handler ToolHandler) error {
+func (m *MockToolRegistrar) RegisterTool(tool mcp.Tool, handler mcpserver.ToolHandlerFunc) error {
 	args := m.Called(tool, handler)
 	return args.Error(0)
 }
 
-func (m *MockToolRegistrar) AddTools(tools ...server.ServerTool) {
+func (m *MockToolRegistrar) AddTools(tools ...mcpserver.ServerTool) {
 	m.Called(tools)
 }
 
@@ -57,55 +55,60 @@ func TestMathController_ToolDefinitions(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		tool := controller.newCalculateTool()
+		serverTool := controller.newCalculateServerTool()
 
-		assert.Equal(t, "calculate", tool.Name)
-		assert.Equal(t, "Perform mathematical calculations (add, subtract, multiply, divide)", tool.Description)
-		assert.NotNil(t, tool.InputSchema)
+		assert.Equal(t, "calculate", serverTool.Tool.Name)
+		assert.Equal(t, "Perform mathematical calculations (add, subtract, multiply, divide)", serverTool.Tool.Description)
+		assert.NotNil(t, serverTool.Tool.InputSchema)
+		assert.NotNil(t, serverTool.Handler)
 	})
 
 	t.Run("should return add tool with correct schema", func(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		tool := controller.newAddTool()
+		serverTool := controller.newAddServerTool()
 
-		assert.Equal(t, "add", tool.Name)
-		assert.Equal(t, "Add two numbers together", tool.Description)
-		assert.NotNil(t, tool.InputSchema)
+		assert.Equal(t, "add", serverTool.Tool.Name)
+		assert.Equal(t, "Add two numbers together", serverTool.Tool.Description)
+		assert.NotNil(t, serverTool.Tool.InputSchema)
+		assert.NotNil(t, serverTool.Handler)
 	})
 
 	t.Run("should return subtract tool with correct schema", func(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		tool := controller.newSubtractTool()
+		serverTool := controller.newSubtractServerTool()
 
-		assert.Equal(t, "subtract", tool.Name)
-		assert.Equal(t, "Subtract second number from first number", tool.Description)
-		assert.NotNil(t, tool.InputSchema)
+		assert.Equal(t, "subtract", serverTool.Tool.Name)
+		assert.Equal(t, "Subtract second number from first number", serverTool.Tool.Description)
+		assert.NotNil(t, serverTool.Tool.InputSchema)
+		assert.NotNil(t, serverTool.Handler)
 	})
 
 	t.Run("should return multiply tool with correct schema", func(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		tool := controller.newMultiplyTool()
+		serverTool := controller.newMultiplyServerTool()
 
-		assert.Equal(t, "multiply", tool.Name)
-		assert.Equal(t, "Multiply two numbers together", tool.Description)
-		assert.NotNil(t, tool.InputSchema)
+		assert.Equal(t, "multiply", serverTool.Tool.Name)
+		assert.Equal(t, "Multiply two numbers together", serverTool.Tool.Description)
+		assert.NotNil(t, serverTool.Tool.InputSchema)
+		assert.NotNil(t, serverTool.Handler)
 	})
 
 	t.Run("should return divide tool with correct schema", func(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		tool := controller.newDivideTool()
+		serverTool := controller.newDivideServerTool()
 
-		assert.Equal(t, "divide", tool.Name)
-		assert.Equal(t, "Divide first number by second number", tool.Description)
-		assert.NotNil(t, tool.InputSchema)
+		assert.Equal(t, "divide", serverTool.Tool.Name)
+		assert.Equal(t, "Divide first number by second number", serverTool.Tool.Description)
+		assert.NotNil(t, serverTool.Tool.InputSchema)
+		assert.NotNil(t, serverTool.Handler)
 	})
 }
 
@@ -114,6 +117,9 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 		ctx := t.Context()
+
+		serverTool := controller.newCalculateServerTool()
+		handler := serverTool.Handler
 
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
@@ -126,7 +132,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleCalculate(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -146,6 +152,9 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newCalculateServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
@@ -157,7 +166,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleCalculate(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -177,6 +186,9 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newCalculateServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
@@ -188,7 +200,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleCalculate(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -207,6 +219,9 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newCalculateServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
@@ -218,7 +233,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleCalculate(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -237,6 +252,9 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newCalculateServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name:      "calculate",
@@ -244,7 +262,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleCalculate(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -263,6 +281,9 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newCalculateServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
@@ -274,7 +295,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleCalculate(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -293,6 +314,9 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newCalculateServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
@@ -304,7 +328,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleCalculate(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -325,6 +349,9 @@ func TestMathController_HandleAdd(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newAddServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "add",
@@ -335,7 +362,7 @@ func TestMathController_HandleAdd(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleAdd(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -354,6 +381,9 @@ func TestMathController_HandleAdd(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newAddServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "add",
@@ -364,7 +394,7 @@ func TestMathController_HandleAdd(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleAdd(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -385,6 +415,9 @@ func TestMathController_HandleSubtract(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newSubtractServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "subtract",
@@ -395,7 +428,7 @@ func TestMathController_HandleSubtract(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleSubtract(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -414,6 +447,9 @@ func TestMathController_HandleSubtract(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newSubtractServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "subtract",
@@ -424,7 +460,7 @@ func TestMathController_HandleSubtract(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleSubtract(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -445,6 +481,9 @@ func TestMathController_HandleMultiply(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newMultiplyServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "multiply",
@@ -455,7 +494,7 @@ func TestMathController_HandleMultiply(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleMultiply(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -474,6 +513,9 @@ func TestMathController_HandleMultiply(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newMultiplyServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "multiply",
@@ -484,7 +526,7 @@ func TestMathController_HandleMultiply(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleMultiply(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -505,6 +547,9 @@ func TestMathController_HandleDivide(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newDivideServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "divide",
@@ -515,7 +560,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleDivide(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -534,6 +579,9 @@ func TestMathController_HandleDivide(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newDivideServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "divide",
@@ -544,7 +592,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleDivide(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -563,6 +611,9 @@ func TestMathController_HandleDivide(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newDivideServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "divide",
@@ -573,7 +624,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleDivide(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -595,6 +646,9 @@ func TestMathController_HandleAdd_ParameterErrors(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newAddServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "add",
@@ -605,7 +659,7 @@ func TestMathController_HandleAdd_ParameterErrors(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleAdd(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -624,6 +678,9 @@ func TestMathController_HandleAdd_ParameterErrors(t *testing.T) {
 		controller := NewMathController(deps)
 		ctx := t.Context()
 
+		serverTool := controller.newAddServerTool()
+		handler := serverTool.Handler
+
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name:      "add",
@@ -631,7 +688,7 @@ func TestMathController_HandleAdd_ParameterErrors(t *testing.T) {
 			},
 		}
 
-		result, err := controller.handleAdd(ctx, request)
+		result, err := handler(ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -734,46 +791,11 @@ func TestMathController_RegisterWithServer(t *testing.T) {
 		controller := NewMathController(deps)
 
 		mockRegistrar := &MockToolRegistrar{}
-		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
-			Return(nil).Times(5) // Expect 5 tools to be registered
+		mockRegistrar.On("AddTools", mock.Anything).Return(nil).Once()
 
 		err := controller.RegisterWithServer(mockRegistrar)
 
 		require.NoError(t, err)
-		mockRegistrar.AssertExpectations(t)
-	})
-
-	t.Run("should handle registration error", func(t *testing.T) {
-		deps := makeMathControllerDeps()
-		controller := NewMathController(deps)
-
-		mockRegistrar := &MockToolRegistrar{}
-		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
-			Return(errors.New("registration failed")).Once()
-
-		err := controller.RegisterWithServer(mockRegistrar)
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to register tool")
-		mockRegistrar.AssertExpectations(t)
-	})
-
-	t.Run("should handle registration error for specific tool", func(t *testing.T) {
-		deps := makeMathControllerDeps()
-		controller := NewMathController(deps)
-
-		mockRegistrar := &MockToolRegistrar{}
-		// First tool succeeds, second fails
-		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
-			Return(nil).Once()
-		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
-			Return(errors.New("specific tool registration failed")).Once()
-
-		err := controller.RegisterWithServer(mockRegistrar)
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to register tool")
-		assert.Contains(t, err.Error(), "specific tool registration failed")
 		mockRegistrar.AssertExpectations(t)
 	})
 }

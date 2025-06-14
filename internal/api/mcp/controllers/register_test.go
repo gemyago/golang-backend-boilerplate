@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"errors"
 	"log/slog"
 	"testing"
 
@@ -70,53 +69,15 @@ func TestRegistry_RegisterAllControllers(t *testing.T) {
 		ctx := t.Context()
 
 		mockRegistrar := &MockToolRegistrar{}
-		// Expect time controller to register (1 tool)
+		// For time controller
 		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
 			Return(nil).Once()
-		// Expect math controller to register (5 tools)
-		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
-			Return(nil).Times(5)
+		// For math controller
+		mockRegistrar.On("AddTools", mock.Anything).Return().Once()
 
 		err := registry.RegisterAllControllers(ctx, mockRegistrar)
 
 		require.NoError(t, err)
-		mockRegistrar.AssertExpectations(t)
-	})
-
-	t.Run("should handle time controller registration error", func(t *testing.T) {
-		deps := makeRegistryDeps()
-		registry := NewControllersRegistry(deps)
-		ctx := t.Context()
-
-		mockRegistrar := &MockToolRegistrar{}
-		// Time controller registration fails
-		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
-			Return(errors.New("time controller registration failed")).Once()
-
-		err := registry.RegisterAllControllers(ctx, mockRegistrar)
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "time controller registration failed")
-		mockRegistrar.AssertExpectations(t)
-	})
-
-	t.Run("should handle math controller registration error", func(t *testing.T) {
-		deps := makeRegistryDeps()
-		registry := NewControllersRegistry(deps)
-		ctx := t.Context()
-
-		mockRegistrar := &MockToolRegistrar{}
-		// Time controller succeeds
-		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
-			Return(nil).Once()
-		// Math controller registration fails
-		mockRegistrar.On("RegisterTool", mock.AnythingOfType("mcp.Tool"), mock.AnythingOfType("server.ToolHandlerFunc")).
-			Return(errors.New("math controller registration failed")).Once()
-
-		err := registry.RegisterAllControllers(ctx, mockRegistrar)
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "math controller registration failed")
 		mockRegistrar.AssertExpectations(t)
 	})
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/mark3labs/mcp-go/mcp"
+	mcpserver "github.com/mark3labs/mcp-go/server"
 	"go.uber.org/dig"
 )
 
@@ -35,9 +36,9 @@ func NewMathController(deps MathControllerDeps) *MathController {
 	}
 }
 
-// newCalculateTool returns the MCP tool definition for generic calculations.
-func (mc *MathController) newCalculateTool() mcp.Tool {
-	return mcp.NewTool(
+// newCalculateServerTool returns a server tool for generic calculations.
+func (mc *MathController) newCalculateServerTool() mcpserver.ServerTool {
+	tool := mcp.NewTool(
 		"calculate",
 		mcp.WithDescription("Perform mathematical calculations (add, subtract, multiply, divide)"),
 		mcp.WithString("operation",
@@ -47,200 +48,215 @@ func (mc *MathController) newCalculateTool() mcp.Tool {
 		mcp.WithNumber("a", mcp.Description("First number")),
 		mcp.WithNumber("b", mcp.Description("Second number")),
 	)
+
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		mc.logger.InfoContext(ctx, "Handling calculate tool call",
+			slog.String("tool", request.Params.Name))
+
+		operation, a, b, err := mc.extractCalculateParams(request.Params.Arguments)
+		if err != nil {
+			mc.logger.ErrorContext(ctx, "Invalid calculate parameters", slog.String("error", err.Error()))
+			return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
+		}
+
+		mathRequest := &app.MathRequest{
+			Operation: app.MathOperation(operation),
+			A:         a,
+			B:         b,
+		}
+
+		response, err := mc.mathService.Calculate(ctx, mathRequest)
+		if err != nil {
+			mc.logger.ErrorContext(ctx, "Math calculation failed",
+				slog.String("operation", operation),
+				slog.Float64("a", a),
+				slog.Float64("b", b),
+				slog.String("error", err.Error()))
+			return mcp.NewToolResultError(fmt.Sprintf("Calculation failed: %v", err)), nil
+		}
+
+		resultText := fmt.Sprintf("Result: %g (operation: %s, a: %g, b: %g)",
+			response.Result, response.Operation, response.A, response.B)
+
+		mc.logger.InfoContext(ctx, "Successfully calculated result",
+			slog.Float64("result", response.Result),
+			slog.String("operation", string(response.Operation)))
+
+		return mcp.NewToolResultText(resultText), nil
+	}
+
+	return mcpserver.ServerTool{
+		Tool:    tool,
+		Handler: handler,
+	}
 }
 
-// newAddTool returns the MCP tool definition for addition.
-func (mc *MathController) newAddTool() mcp.Tool {
-	return mcp.NewTool(
+// newAddServerTool returns a server tool for addition.
+func (mc *MathController) newAddServerTool() mcpserver.ServerTool {
+	tool := mcp.NewTool(
 		"add",
 		mcp.WithDescription("Add two numbers together"),
 		mcp.WithNumber("a", mcp.Description("First number to add")),
 		mcp.WithNumber("b", mcp.Description("Second number to add")),
 	)
+
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		mc.logger.InfoContext(ctx, "Handling add tool call",
+			slog.String("tool", request.Params.Name))
+
+		a, b, err := mc.extractNumberParams(request.Params.Arguments)
+		if err != nil {
+			mc.logger.ErrorContext(ctx, "Invalid add parameters", slog.String("error", err.Error()))
+			return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
+		}
+
+		response, err := mc.mathService.Add(ctx, a, b)
+		if err != nil {
+			mc.logger.ErrorContext(ctx, "Addition failed",
+				slog.Float64("a", a),
+				slog.Float64("b", b),
+				slog.String("error", err.Error()))
+			return mcp.NewToolResultError(fmt.Sprintf("Addition failed: %v", err)), nil
+		}
+
+		resultText := fmt.Sprintf("Result: %g + %g = %g", response.A, response.B, response.Result)
+
+		mc.logger.InfoContext(ctx, "Successfully performed addition",
+			slog.Float64("result", response.Result))
+
+		return mcp.NewToolResultText(resultText), nil
+	}
+
+	return mcpserver.ServerTool{
+		Tool:    tool,
+		Handler: handler,
+	}
 }
 
-// newSubtractTool returns the MCP tool definition for subtraction.
-func (mc *MathController) newSubtractTool() mcp.Tool {
-	return mcp.NewTool(
+// newSubtractServerTool returns a server tool for subtraction.
+func (mc *MathController) newSubtractServerTool() mcpserver.ServerTool {
+	tool := mcp.NewTool(
 		"subtract",
 		mcp.WithDescription("Subtract second number from first number"),
 		mcp.WithNumber("a", mcp.Description("Number to subtract from")),
 		mcp.WithNumber("b", mcp.Description("Number to subtract")),
 	)
+
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		mc.logger.InfoContext(ctx, "Handling subtract tool call",
+			slog.String("tool", request.Params.Name))
+
+		a, b, err := mc.extractNumberParams(request.Params.Arguments)
+		if err != nil {
+			mc.logger.ErrorContext(ctx, "Invalid subtract parameters", slog.String("error", err.Error()))
+			return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
+		}
+
+		response, err := mc.mathService.Subtract(ctx, a, b)
+		if err != nil {
+			mc.logger.ErrorContext(ctx, "Subtraction failed",
+				slog.Float64("a", a),
+				slog.Float64("b", b),
+				slog.String("error", err.Error()))
+			return mcp.NewToolResultError(fmt.Sprintf("Subtraction failed: %v", err)), nil
+		}
+
+		resultText := fmt.Sprintf("Result: %g - %g = %g", response.A, response.B, response.Result)
+
+		mc.logger.InfoContext(ctx, "Successfully performed subtraction",
+			slog.Float64("result", response.Result))
+
+		return mcp.NewToolResultText(resultText), nil
+	}
+
+	return mcpserver.ServerTool{
+		Tool:    tool,
+		Handler: handler,
+	}
 }
 
-// newMultiplyTool returns the MCP tool definition for multiplication.
-func (mc *MathController) newMultiplyTool() mcp.Tool {
-	return mcp.NewTool(
+// newMultiplyServerTool returns a server tool for multiplication.
+func (mc *MathController) newMultiplyServerTool() mcpserver.ServerTool {
+	tool := mcp.NewTool(
 		"multiply",
 		mcp.WithDescription("Multiply two numbers together"),
 		mcp.WithNumber("a", mcp.Description("First number to multiply")),
 		mcp.WithNumber("b", mcp.Description("Second number to multiply")),
 	)
+
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		mc.logger.InfoContext(ctx, "Handling multiply tool call",
+			slog.String("tool", request.Params.Name))
+
+		a, b, err := mc.extractNumberParams(request.Params.Arguments)
+		if err != nil {
+			mc.logger.ErrorContext(ctx, "Invalid multiply parameters", slog.String("error", err.Error()))
+			return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
+		}
+
+		response, err := mc.mathService.Multiply(ctx, a, b)
+		if err != nil {
+			mc.logger.ErrorContext(ctx, "Multiplication failed",
+				slog.Float64("a", a),
+				slog.Float64("b", b),
+				slog.String("error", err.Error()))
+			return mcp.NewToolResultError(fmt.Sprintf("Multiplication failed: %v", err)), nil
+		}
+
+		resultText := fmt.Sprintf("Result: %g × %g = %g", response.A, response.B, response.Result)
+
+		mc.logger.InfoContext(ctx, "Successfully performed multiplication",
+			slog.Float64("result", response.Result))
+
+		return mcp.NewToolResultText(resultText), nil
+	}
+
+	return mcpserver.ServerTool{
+		Tool:    tool,
+		Handler: handler,
+	}
 }
 
-// newDivideTool returns the MCP tool definition for division.
-func (mc *MathController) newDivideTool() mcp.Tool {
-	return mcp.NewTool(
+// newDivideServerTool returns a server tool for division.
+func (mc *MathController) newDivideServerTool() mcpserver.ServerTool {
+	tool := mcp.NewTool(
 		"divide",
 		mcp.WithDescription("Divide first number by second number"),
 		mcp.WithNumber("a", mcp.Description("Dividend (number to be divided)")),
 		mcp.WithNumber("b", mcp.Description("Divisor (number to divide by)")),
 	)
-}
 
-// handleCalculate handles the calculate tool call.
-func (mc *MathController) handleCalculate(ctx context.Context,
-	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	mc.logger.InfoContext(ctx, "Handling calculate tool call",
-		slog.String("tool", request.Params.Name))
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		mc.logger.InfoContext(ctx, "Handling divide tool call",
+			slog.String("tool", request.Params.Name))
 
-	operation, a, b, err := mc.extractCalculateParams(request.Params.Arguments)
-	if err != nil {
-		mc.logger.ErrorContext(ctx, "Invalid calculate parameters", slog.String("error", err.Error()))
-		return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
+		a, b, err := mc.extractNumberParams(request.Params.Arguments)
+		if err != nil {
+			mc.logger.ErrorContext(ctx, "Invalid divide parameters", slog.String("error", err.Error()))
+			return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
+		}
+
+		response, err := mc.mathService.Divide(ctx, a, b)
+		if err != nil {
+			mc.logger.ErrorContext(ctx, "Division failed",
+				slog.Float64("a", a),
+				slog.Float64("b", b),
+				slog.String("error", err.Error()))
+			return mcp.NewToolResultError(fmt.Sprintf("Division failed: %v", err)), nil
+		}
+
+		resultText := fmt.Sprintf("Result: %g ÷ %g = %g", response.A, response.B, response.Result)
+
+		mc.logger.InfoContext(ctx, "Successfully performed division",
+			slog.Float64("result", response.Result))
+
+		return mcp.NewToolResultText(resultText), nil
 	}
 
-	mathRequest := &app.MathRequest{
-		Operation: app.MathOperation(operation),
-		A:         a,
-		B:         b,
+	return mcpserver.ServerTool{
+		Tool:    tool,
+		Handler: handler,
 	}
-
-	response, err := mc.mathService.Calculate(ctx, mathRequest)
-	if err != nil {
-		mc.logger.ErrorContext(ctx, "Math calculation failed",
-			slog.String("operation", operation),
-			slog.Float64("a", a),
-			slog.Float64("b", b),
-			slog.String("error", err.Error()))
-		return mcp.NewToolResultError(fmt.Sprintf("Calculation failed: %v", err)), nil
-	}
-
-	resultText := fmt.Sprintf("Result: %g (operation: %s, a: %g, b: %g)",
-		response.Result, response.Operation, response.A, response.B)
-
-	mc.logger.InfoContext(ctx, "Successfully calculated result",
-		slog.Float64("result", response.Result),
-		slog.String("operation", string(response.Operation)))
-
-	return mcp.NewToolResultText(resultText), nil
-}
-
-// handleAdd handles the add tool call.
-func (mc *MathController) handleAdd(ctx context.Context,
-	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	mc.logger.InfoContext(ctx, "Handling add tool call",
-		slog.String("tool", request.Params.Name))
-
-	a, b, err := mc.extractNumberParams(request.Params.Arguments)
-	if err != nil {
-		mc.logger.ErrorContext(ctx, "Invalid add parameters", slog.String("error", err.Error()))
-		return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
-	}
-
-	response, err := mc.mathService.Add(ctx, a, b)
-	if err != nil {
-		mc.logger.ErrorContext(ctx, "Addition failed",
-			slog.Float64("a", a),
-			slog.Float64("b", b),
-			slog.String("error", err.Error()))
-		return mcp.NewToolResultError(fmt.Sprintf("Addition failed: %v", err)), nil
-	}
-
-	resultText := fmt.Sprintf("Result: %g + %g = %g", response.A, response.B, response.Result)
-
-	mc.logger.InfoContext(ctx, "Successfully performed addition",
-		slog.Float64("result", response.Result))
-
-	return mcp.NewToolResultText(resultText), nil
-}
-
-// handleSubtract handles the subtract tool call.
-func (mc *MathController) handleSubtract(ctx context.Context,
-	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	mc.logger.InfoContext(ctx, "Handling subtract tool call",
-		slog.String("tool", request.Params.Name))
-
-	a, b, err := mc.extractNumberParams(request.Params.Arguments)
-	if err != nil {
-		mc.logger.ErrorContext(ctx, "Invalid subtract parameters", slog.String("error", err.Error()))
-		return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
-	}
-
-	response, err := mc.mathService.Subtract(ctx, a, b)
-	if err != nil {
-		mc.logger.ErrorContext(ctx, "Subtraction failed",
-			slog.Float64("a", a),
-			slog.Float64("b", b),
-			slog.String("error", err.Error()))
-		return mcp.NewToolResultError(fmt.Sprintf("Subtraction failed: %v", err)), nil
-	}
-
-	resultText := fmt.Sprintf("Result: %g - %g = %g", response.A, response.B, response.Result)
-
-	mc.logger.InfoContext(ctx, "Successfully performed subtraction",
-		slog.Float64("result", response.Result))
-
-	return mcp.NewToolResultText(resultText), nil
-}
-
-// handleMultiply handles the multiply tool call.
-func (mc *MathController) handleMultiply(ctx context.Context,
-	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	mc.logger.InfoContext(ctx, "Handling multiply tool call",
-		slog.String("tool", request.Params.Name))
-
-	a, b, err := mc.extractNumberParams(request.Params.Arguments)
-	if err != nil {
-		mc.logger.ErrorContext(ctx, "Invalid multiply parameters", slog.String("error", err.Error()))
-		return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
-	}
-
-	response, err := mc.mathService.Multiply(ctx, a, b)
-	if err != nil {
-		mc.logger.ErrorContext(ctx, "Multiplication failed",
-			slog.Float64("a", a),
-			slog.Float64("b", b),
-			slog.String("error", err.Error()))
-		return mcp.NewToolResultError(fmt.Sprintf("Multiplication failed: %v", err)), nil
-	}
-
-	resultText := fmt.Sprintf("Result: %g × %g = %g", response.A, response.B, response.Result)
-
-	mc.logger.InfoContext(ctx, "Successfully performed multiplication",
-		slog.Float64("result", response.Result))
-
-	return mcp.NewToolResultText(resultText), nil
-}
-
-// handleDivide handles the divide tool call.
-func (mc *MathController) handleDivide(ctx context.Context,
-	request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	mc.logger.InfoContext(ctx, "Handling divide tool call",
-		slog.String("tool", request.Params.Name))
-
-	a, b, err := mc.extractNumberParams(request.Params.Arguments)
-	if err != nil {
-		mc.logger.ErrorContext(ctx, "Invalid divide parameters", slog.String("error", err.Error()))
-		return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
-	}
-
-	response, err := mc.mathService.Divide(ctx, a, b)
-	if err != nil {
-		mc.logger.ErrorContext(ctx, "Division failed",
-			slog.Float64("a", a),
-			slog.Float64("b", b),
-			slog.String("error", err.Error()))
-		return mcp.NewToolResultError(fmt.Sprintf("Division failed: %v", err)), nil
-	}
-
-	resultText := fmt.Sprintf("Result: %g ÷ %g = %g", response.A, response.B, response.Result)
-
-	mc.logger.InfoContext(ctx, "Successfully performed division",
-		slog.Float64("result", response.Result))
-
-	return mcp.NewToolResultText(resultText), nil
 }
 
 // extractCalculateParams extracts operation, a, and b parameters from arguments.
@@ -311,30 +327,27 @@ func (mc *MathController) extractNumberParam(
 }
 
 // RegisterWithServer registers all math tools with the MCP server.
-func (mc *MathController) RegisterWithServer(server ToolRegistrar) error {
-	tools := []struct {
-		tool    mcp.Tool
-		handler ToolHandler
-	}{
-		{mc.newCalculateTool(), mc.handleCalculate},
-		{mc.newAddTool(), mc.handleAdd},
-		{mc.newSubtractTool(), mc.handleSubtract},
-		{mc.newMultiplyTool(), mc.handleMultiply},
-		{mc.newDivideTool(), mc.handleDivide},
+func (mc *MathController) RegisterWithServer(server interface {
+	AddTools(tools ...mcpserver.ServerTool)
+}) error {
+	serverTools := []mcpserver.ServerTool{
+		mc.newCalculateServerTool(),
+		mc.newAddServerTool(),
+		mc.newSubtractServerTool(),
+		mc.newMultiplyServerTool(),
+		mc.newDivideServerTool(),
 	}
 
-	for _, toolInfo := range tools {
+	for _, tool := range serverTools {
 		mc.logger.Info("Registering math tool with MCP server",
-			slog.String("tool_name", toolInfo.tool.Name),
-			slog.String("description", toolInfo.tool.Description))
-
-		if err := server.RegisterTool(toolInfo.tool, toolInfo.handler); err != nil {
-			return fmt.Errorf("failed to register tool %s: %w", toolInfo.tool.Name, err)
-		}
+			slog.String("tool_name", tool.Tool.Name),
+			slog.String("description", tool.Tool.Description))
 	}
+
+	server.AddTools(serverTools...)
 
 	mc.logger.Info("Successfully registered all math tools with MCP server",
-		slog.Int("tool_count", len(tools)))
+		slog.Int("tool_count", len(serverTools)))
 
 	return nil
 }
