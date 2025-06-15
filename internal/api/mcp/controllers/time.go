@@ -92,19 +92,9 @@ func (tc *TimeController) newGetCurrentTimeServerTool() server.ServerTool {
 	}
 }
 
-// RegisterWithServer registers the time tool with the MCP server.
-func (tc *TimeController) RegisterWithServer(server interface {
-	AddTools(tools ...server.ServerTool)
-}) error {
-	serverTool := tc.newGetCurrentTimeServerTool()
-
-	tc.logger.Info("Registering time tool with MCP server",
-		slog.String("tool_name", serverTool.Tool.Name),
-		slog.String("description", serverTool.Tool.Description))
-
-	server.AddTools(serverTool)
-
-	tc.logger.Info("Successfully registered time tool with MCP server")
-
-	return nil
+// NewTools returns all time tools.
+func (tc *TimeController) NewTools() []server.ServerTool {
+	return []server.ServerTool{
+		tc.newGetCurrentTimeServerTool(),
+	}
 }

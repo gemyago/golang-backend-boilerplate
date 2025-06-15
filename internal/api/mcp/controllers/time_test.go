@@ -9,7 +9,6 @@ import (
 	"github.com/go-faker/faker/v4"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -258,13 +257,9 @@ func TestTimeController_RegisterWithServer(t *testing.T) {
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
 
-		mockRegistrar := &MockToolRegistrar{}
-		mockRegistrar.On("AddTools", mock.Anything).Return(nil).Once()
+		tools := controller.NewTools()
 
-		err := controller.RegisterWithServer(mockRegistrar)
-
-		require.NoError(t, err)
-		mockRegistrar.AssertExpectations(t)
+		require.NotEmpty(t, tools)
 	})
 }
 

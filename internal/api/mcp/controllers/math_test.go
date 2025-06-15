@@ -7,7 +7,6 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -770,18 +769,14 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 	})
 }
 
-func TestMathController_RegisterWithServer(t *testing.T) {
-	t.Run("should register all tools successfully", func(t *testing.T) {
+func TestMathController_NewTools(t *testing.T) {
+	t.Run("should return all tools successfully", func(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		mockRegistrar := &MockToolRegistrar{}
-		mockRegistrar.On("AddTools", mock.Anything).Return(nil).Once()
+		tools := controller.NewTools()
 
-		err := controller.RegisterWithServer(mockRegistrar)
-
-		require.NoError(t, err)
-		mockRegistrar.AssertExpectations(t)
+		require.NotEmpty(t, tools)
 	})
 }
 

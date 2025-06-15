@@ -22,7 +22,6 @@ const (
 )
 
 type ToolController interface {
-	Name() string
 	NewTools() []server.ServerTool
 }
 

@@ -326,28 +326,13 @@ func (mc *MathController) extractNumberParam(
 	}
 }
 
-// RegisterWithServer registers all math tools with the MCP server.
-func (mc *MathController) RegisterWithServer(server interface {
-	AddTools(tools ...mcpserver.ServerTool)
-}) error {
-	serverTools := []mcpserver.ServerTool{
+// NewTools returns all math tools.
+func (mc *MathController) NewTools() []mcpserver.ServerTool {
+	return []mcpserver.ServerTool{
 		mc.newCalculateServerTool(),
 		mc.newAddServerTool(),
 		mc.newSubtractServerTool(),
 		mc.newMultiplyServerTool(),
 		mc.newDivideServerTool(),
 	}
-
-	for _, tool := range serverTools {
-		mc.logger.Info("Registering math tool with MCP server",
-			slog.String("tool_name", tool.Tool.Name),
-			slog.String("description", tool.Tool.Description))
-	}
-
-	server.AddTools(serverTools...)
-
-	mc.logger.Info("Successfully registered all math tools with MCP server",
-		slog.Int("tool_count", len(serverTools)))
-
-	return nil
 }
