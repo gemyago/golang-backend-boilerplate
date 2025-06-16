@@ -21,7 +21,7 @@ const (
 	shutdownTimeout  = 10 * time.Second
 )
 
-type ToolController interface {
+type ToolsFactory interface {
 	NewTools() []server.ServerTool
 }
 
@@ -41,7 +41,7 @@ type MCPServerDeps struct {
 	*services.ShutdownHooks
 
 	// controllers
-	Controllers []ToolController
+	Controllers []ToolsFactory `group:"mcp-controllers"`
 }
 
 // ToolHandler represents a function that handles tool calls.

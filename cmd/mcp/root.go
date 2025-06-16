@@ -74,8 +74,8 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 			services.Register(container),
 
 			// mcp components
+			controllers.Register(container),
 			di.ProvideAll(container,
-				controllers.NewControllersRegistry,
 				server.NewMCPServer,
 			),
 

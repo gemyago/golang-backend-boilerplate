@@ -9,10 +9,10 @@ import (
 type controllerResult struct {
 	dig.Out
 
-	Controller server.ToolController `group:"mcp-controllers"`
+	Controller server.ToolsFactory `group:"mcp-controllers"`
 }
 
-func newControllerResult[T server.ToolController](controller T) controllerResult {
+func newToolsFactory[T server.ToolsFactory](controller T) controllerResult {
 	return controllerResult{
 		Controller: controller,
 	}
@@ -22,7 +22,7 @@ func Register(container *dig.Container) error {
 	return di.ProvideAll(container,
 		NewMathController,
 		NewTimeController,
-		newControllerResult[*MathController],
-		newControllerResult[*TimeController],
+		newToolsFactory[*MathController],
+		newToolsFactory[*TimeController],
 	)
 }

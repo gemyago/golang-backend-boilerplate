@@ -327,6 +327,7 @@ func (mc *MathController) extractNumberParam(
 }
 
 // NewTools returns all math tools.
+// Satisfies the ToolsFactory interface.
 func (mc *MathController) NewTools() []mcpserver.ServerTool {
 	return []mcpserver.ServerTool{
 		mc.newCalculateServerTool(),

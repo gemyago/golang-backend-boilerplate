@@ -93,6 +93,7 @@ func (tc *TimeController) newGetCurrentTimeServerTool() server.ServerTool {
 }
 
 // NewTools returns all time tools.
+// Satisfies the ToolsFactory interface.
 func (tc *TimeController) NewTools() []server.ServerTool {
 	return []server.ServerTool{
 		tc.newGetCurrentTimeServerTool(),
