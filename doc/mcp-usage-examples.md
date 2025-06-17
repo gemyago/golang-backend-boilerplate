@@ -20,7 +20,7 @@ go run ./cmd/mcp/ stdio
 ### 2. Start with HTTP Transport
 
 ```bash
-go run ./cmd/mcp/ http --host localhost --port 8080
+go run ./cmd/mcp/ http
 ```
 
 ## Transport Options

@@ -119,7 +119,7 @@ func (s *MCPServer) StartHTTP(ctx context.Context) error {
 		WriteTimeout:      httpWriteTimeout,
 
 		ShutdownHooks: s.shutdownHooks,
-		Handler:       server.NewSSEServer(s.mcpServer),
+		Handler:       server.NewStreamableHTTPServer(s.mcpServer),
 	})
 
 	return httpSrv.Start(ctx)
