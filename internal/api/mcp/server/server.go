@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"fmt"
+	"io"
 	"log/slog"
 	"time"
 
@@ -44,13 +44,10 @@ type MCPServerDeps struct {
 	Controllers []ToolsFactory `group:"mcp-controllers"`
 }
 
-// ToolHandler represents a function that handles tool calls.
-type ToolHandler = server.ToolHandlerFunc
-
 // ToolInfo contains information about a registered tool.
 type ToolInfo struct {
 	Tool    mcp.Tool
-	Handler ToolHandler
+	Handler server.ToolHandlerFunc
 }
 
 // MCPServer wraps the mcp-go server with additional functionality.
@@ -86,29 +83,23 @@ func NewMCPServer(deps MCPServerDeps) *MCPServer {
 	return mcpSrv
 }
 
-// StartStdio starts the MCP server with stdio transport.
-func (s *MCPServer) StartStdio(ctx context.Context) error {
+// ListenStdioServer starts the MCP server with stdio transport.
+func (s *MCPServer) ListenStdioServer(
+	ctx context.Context,
+	stdin io.Reader,
+	stdout io.Writer,
+) error { // coverage-ignore -- Challenging to test this
+	stdioSrv := server.NewStdioServer(s.mcpServer)
 	s.logger.InfoContext(ctx, "Starting MCP server with stdio transport",
 		slog.String("name", s.deps.Name),
 		slog.String("version", s.deps.Version))
 
-	// Start the stdio server - this will block until the connection is closed
-	// The mcp-go framework handles all the protocol details
-	if err := server.ServeStdio(s.mcpServer); err != nil {
-		return fmt.Errorf("MCP stdio server terminated with error: %w", err)
-	}
-
-	s.logger.InfoContext(ctx, "MCP stdio server terminated gracefully")
-	return nil
+	return stdioSrv.Listen(ctx, stdin, stdout)
 }
 
-// StartHTTP starts the MCP server with HTTP transport.
-func (s *MCPServer) StartHTTP(ctx context.Context) error {
-	s.logger.InfoContext(ctx, "Starting MCP server with HTTP transport",
-		slog.String("name", s.deps.Name),
-		slog.String("version", s.deps.Version))
-
-	httpSrv := httpserver.NewHTTPServer(httpserver.HTTPServerDeps{
+// NewStreamableHTTPServer creates a new streamable HTTP server.
+func (s *MCPServer) NewStreamableHTTPServer() *httpserver.HTTPServer {
+	return httpserver.NewHTTPServer(httpserver.HTTPServerDeps{
 		RootLogger: s.logger,
 
 		Host:              s.deps.HTTPHost,
@@ -121,6 +112,4 @@ func (s *MCPServer) StartHTTP(ctx context.Context) error {
 		ShutdownHooks: s.shutdownHooks,
 		Handler:       server.NewStreamableHTTPServer(s.mcpServer),
 	})
-
-	return httpSrv.Start(ctx)
 }
