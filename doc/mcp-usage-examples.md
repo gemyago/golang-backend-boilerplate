@@ -50,6 +50,42 @@ curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
+
+## Configuring Your IDE
+
+In order to add a tool in scope of a currently open project, you can use the following configuration for stdio transport:
+```json
+{
+  "mcpServers": {
+    "boilerplate": {
+      "command": "./scripts/start-mcp-stdio.sh",
+      "args": []
+    }
+  }
+}
+```
+
+For HTTP transport, you can use the following configuration:
+
+
+```json
+{
+  "mcpServers": {
+    "boilerplate": {
+      "url": "http://localhost:8080/mcp"
+    }
+  }
+}
+```
+
+Make sure to start the server first:
+
+```bash
+go run ./cmd/mcp/ http
+```
+
+You may have to reload the IDE to see the new tools.
+
 ## Contributing
 
 To add new MCP tools:
