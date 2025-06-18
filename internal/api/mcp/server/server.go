@@ -9,7 +9,7 @@ import (
 	httpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/services"
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
+	mcpserver "github.com/mark3labs/mcp-go/server"
 	"go.uber.org/dig"
 )
 
@@ -22,7 +22,13 @@ const (
 )
 
 type ToolsFactory interface {
-	NewTools() []server.ServerTool
+	NewTools() []mcpserver.ServerTool
+}
+
+type ToolsFactoryFunc func() []mcpserver.ServerTool
+
+func (f ToolsFactoryFunc) NewTools() []mcpserver.ServerTool {
+	return f()
 }
 
 // MCPServerDeps contains dependencies for creating the MCP server.
@@ -47,12 +53,12 @@ type MCPServerDeps struct {
 // ToolInfo contains information about a registered tool.
 type ToolInfo struct {
 	Tool    mcp.Tool
-	Handler server.ToolHandlerFunc
+	Handler mcpserver.ToolHandlerFunc
 }
 
 // MCPServer wraps the mcp-go server with additional functionality.
 type MCPServer struct {
-	mcpServer     *server.MCPServer
+	mcpServer     *mcpserver.MCPServer
 	deps          MCPServerDeps
 	logger        *slog.Logger
 	shutdownHooks *services.ShutdownHooks
@@ -61,11 +67,11 @@ type MCPServer struct {
 // NewMCPServer creates a new MCP server instance.
 func NewMCPServer(deps MCPServerDeps) *MCPServer {
 	// Create the underlying mcp-go server
-	mcpServer := server.NewMCPServer(
+	mcpServer := mcpserver.NewMCPServer(
 		deps.Name,
 		deps.Version,
-		server.WithToolCapabilities(true),
-		server.WithRecovery(),
+		mcpserver.WithToolCapabilities(true),
+		mcpserver.WithRecovery(),
 	)
 
 	mcpSrv := &MCPServer{
@@ -89,7 +95,7 @@ func (s *MCPServer) ListenStdioServer(
 	stdin io.Reader,
 	stdout io.Writer,
 ) error { // coverage-ignore -- Challenging to test this
-	stdioSrv := server.NewStdioServer(s.mcpServer)
+	stdioSrv := mcpserver.NewStdioServer(s.mcpServer)
 	s.logger.InfoContext(ctx, "Starting MCP server with stdio transport",
 		slog.String("name", s.deps.Name),
 		slog.String("version", s.deps.Version))
@@ -110,6 +116,6 @@ func (s *MCPServer) NewStreamableHTTPServer() *httpserver.HTTPServer {
 		WriteTimeout:      httpWriteTimeout,
 
 		ShutdownHooks: s.shutdownHooks,
-		Handler:       server.NewStreamableHTTPServer(s.mcpServer),
+		Handler:       mcpserver.NewStreamableHTTPServer(s.mcpServer),
 	})
 }
