@@ -32,5 +32,6 @@ jobs:
         run: |
           ./scripts/ghcr.py cleanup-versions --namespace "users/${GITHUB_REPOSITORY_OWNER}" --package golang-backend-boilerplate-jobs --really-remove
           ./scripts/ghcr.py cleanup-versions --namespace "users/${GITHUB_REPOSITORY_OWNER}" --package golang-backend-boilerplate-server --really-remove
+          ./scripts/ghcr.py cleanup-versions --namespace "users/${GITHUB_REPOSITORY_OWNER}" --package golang-backend-boilerplate-mcp --really-remove
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
