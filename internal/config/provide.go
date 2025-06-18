@@ -52,6 +52,7 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 		provideConfigValue(cfg, "httpServer.readHeaderTimeout").asDuration(),
 		provideConfigValue(cfg, "httpServer.readTimeout").asDuration(),
 		provideConfigValue(cfg, "httpServer.writeTimeout").asDuration(),
+		provideConfigValue(cfg, "httpServer.accessLogsLevel").asString(),
 
 		// mcp server config
 		provideConfigValue(cfg, "mcpServer.name").asString(),

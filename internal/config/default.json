@@ -7,7 +7,8 @@
     "idleTimeout": "60s",
     "readHeaderTimeout": "2s",
     "readTimeout": "2s",
-    "writeTimeout": "8s"
+    "writeTimeout": "8s",
+    "accessLogsLevel": ""
   },
   "mcpServer": {
     "name": "golang-backend-boilerplate-mcp",
