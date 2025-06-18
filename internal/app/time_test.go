@@ -2,11 +2,11 @@ package app
 
 import (
 	"context"
-	"log/slog"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +14,7 @@ import (
 
 func makeTimeServiceDeps() TimeServiceDeps {
 	return TimeServiceDeps{
-		RootLogger: slog.Default(),
+		RootLogger: diag.RootTestLogger(),
 	}
 }
 

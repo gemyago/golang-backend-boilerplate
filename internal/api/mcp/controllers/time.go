@@ -45,11 +45,7 @@ func (tc *TimeController) newGetCurrentTimeServerTool() server.ServerTool {
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		tc.logger.InfoContext(ctx, "Handling get_current_time tool call",
-			slog.String("tool", request.Params.Name))
-
-		// Parse format from arguments
-		format := app.TimeFormatISO // default
+		format := app.TimeFormatISO
 		if request.Params.Arguments != nil {
 			if args, argsOk := request.Params.Arguments.(map[string]interface{}); argsOk {
 				if formatStr, formatOk := args["format"].(string); formatOk {
@@ -68,20 +64,12 @@ func (tc *TimeController) newGetCurrentTimeServerTool() server.ServerTool {
 			}
 		}
 
-		// Get current time using the time service
 		timeRequest := &app.TimeRequest{Format: format}
 		timeResponse, err := tc.timeService.GetCurrentTime(ctx, timeRequest)
 		if err != nil {
-			tc.logger.ErrorContext(ctx, "Failed to get current time",
-				slog.String("error", err.Error()))
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to get current time: %v", err)), nil
 		}
 
-		tc.logger.InfoContext(ctx, "Successfully retrieved current time",
-			slog.String("time", timeResponse.Time),
-			slog.String("format", timeResponse.Format))
-
-		// Return the result
 		return mcp.NewToolResultText(fmt.Sprintf("Current time: %s (format: %s)",
 			timeResponse.Time, timeResponse.Format)), nil
 	}

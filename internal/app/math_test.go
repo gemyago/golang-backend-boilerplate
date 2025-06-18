@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
-	"log/slog"
 	"testing"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,7 +12,7 @@ import (
 
 func makeMathServiceDeps() MathServiceDeps {
 	return MathServiceDeps{
-		RootLogger: slog.Default(),
+		RootLogger: diag.RootTestLogger(),
 	}
 }
 
@@ -162,7 +162,7 @@ func TestMathService_Multiply(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
-		assert.Equal(t, 0.0, response.Result)
+		assert.InDelta(t, 0.0, response.Result, 0)
 		assert.Equal(t, MathOperationMultiply, response.Operation)
 	})
 

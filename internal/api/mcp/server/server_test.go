@@ -75,7 +75,7 @@ func TestMCPServer(t *testing.T) {
 				})
 			srv := NewMCPServer(deps)
 			ctx := t.Context()
-			testServer := newTestMCPServer(t)
+			testServer := newTestMCPServer()
 			err := testServer.Start(ctx, srv.mcpServer)
 			require.NoError(t, err)
 
@@ -102,7 +102,7 @@ func TestMCPServer(t *testing.T) {
 				})
 			srv := NewMCPServer(deps)
 			ctx := t.Context()
-			testServer := newTestMCPServer(t)
+			testServer := newTestMCPServer()
 			err := testServer.Start(ctx, srv.mcpServer)
 			require.NoError(t, err)
 
@@ -133,7 +133,7 @@ func TestMCPServer(t *testing.T) {
 					return newToolCallResult(), nil
 				})
 			srv := NewMCPServer(deps)
-			testServer := newTestMCPServer(t)
+			testServer := newTestMCPServer()
 			err := testServer.Start(callCtx, srv.mcpServer)
 			require.NoError(t, err)
 
@@ -159,7 +159,7 @@ func TestMCPServer(t *testing.T) {
 				})
 			srv := NewMCPServer(deps)
 			ctx := t.Context()
-			testServer := newTestMCPServer(t)
+			testServer := newTestMCPServer()
 			err := testServer.Start(ctx, srv.mcpServer)
 			require.NoError(t, err)
 

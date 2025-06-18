@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"sync"
-	"testing"
 
 	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/client/transport"
@@ -34,7 +33,7 @@ type testMCPServer struct {
 
 // newTestMCPServer creates a new MCP server instance with the given name, but does not start the server.
 // Useful for tests where you need to add tools before starting the server.
-func newTestMCPServer(t *testing.T) *testMCPServer {
+func newTestMCPServer() *testMCPServer {
 	server := &testMCPServer{}
 
 	// Set up pipes for client-server communication
