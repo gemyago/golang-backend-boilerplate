@@ -6,3 +6,6 @@ tmp
 .cover
 test.log
 .venv
+
+# Ignore MCP config file for now
+.cursor/mcp.json

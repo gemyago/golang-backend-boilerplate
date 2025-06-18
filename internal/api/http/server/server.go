@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"time"
 
@@ -14,7 +16,7 @@ import (
 )
 
 type HTTPServerDeps struct {
-	dig.In
+	dig.In `ignore-unexported:"true"`
 
 	RootLogger *slog.Logger
 
@@ -25,11 +27,17 @@ type HTTPServerDeps struct {
 	ReadHeaderTimeout time.Duration `name:"config.httpServer.readHeaderTimeout"`
 	ReadTimeout       time.Duration `name:"config.httpServer.readTimeout"`
 	WriteTimeout      time.Duration `name:"config.httpServer.writeTimeout"`
+	AccessLogsLevel   string        `name:"config.httpServer.accessLogsLevel"`
 
+	// handler
 	Handler http.Handler
 
 	// services
 	*services.ShutdownHooks
+
+	// listeningSignal is an optional channel that Start will close when the server is listening.
+	// Primarily for testing.
+	listeningSignal chan<- struct{}
 }
 
 type HTTPServer struct {
@@ -39,24 +47,54 @@ type HTTPServer struct {
 }
 
 func (srv *HTTPServer) Start(ctx context.Context) error {
-	srv.logger.InfoContext(ctx, "Starting http listener",
-		slog.String("addr", srv.httpSrv.Addr),
+	listener, err := net.Listen("tcp", srv.httpSrv.Addr)
+	if err != nil {
+		return fmt.Errorf("failed to listen on %s: %w", srv.httpSrv.Addr, err)
+	}
+
+	actualAddr := listener.Addr().String()
+	srv.logger.InfoContext(ctx, "Started http listener",
+		slog.String("addr", actualAddr),
 		slog.String("idleTimeout", srv.deps.IdleTimeout.String()),
 		slog.String("readHeaderTimeout", srv.deps.ReadHeaderTimeout.String()),
 		slog.String("readTimeout", srv.deps.ReadTimeout.String()),
 		slog.String("writeTimeout", srv.deps.WriteTimeout.String()),
+		slog.String("accessLogsLevel", srv.deps.AccessLogsLevel),
 	)
-	return srv.httpSrv.ListenAndServe()
+
+	if srv.deps.listeningSignal != nil {
+		close(srv.deps.listeningSignal)
+	}
+
+	// http.Serve always returns a non-nil error.
+	// It returns http.ErrServerClosed when Shutdown or Close is called.
+	err = srv.httpSrv.Serve(listener)
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("http server Serve error: %w", err)
+	}
+	return nil
 }
 
-func buildMiddlewareChain(logger *slog.Logger, handler http.Handler) http.Handler {
+func buildMiddlewareChain(deps HTTPServerDeps) http.Handler {
+	defaultLogLevel := slog.LevelInfo
+	clientErrorLevel := slog.LevelWarn
+	serverErrorLevel := slog.LevelError
+
+	if deps.AccessLogsLevel != "" {
+		if err := defaultLogLevel.UnmarshalText([]byte(deps.AccessLogsLevel)); err != nil {
+			panic(fmt.Errorf("failed to unmarshal access logs level: %w", err))
+		}
+		clientErrorLevel = defaultLogLevel
+		serverErrorLevel = defaultLogLevel
+	}
+
 	// Router wire-up
 	chain := middleware.Chain(
 		middleware.NewTracingMiddleware(middleware.NewTracingMiddlewareCfg()),
-		sloghttp.NewWithConfig(logger, sloghttp.Config{
-			DefaultLevel:     slog.LevelInfo,
-			ClientErrorLevel: slog.LevelWarn,
-			ServerErrorLevel: slog.LevelError,
+		sloghttp.NewWithConfig(deps.RootLogger, sloghttp.Config{
+			DefaultLevel:     defaultLogLevel,
+			ClientErrorLevel: clientErrorLevel,
+			ServerErrorLevel: serverErrorLevel,
 
 			WithUserAgent:      true,
 			WithRequestID:      false, // We handle it ourselves (tracing middleware)
@@ -65,9 +103,9 @@ func buildMiddlewareChain(logger *slog.Logger, handler http.Handler) http.Handle
 			WithSpanID:         true,
 			WithTraceID:        true,
 		}),
-		middleware.NewRecovererMiddleware(logger),
+		middleware.NewRecovererMiddleware(deps.RootLogger),
 	)
-	return chain(handler)
+	return chain(deps.Handler)
 }
 
 // NewHTTPServer constructor factory for general use *http.Server.
@@ -79,7 +117,7 @@ func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
 		ReadHeaderTimeout: deps.ReadHeaderTimeout,
 		ReadTimeout:       deps.ReadTimeout,
 		WriteTimeout:      deps.WriteTimeout,
-		Handler:           buildMiddlewareChain(deps.RootLogger, deps.Handler),
+		Handler:           buildMiddlewareChain(deps),
 		ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
 	}
 
