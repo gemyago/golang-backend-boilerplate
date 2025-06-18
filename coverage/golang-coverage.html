@@ -135,7 +135,7 @@
 				
 				<option value="file39">github.com/gemyago/golang-backend-boilerplate/internal/app/time.go (100.0%)</option>
 				
-				<option value="file40">github.com/gemyago/golang-backend-boilerplate/internal/config/load.go (95.8%)</option>
+				<option value="file40">github.com/gemyago/golang-backend-boilerplate/internal/config/load.go (92.6%)</option>
 				
 				<option value="file41">github.com/gemyago/golang-backend-boilerplate/internal/config/provide.go (100.0%)</option>
 				
@@ -3400,7 +3400,7 @@ func (s *testMCPServer) Start(
                 stdioServer := mcpserver.NewStdioServer(mcpServer)
                 stdioServer.SetErrorLogger(logger)
 
-                if err := stdioServer.Listen(ctx, s.serverReader, s.serverWriter); err != nil </span><span class="cov8" title="3">{
+                if err := stdioServer.Listen(ctx, s.serverReader, s.serverWriter); err != nil </span><span class="cov10" title="4">{
                         logger.Println("StdioServer.Listen failed:", err)
                 }</span>
         }()
@@ -3814,7 +3814,9 @@ func NewTimeService(deps TimeServiceDeps) *TimeService <span class="cov10" title
 
 import (
         "embed"
+        "errors"
         "fmt"
+        "os"
         "strings"
 
         "github.com/spf13/viper"
@@ -3823,17 +3825,17 @@ import (
 //go:embed *.json
 var resources embed.FS
 
-func mergeResourceCfg(cfg *viper.Viper, resourceName string) error <span class="cov10" title="31">{
+func mergeResourceCfg(cfg *viper.Viper, resourceName string) error <span class="cov10" title="41">{
         resourceStream, err := resources.Open(resourceName)
-        if err != nil </span><span class="cov5" title="6">{
+        if err != nil </span><span class="cov7" title="16">{
                 return fmt.Errorf("failed to read config %v: %w", resourceName, err)
         }</span>
-        <span class="cov9" title="25">defer resourceStream.Close()
+        <span class="cov8" title="25">defer resourceStream.Close()
 
         if err = cfg.MergeConfig(resourceStream); err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("failed to load config %v: %w", resourceName, err)
         }</span>
-        <span class="cov9" title="25">return nil</span>
+        <span class="cov8" title="25">return nil</span>
 }
 
 type LoadOpts struct {
@@ -3848,14 +3850,14 @@ func (opts *LoadOpts) WithEnv(val string) *LoadOpts <span class="cov7" title="14
         <span class="cov7" title="14">return opts</span>
 }
 
-func NewLoadOpts() *LoadOpts <span class="cov8" title="16">{
+func NewLoadOpts() *LoadOpts <span class="cov7" title="16">{
         return &amp;LoadOpts{
                 env:                   "local",
                 defaultConfigFileName: "default.json",
         }
 }</span>
 
-func New() *viper.Viper <span class="cov8" title="16">{
+func New() *viper.Viper <span class="cov7" title="16">{
         v := viper.New()
         v.SetEnvPrefix("APP")
         v.SetConfigType("json")
@@ -3866,17 +3868,24 @@ func New() *viper.Viper <span class="cov8" title="16">{
         return v
 }</span>
 
-func Load(cfg *viper.Viper, opts *LoadOpts) error <span class="cov8" title="16">{
+func Load(cfg *viper.Viper, opts *LoadOpts) error <span class="cov7" title="16">{
         if err := mergeResourceCfg(cfg, opts.defaultConfigFileName); err != nil </span><span class="cov1" title="1">{
                 return err
         }</span>
 
-        <span class="cov8" title="15">if err := mergeResourceCfg(cfg, opts.env+".json"); err != nil </span><span class="cov5" title="5">{
+        <span class="cov7" title="15">if err := mergeResourceCfg(cfg, opts.env+".json"); err != nil </span><span class="cov4" title="5">{
                 return err
         }</span>
 
+        // load env user if exists
+        <span class="cov6" title="10">if err := mergeResourceCfg(cfg, opts.env+"-user.json"); err != nil </span><span class="cov6" title="10">{
+                if !errors.Is(err, os.ErrNotExist) </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+        }
+
         // Some common aliases to have cli params with the same name as config keys
-        <span class="cov7" title="10">cfg.RegisterAlias("defaultLogLevel", "log-level")
+        <span class="cov6" title="10">cfg.RegisterAlias("defaultLogLevel", "log-level")
         cfg.RegisterAlias("jsonLogs", "json-logs")
 
         return nil</span>
