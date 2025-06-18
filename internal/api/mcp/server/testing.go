@@ -82,26 +82,6 @@ func (s *testMCPServer) Start(
 	return nil
 }
 
-// Close stops the server and cleans up resources like temporary directories.
-func (s *testMCPServer) Close() {
-	if s.transport != nil {
-		s.transport.Close()
-		s.transport = nil
-		s.client = nil
-	}
-
-	// Wait for server goroutine to finish
-	s.wg.Wait()
-
-	s.serverWriter.Close()
-	s.serverReader.Close()
-	s.serverReader, s.serverWriter = nil, nil
-
-	s.clientWriter.Close()
-	s.clientReader.Close()
-	s.clientReader, s.clientWriter = nil, nil
-}
-
 // Client returns an MCP client connected to the server.
 // The client is already initialized, i.e. you do _not_ need to call Client.Initialize().
 func (s *testMCPServer) Client() *client.Client {

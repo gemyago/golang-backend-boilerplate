@@ -7,7 +7,9 @@ import (
 	"time"
 
 	httpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/services"
+	"github.com/gofrs/uuid/v5"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"go.uber.org/dig"
@@ -66,11 +68,48 @@ type MCPServer struct {
 
 // NewMCPServer creates a new MCP server instance.
 func NewMCPServer(deps MCPServerDeps) *MCPServer {
-	// Create the underlying mcp-go server
+	logger := deps.RootLogger.WithGroup("mcp-server")
+
 	mcpServer := mcpserver.NewMCPServer(
 		deps.Name,
 		deps.Version,
 		mcpserver.WithToolCapabilities(true),
+		mcpserver.WithToolHandlerMiddleware(
+			func(next mcpserver.ToolHandlerFunc) mcpserver.ToolHandlerFunc {
+				return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+					nextCtx := ctx
+					diagCtx := diag.GetLogAttributesFromContext(nextCtx)
+
+					// We may need to revisit this. It may be so that the diag context is always set
+					// for the stdio transport at least.
+					if diagCtx.CorrelationID.Kind() != slog.KindString {
+						diagCtx.CorrelationID = slog.StringValue(uuid.Must(uuid.NewV4()).String())
+						nextCtx = diag.SetLogAttributesToContext(nextCtx, diagCtx)
+					}
+
+					// It may be quite verbose and we may want to log just the "processed" part.
+					logger.InfoContext(nextCtx, "Processing tool call",
+						slog.String("tool", req.Params.Name),
+						slog.Any("params", req.Params),
+						slog.Any("meta", req.Params.Meta),
+					)
+
+					res, err := next(nextCtx, req)
+					if err != nil {
+						logger.ErrorContext(nextCtx, "Error processing tool call",
+							slog.String("tool", req.Params.Name),
+							slog.Any("error", err),
+						)
+						return nil, err
+					}
+
+					logger.InfoContext(nextCtx, "Tool call processed",
+						slog.String("tool", req.Params.Name),
+					)
+					return res, nil
+				}
+			},
+		),
 		mcpserver.WithRecovery(),
 	)
 
