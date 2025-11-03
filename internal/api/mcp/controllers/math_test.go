@@ -42,7 +42,11 @@ func TestMathController_ToolDefinitions(t *testing.T) {
 		serverTool := controller.newCalculateServerTool()
 
 		assert.Equal(t, "calculate", serverTool.Tool.Name)
-		assert.Equal(t, "Perform mathematical calculations (add, subtract, multiply, divide)", serverTool.Tool.Description)
+		assert.Equal(
+			t,
+			"Perform mathematical calculations (add, subtract, multiply, divide)",
+			serverTool.Tool.Description,
+		)
 		assert.NotNil(t, serverTool.Tool.InputSchema)
 		assert.NotNil(t, serverTool.Handler)
 	})
@@ -586,7 +590,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 		if len(result.Content) > 0 {
 			content, ok := mcp.AsTextContent(result.Content[0])
 			require.True(t, ok, "Error content should be text content")
-			assert.Contains(t, content.Text, "Division failed")
+			assert.Contains(t, content.Text, "division by zero")
 		}
 	})
 

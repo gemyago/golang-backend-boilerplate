@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/mark3labs/mcp-go/client"
@@ -55,7 +55,7 @@ func (s *testMCPServer) Start(
 	go func() {
 		defer s.wg.Done()
 
-		logger := log.New(&s.logBuffer, "", 0)
+		logger := slog.NewLogLogger(slog.NewTextHandler(&s.logBuffer, nil), slog.LevelDebug)
 
 		stdioServer := mcpserver.NewStdioServer(mcpServer)
 		stdioServer.SetErrorLogger(logger)

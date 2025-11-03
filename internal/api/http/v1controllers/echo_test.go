@@ -31,7 +31,12 @@ func TestEcho(t *testing.T) {
 	t.Run("POST /echo", func(t *testing.T) {
 		t.Run("should respond with OK", func(t *testing.T) {
 			wantMessage := faker.Sentence()
-			req := httptest.NewRequest(http.MethodPost, "/echo", bytes.NewBufferString(`{"message": "`+wantMessage+`"}`))
+			reqBody := `{"message": "` + wantMessage + `"}`
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/echo",
+				bytes.NewBufferString(reqBody),
+			)
 			w := httptest.NewRecorder()
 			deps := makeDeps()
 			rootHandler := handlers.

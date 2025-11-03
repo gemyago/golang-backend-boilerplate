@@ -18,13 +18,13 @@ import (
 type startHTTPServerParams struct {
 	dig.In `ignore-unexported:"true"`
 
-	noop bool
+	*services.ShutdownHooks
 
 	RootLogger *slog.Logger
 
 	MCPServer *mcpserver.MCPServer
 
-	*services.ShutdownHooks
+	noop bool
 }
 
 func startHTTPServer(rootCtx context.Context, params startHTTPServerParams) error {

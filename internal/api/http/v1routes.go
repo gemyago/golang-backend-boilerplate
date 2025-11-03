@@ -18,10 +18,10 @@ import (
 type V1RoutesDeps struct {
 	dig.In
 
-	RootLogger *slog.Logger
-
 	*v1controllers.HealthController
 	*v1controllers.EchoController
+
+	RootLogger *slog.Logger
 }
 
 func NewRootHandler(deps V1RoutesDeps) http.Handler { // coverage-ignore // Little value in testing wireup code.

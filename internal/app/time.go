@@ -43,7 +43,13 @@ type TimeService struct {
 	logger *slog.Logger
 }
 
-// GetCurrentTime returns the current time in the specified format.
+// NewTimeService creates a new time service instance.
+func NewTimeService(deps TimeServiceDeps) *TimeService {
+	return &TimeService{
+		logger: deps.RootLogger.WithGroup("app.time-service"),
+	}
+}
+
 func (svc *TimeService) GetCurrentTime(ctx context.Context, req *TimeRequest) (*TimeResponse, error) {
 	svc.logger.InfoContext(ctx, "Getting current time", slog.String("format", string(req.Format)))
 
@@ -78,11 +84,4 @@ func (svc *TimeService) GetCurrentTime(ctx context.Context, req *TimeRequest) (*
 		slog.String("format", response.Format))
 
 	return response, nil
-}
-
-// NewTimeService creates a new time service instance.
-func NewTimeService(deps TimeServiceDeps) *TimeService {
-	return &TimeService{
-		logger: deps.RootLogger.WithGroup("app.time-service"),
-	}
 }

@@ -26,6 +26,14 @@ type ShutdownHooks struct {
 	deps   ShutdownHooksRegistryDeps
 }
 
+// NewShutdownHooks constructor for ShutdownHooks.
+func NewShutdownHooks(deps ShutdownHooksRegistryDeps) *ShutdownHooks {
+	return &ShutdownHooks{
+		logger: deps.RootLogger.WithGroup("shutdown"),
+		deps:   deps,
+	}
+}
+
 // HasHook checks if a shutdown hook with the given name is registered.
 // Typical usage is in tests and must be carefully considered for production scenarios.
 func (h *ShutdownHooks) HasHook(name string, method any) bool {
@@ -83,11 +91,4 @@ type ShutdownHooksRegistryDeps struct {
 
 	// config
 	GracefulShutdownTimeout time.Duration `name:"config.gracefulShutdownTimeout"`
-}
-
-func NewShutdownHooks(deps ShutdownHooksRegistryDeps) *ShutdownHooks {
-	return &ShutdownHooks{
-		logger: deps.RootLogger.WithGroup("shutdown"),
-		deps:   deps,
-	}
 }

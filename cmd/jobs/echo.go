@@ -18,9 +18,9 @@ import (
 type echoJobParams struct {
 	dig.In `ignore-unexported:"true"`
 
-	RootLogger *slog.Logger
-
 	*app.EchoService
+
+	RootLogger *slog.Logger
 
 	noop bool
 }

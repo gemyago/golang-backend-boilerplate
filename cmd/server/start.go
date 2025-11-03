@@ -19,11 +19,11 @@ import (
 type startServerParams struct {
 	dig.In `ignore-unexported:"true"`
 
+	*services.ShutdownHooks
+
 	RootLogger *slog.Logger
 
 	HTTPServer *server.HTTPServer
-
-	*services.ShutdownHooks
 
 	noop bool
 }

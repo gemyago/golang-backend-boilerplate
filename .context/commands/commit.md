@@ -1,12 +1,12 @@
-# Instruction to commit changes.
+# Follow this instruction to commit changes.
 
-This is an instruction to follow when user is referencing it. Only use this instruction when explicitly requested by the user.
+Only use this instruction if the user asks for it.
 
 * All commands should be run from a repo root.
 * You will be given a list of files to commit.
 * Commit all updated files if not otherwise specified. In this case use `git add .` from a repo root as a first step to stage all updated files.
 * If user requested to commit specific files, use `git add <file1> <file2> ...` to stage specific files only.
-* When committing, make sure to provide a sensible message. Figure out the message from chat history.
+* When committing, make sure to provide a sensible message. Figure out the message from chat history. Make message short and descriptive.
 * If no relevant chat history available, use `git diff --staged | head -n 1000` to understand changes and figure-out a sensible message.
 
 Do **NOT** do any other verification or actions unrelated to this instruction. You **SHOULD** just commit the changes as specified here.

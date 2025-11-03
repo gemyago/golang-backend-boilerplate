@@ -18,6 +18,9 @@ import (
 type HTTPServerDeps struct {
 	dig.In `ignore-unexported:"true"`
 
+	// services
+	*services.ShutdownHooks
+
 	RootLogger *slog.Logger
 
 	// config
@@ -32,9 +35,6 @@ type HTTPServerDeps struct {
 	// handler
 	Handler http.Handler
 
-	// services
-	*services.ShutdownHooks
-
 	// listeningSignal is an optional channel that Start will close when the server is listening.
 	// Primarily for testing.
 	listeningSignal chan<- struct{}
@@ -46,8 +46,31 @@ type HTTPServer struct {
 	logger  *slog.Logger
 }
 
+// NewHTTPServer constructor factory for general use *http.Server.
+func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
+	address := fmt.Sprintf("%s:%d", deps.Host, deps.Port)
+	srv := &http.Server{
+		Addr:              address,
+		IdleTimeout:       deps.IdleTimeout,
+		ReadHeaderTimeout: deps.ReadHeaderTimeout,
+		ReadTimeout:       deps.ReadTimeout,
+		WriteTimeout:      deps.WriteTimeout,
+		Handler:           buildMiddlewareChain(deps),
+		ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
+	}
+
+	deps.ShutdownHooks.Register("http-server", srv.Shutdown)
+
+	return &HTTPServer{
+		deps:    deps,
+		httpSrv: srv,
+		logger:  deps.RootLogger.WithGroup("http-server"),
+	}
+}
+
 func (srv *HTTPServer) Start(ctx context.Context) error {
-	listener, err := net.Listen("tcp", srv.httpSrv.Addr)
+	listenConfig := net.ListenConfig{}
+	listener, err := listenConfig.Listen(ctx, "tcp", srv.httpSrv.Addr)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", srv.httpSrv.Addr, err)
 	}
@@ -106,26 +129,4 @@ func buildMiddlewareChain(deps HTTPServerDeps) http.Handler {
 		middleware.NewRecovererMiddleware(deps.RootLogger),
 	)
 	return chain(deps.Handler)
-}
-
-// NewHTTPServer constructor factory for general use *http.Server.
-func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
-	address := fmt.Sprintf("%s:%d", deps.Host, deps.Port)
-	srv := &http.Server{
-		Addr:              address,
-		IdleTimeout:       deps.IdleTimeout,
-		ReadHeaderTimeout: deps.ReadHeaderTimeout,
-		ReadTimeout:       deps.ReadTimeout,
-		WriteTimeout:      deps.WriteTimeout,
-		Handler:           buildMiddlewareChain(deps),
-		ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
-	}
-
-	deps.ShutdownHooks.Register("http-server", srv.Shutdown)
-
-	return &HTTPServer{
-		deps:    deps,
-		httpSrv: srv,
-		logger:  deps.RootLogger.WithGroup("http-server"),
-	}
 }
