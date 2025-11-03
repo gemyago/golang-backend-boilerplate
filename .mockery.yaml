@@ -1,15 +1,13 @@
-dir: "{{.InterfaceDirRelative}}"
-inpackage: true
-filename: "mock_{{.InterfaceNameSnake}}.go"
-mock-build-tags: "!release"
-disable-version-string: true
+dir: '{{.InterfaceDirRelative}}'
+template: testify
+template-data:
+  mock-build-tags: '!release'
+  unroll-variadic: true
 packages:
   log/slog:
     interfaces:
       Handler:
         config:
-          inpackage: false
-          outpkg: 'diag'
-          dir: 'internal/diag'
-          filename: "mock_slog_handler.go"
-          mockname: MockSlogHandler
+          dir: internal/diag
+          structname: MockSlogHandler
+          pkgname: diag
