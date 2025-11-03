@@ -8,6 +8,7 @@ This is a golang backend project. Go version is defined in [go.mod](./go.mod) fi
 - This file gives AI coding agents the exact commands and conventions to follow in this repo.
 - Closest AGENTS.md to the edited file applies; walk up directories to root if none found.
 - Treat this as living documentation: update it in the same PR as any build/test/arch changes.
+- **ALWAYS** follow "Coding Task Completion Protocol" prior to reporting task completion for coding tasks.
 
 ## Quick Setup
 - direnv is assumed to be already configured
@@ -16,10 +17,11 @@ This is a golang backend project. Go version is defined in [go.mod](./go.mod) fi
 - Lint: `make lint`
 - Run tests: `make test`
 
-## Build & Test
+## Build, Test and Lint
 - Build artifacts (from build/): `make -C build dist`
 - Package artifacts: `make -C build build-artifacts.tar.bz2`
 - Run a specific test: `go test -v ./internal/... --run "^TestName$"`
+- Attempt auto fixing linting issues: `bin/golangci-lint run --fix`
 
 ## Run (local)
 - API server: `go run ./cmd/server start --env local`
@@ -67,10 +69,6 @@ This is a golang backend project. Go version is defined in [go.mod](./go.mod) fi
 - Use faker (github.com/go-faker/faker/v4) to generate random texts or other data
 - Follow [mockery](.context/mockery.md) for defining and generating mocks
 
-## Definition of Done
-- `make lint` and `make test` pass locally - failure means task is **NOT** done
-- AGENTS.md (this file or nested one) updated if commands, workflows, or architecture changed
-
 ## Security
 - NEVER hardcode secrets. Use env vars/secret stores. Authenticate to GHCR before push/pull when required.
 - Validate/sanitize all external inputs. Do not disable security linters without explicit justification.
@@ -87,3 +85,19 @@ This is a golang backend project. Go version is defined in [go.mod](./go.mod) fi
 - Overview: `README.md`
 - Build details: `build/README.md`
 - Deploy details: `deploy/README.md`
+
+## Coding Task Completion Protocol
+
+Any task that involved code changes is considered coding task and must follow this protocol before being marked done. Other tasks (docs, design, etc) MUST not follow this protocol.
+
+Prior to reporting task completion **ALWAYS** do this checklist:
+1. Lint status: Run `make lint` and confirm no errors
+2. Test status: Run `make test` and confirm no failures; coverage: XX.XX% (meets threshold)
+3. Make sure AGENTS.md are in sync if updated commands, workflows, or architecture.
+
+Any failure in the above steps MUST be resolved prior to task completion.
+
+Report task completion:
+- Lint: no errors / fixed all errors
+- Tests: all passing, coverage XX.XX%
+- AGENTS.md: updated to reflect changes (if any) / no changes needed

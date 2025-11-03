@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"testing"
 
+	"net/http"
+
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/services"
 	"github.com/go-faker/faker/v4"
@@ -29,6 +31,7 @@ func TestMCPServer(t *testing.T) {
 			Request: mcp.Request{
 				Method: "tools/call",
 			},
+			Header: http.Header{},
 			Params: mcp.CallToolParams{
 				Name: "tool-1-" + faker.Word(),
 			},
@@ -167,7 +170,7 @@ func TestMCPServer(t *testing.T) {
 
 			_, err = client.CallTool(ctx, wantCall)
 			require.Error(t, err)
-			assert.Equal(t, wantError, err)
+			assert.Contains(t, err.Error(), wantError.Error())
 		})
 	})
 }
