@@ -1,20 +1,24 @@
 <!-- AGENTS.md — README for machines. Nearest file in the tree wins (hierarchical precedence). Keep this concise, concrete, and executable. -->
 
+## Overview
+
+This is a golang backend project. Go version is defined in [go.mod](./go.mod) file and this is the primary source of truth for the version.
+
 ## Purpose & Precedence
 - This file gives AI coding agents the exact commands and conventions to follow in this repo.
 - Closest AGENTS.md to the edited file applies; walk up directories to root if none found.
 - Treat this as living documentation: update it in the same PR as any build/test/arch changes.
 
 ## Quick Setup
+- direnv is assumed to be already configured
+- gobrew is used to manage Go versions
 - Install deps/tools: `go mod download && go install tool`
 - Lint: `make lint`
-- Tests (with coverage/badge): `make test`
-- Open coverage (after tests): `open .cover/coverage.html`
+- Run tests: `make test`
 
 ## Build & Test
 - Build artifacts (from build/): `make -C build dist`
 - Package artifacts: `make -C build build-artifacts.tar.bz2`
-- Run all tests (CI-equivalent): `make test`
 - Run a specific test: `go test -v ./internal/... --run "^TestName$"`
 
 ## Run (local)
@@ -63,12 +67,9 @@
 - Use faker (github.com/go-faker/faker/v4) to generate random texts or other data
 - Follow [mockery](.context/mockery.md) for defining and generating mocks
 
-## Git Workflow & Definition of Done
-- Branch from `main`: `feature/<slug>` or `fix/<slug>`. PRs target `main`. CI entrypoint: `.github/workflows/build-flow.yml`
-- DoD for any PR:
-  - `make lint` and `make test` pass locally
-  - If artifacts/images changed: `make -C build build-artifacts.tar.bz2` and/or `make -C build docker/.remote-images` succeed locally
-  - AGENTS.md (this file or nested one) updated if commands, workflows, or architecture changed
+## Definition of Done
+- `make lint` and `make test` pass locally - failure means task is **NOT** done
+- AGENTS.md (this file or nested one) updated if commands, workflows, or architecture changed
 
 ## Security
 - NEVER hardcode secrets. Use env vars/secret stores. Authenticate to GHCR before push/pull when required.
