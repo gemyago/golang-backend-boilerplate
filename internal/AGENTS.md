@@ -28,7 +28,7 @@
 - Lint: `make lint` (strict). Use `//nolint:<rule>` only with justification.
 - Formatting via goimports (included in lint set).
 
-## Definition of Done (internal changes)
-- `go test ./internal/...` passes.
+## Definition of Done
+- `make test` passes.
 - `make lint` passes with no new warnings.
 - Patterns follow the canonical examples linked above.

@@ -24,12 +24,14 @@ This is a golang backend project. Go version is defined in [go.mod](./go.mod) fi
 - Attempt auto fixing linting issues: `bin/golangci-lint run --fix`
 
 ## Run (local)
-- API server: `go run ./cmd/server start --env local`
-- Jobs (echo): `go run ./cmd/jobs echo --env local`
-- MCP server (stdio): `go run ./cmd/mcp stdio --env local`
-- MCP server (HTTP): `go run ./cmd/mcp http --env local`
-- Watch (requires gow): `gow run ./cmd/server start --env local`
-- Add `--noop` to dry-run startup checks without external deps.
+
+AI must almost **always** use `--noop` to dry-run startup checks without external deps. Otherwise the process will start in foreground and block the AI.
+
+- API server: `go run ./cmd/server start --env local --noop`
+- Jobs (echo): `go run ./cmd/jobs echo --env local --noop`
+- MCP server (stdio): `go run ./cmd/mcp stdio --env local --noop`
+- MCP server (HTTP): `go run ./cmd/mcp http --env local --noop`
+- Watch (requires gow): `gow run ./cmd/server start --env local --noop`
 
 ## Docker Images (multi-platform)
 - Build local images (load): `make -C build docker/.local-images`
@@ -47,10 +49,19 @@ This is a golang backend project. Go version is defined in [go.mod](./go.mod) fi
 - Env vars prefix `APP_` (dots/dashes -> underscores). Examples: `APP_ENV=local`, `APP_DEFAULT_LOG_LEVEL=info`, `APP_JSON_LOGS=true`
 
 ## Architecture Overview (map, link—don’t duplicate)
+
+The application follows hexagonal architecture with layers mapped as follows:
+- Incoming adapters: `internal/api` (HTTP, MCP)
+  - HTTP layer: spec `internal/api/http/v1routes.yaml`; generated routes/controllers under `internal/api/http/v1routes/*`
+- Application layer: `internal/app` (business logic, DI)
+- Outgoing adapters: `internal/services` (DB, external APIs e.t.c)
+
+The Application layer is structured to follow CQRS principles:
+- Data mutations are handled by Commands
+- Data read operations are handled by Queries
+
+Additional notes:
 - Entrypoints: `cmd/server` (HTTP API), `cmd/jobs` (batch), `cmd/mcp` (MCP stdio/HTTP server)
-- HTTP layer: spec `internal/api/http/v1routes.yaml`; generated routes/controllers under `internal/api/http/v1routes/*`
-- Application layer: `internal/app` (business logic, DI wiring)
-- Services/utilities: `internal/services`
 - Config loader: `internal/config` (embedded JSON via viper)
 - For patterns, prefer pointing to canonical examples vs prose:
   - Echo HTTP handler: `internal/api/http/v1controllers/echo.go`
@@ -86,16 +97,27 @@ This is a golang backend project. Go version is defined in [go.mod](./go.mod) fi
 - Build details: `build/README.md`
 - Deploy details: `deploy/README.md`
 
+### Non coding task completion protocol
+
+Examples of non coding tasks are:
+- Investigation of a problem
+- Documentation updates
+- Script updates
+
+Generally anything that is not related to code changes.
+
+The completion protocol for non coding task is established by the user.
+
 ## Coding Task Completion Protocol
 
-Any task that involved code changes is considered coding task and must follow this protocol before being marked done. Other tasks (docs, design, etc) MUST not follow this protocol.
+This protocol is used to complete a coding task (e.g the one that resulted in changing any code files). For non coding tasks, use the non coding task completion protocol.
 
-Prior to reporting task completion **ALWAYS** do this checklist:
+If you changed any code then **always** perform the completion protocol below:
 1. Lint status: Run `make lint` and confirm no errors
 2. Test status: Run `make test` and confirm no failures; coverage: XX.XX% (meets threshold)
 3. Make sure AGENTS.md are in sync if updated commands, workflows, or architecture.
 
-Any failure in the above steps MUST be resolved prior to task completion.
+Report the result to the user. The **only** acceptable result is "All tests pass and no lint errors". Failing tests or linting errors means the task **is not complete**. Any failure in the above steps MUST be resolved prior to task completion.
 
 Report task completion:
 - Lint: no errors / fixed all errors
