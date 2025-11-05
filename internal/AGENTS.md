@@ -1,12 +1,8 @@
 <!-- Nearest AGENTS.md takes precedence. Scope: guidance for packages under internal/. Keep concise; link to canonical code. -->
 
 ## Purpose
-- Module-specific rules for `internal/*`. For global setup, CI, and workflows see [AGENTS.md](AGENTS.md).
-- Living document: update this file in the same PR as architecture or testing changes.
 
-## Tests
-- Run all internal tests: `go test -v ./internal/...`
-- Full repo parity (coverage/shuffle as in Makefile): `TZ=US/Alaska go test -shuffle=on -failfast -coverpkg=./internal/...,./cmd/... -coverprofile=.cover/profile.out -covermode=atomic ./...`
+Please review project level [AGENTS.md](../AGENTS.md). This file complements it with internal/ specific details.
 
 ## HTTP Layer (OpenAPI-first)
 - Spec source of truth: [internal/api/http/v1routes.yaml](internal/api/http/v1routes.yaml)
@@ -28,7 +24,6 @@
 - Lint: `make lint` (strict). Use `//nolint:<rule>` only with justification.
 - Formatting via goimports (included in lint set).
 
-## Definition of Done
-- `make test` passes.
-- `make lint` passes with no new warnings.
-- Patterns follow the canonical examples linked above.
+## Task completion protocol
+
+Follow project wide completion protocol. No exceptions.

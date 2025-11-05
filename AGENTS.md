@@ -50,7 +50,7 @@ AI must almost **always** use `--noop` to dry-run startup checks without externa
 
 ## Architecture Overview (map, link—don’t duplicate)
 
-The application follows hexagonal architecture with layers mapped as follows:
+The application applies some hexagonal architecture principles with layers mapped as follows:
 - Incoming adapters: `internal/api` (HTTP, MCP)
   - HTTP layer: spec `internal/api/http/v1routes.yaml`; generated routes/controllers under `internal/api/http/v1routes/*`
 - Application layer: `internal/app` (business logic, DI)
