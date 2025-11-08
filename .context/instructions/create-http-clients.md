@@ -2,24 +2,40 @@
 
 ## Overview
 
-This document provides comprehensive instructions for creating HTTP API clients from OpenAPI specifications. It provides concrete templates and patterns for implementation that can be used by AI models or humans to generate robust, maintainable API clients.
+You must strickly follow this instruction to create (or update) HTTP API clients from OpenAPI specifications
 
 ## Architectural Decisions
 
-Key principles:
-- Maintain separate file per operation to simplify updates and testing. Example `create_resource.go`.
-- Maintain separate tests per operation. Example `create_resource_test.go`.
-- Maintain separate file per model. Keep models in the same package as the client. Example `model_create_request.go` and `model_create_response.go`.
+Key principles to follow:
 - Keep common client code in `client.go` file.
-- Use simple naming: `Client` instead of `ServiceClient` since it will be accessed as `packagename.Client`.
+  - Use simple naming: `Client` instead of `ServiceClient`
+- Separate file per operation. Example:
+  - Operation: `addPet`
+  - File: `add_pet.go`
+  - Tests file: `add_pet_test.go`
+- Separate file per model. Example:
+  - Model: `PetDetails`
+  - File: `model_pet_details.go`
+  - Models are not tested directly.
 - Always use consistent operation signature: `ctx`, `tokenProvider`, and `params` struct (even for single parameters).
 
-### 1. HTTP Client Infrastructure
+## Implementation Templates
+
+Key decisions:
+- Use context-based authentication via existing middleware. Use token provider interface to get the token.
+
+### HTTP Client Infrastructure
 
 **Decision**: Use existing `ClientFactory` with middleware composition pattern.
 
 **Implementation Pattern**:
+
+This is `client.go` file content pattern:
 ```go
+type TokenProvider interface {
+    GetToken(ctx context.Context) (middleware.Token, error)
+}
+
 type Client struct {
     httpClient *http.Client
     baseURL    string
@@ -28,7 +44,7 @@ type Client struct {
 
 type ClientDeps struct {
     dig.In
-    
+
     ClientFactory *http.ClientFactory
     RootLogger    *slog.Logger
     BaseURL       string `name:"config.serviceApi.baseURL"`
@@ -43,80 +59,66 @@ func NewClient(deps ClientDeps) *Client {
 }
 ```
 
-### 2. Authentication Strategy
+### API Method Implementation Template
 
-Use context-based authentication via existing middleware. Use token provider interface to get the token.
+Example to send POST/PUT/PATCH requests (with http body):
+- Operation `addPet`
+- File `add_pet.go`
+- AddPetParams - input params, declared in the same file
 
-**Implementation Pattern**:
 ```go
-type TokenProvider interface {
-    GetToken(ctx context.Context) (middleware.Token, error)
+// AddPetParams contains parameters for creating a resource.
+type AddPetParams struct {
+    // Request represents the request body for adding a pet.
+    Request *AddPetRequest
 }
 
-// In the client method - always use params struct even for single parameters.
-type CreateResourceParams struct {
-    Request *CreateResourceRequest
-}
-
-func (c *Client) CreateResource(ctx context.Context, tokenProvider TokenProvider, params CreateResourceParams) (*Resource, error) {
+// AddPet is example to show how to send a request with body and response.
+func (c *Client) AddPet(ctx context.Context, tokenProvider TokenProvider, params AddPetParams) (*AddPetResponse, error) {
     token, err := tokenProvider.GetToken(ctx)
     if err != nil {
         return nil, fmt.Errorf("failed to get token: %w", err)
     }
     ctxWithAuth := middleware.WithAuthTokenV2(ctx, token)
-    // ... rest of implementation
+
+    // Make API call
+    var response AddPetResponse
+    err = http.SendRequest(ctxWithAuth, c.httpClient, http.SendRequestParams[AddPetRequest, AddPetResponse]{
+        Method: "POST",
+        URL:    c.baseURL + "/pets",
+        Body:   params.Request,
+        Target: &response,
+    })
+    if err != nil {
+        return nil, fmt.Errorf("failed to add pet: %w", err)
+    }
+
+    return &resource, nil
 }
 ```
 
-## Implementation Templates
-
-### API Method Implementation Template
+Example to send GET requests (no boty) with query/path parameters:
+- Operation `getPetById`
+- File `get_pet_by_id.go`
+- GetPetByIdParams - input params, declared in the same file
 
 ```go
-// CreateResourceParams contains parameters for creating a resource.
-type CreateResourceParams struct {
-    Request *CreateResourceRequest
+// GetPetByIdParams contains parameters for getting a resource.
+type GetPetByIdParams struct {
+    PetID string
 }
 
-// CreateResource is example to show how to send a request with body and response.
-func (c *Client) CreateResource(ctx context.Context, tokenProvider TokenProvider, params CreateResourceParams) (*Resource, error) {
+// GetPetById is example to show how to send a request with no body and response.
+func (c *Client) GetPetById(ctx context.Context, tokenProvider TokenProvider, params GetPetByIdParams) (*GetPetByIDResponse, error) {
     token, err := tokenProvider.GetToken(ctx)
     if err != nil {
         return nil, fmt.Errorf("failed to get token: %w", err)
     }
     ctxWithAuth := middleware.WithAuthTokenV2(ctx, token)
-    
-    // Make API call
-    var resource Resource
-    err = http.SendRequest(ctxWithAuth, c.httpClient, http.SendRequestParams[CreateResourceRequest, Resource]{
-        Method: "POST",
-        URL:    c.baseURL + "/resources",
-        Body:   params.Request,
-        Target: &resource,
-    })
-    if err != nil {
-        return nil, fmt.Errorf("create resource failed: %w", err)
-    }
-    
-    return &resource, nil
-}
 
-// GetResourceParams contains parameters for getting a resource.
-type GetResourceParams struct {
-    ResourceID string
-}
-
-// GetResource is example to show how to send a request with no body and response.  
-func (c *Client) GetResource(ctx context.Context, tokenProvider TokenProvider, params GetResourceParams) (*Resource, error) {
-    token, err := tokenProvider.GetToken(ctx)
-    if err != nil {
-        return nil, fmt.Errorf("failed to get token: %w", err)
-    }
-    ctxWithAuth := middleware.WithAuthTokenV2(ctx, token)
-    
-    var resource Resource
-    path := fmt.Sprintf("/resources/%s", params.ResourceID)
-    err = http.SendRequest(ctxWithAuth, c.httpClient, http.SendRequestParams[interface{}, Resource]{
+    var resource GetPetByIDResponse
+    path := fmt.Sprintf("/pets/%s", params.PetID)
+    err = http.SendRequest(ctxWithAuth, c.httpClient, http.SendRequestParams[interface{}, GetPetByIDResponse]{
         Method: "GET",
         URL:    c.baseURL + path,
         Target: &resource,
@@ -124,7 +126,7 @@ func (c *Client) GetResource(ctx context.Context, tokenProvider TokenProvider, p
     if err != nil {
         return nil, fmt.Errorf("get resource failed: %w", err)
     }
-    
+
     return &resource, nil
 }
 ```
@@ -154,11 +156,11 @@ type Resource struct {
 
 ## Testing Patterns
 
-Follow [testing-best-practices](../testing-best-practices.md) when writing tests.
+Follow [testing-best-practices](./doc/testing-best-practices.md) when writing tests.
 Always include these 4 test cases for each operation:
 
 1. **Success with all parameters/fields** - Test with complete request and response
-2. **Success with required parameters only** - Test minimal valid case  
+2. **Success with required parameters only** - Test minimal valid case
 3. **Generic API error test** - Test API error handling
 4. **Generic token provider error test** - Test authentication error
 
@@ -169,7 +171,7 @@ Always include these 4 test cases for each operation:
 3. **Use Randomized Test Data**: Use faker to generate random test inputs
 4. **Use Proper Error Assertions**: Use assert.ErrorContains or assert.ErrorIs for error checking
 
-Here's an improved test template that incorporates these practices:
+Here's a test template that incorporates these practices:
 
 ```go
 package packagename
@@ -182,7 +184,7 @@ import (
     "net/http"
     "net/http/httptest"
     "testing"
-    
+
     "github.com/gemyago/atlacp/internal/diag"
     httpservices "github.com/gemyago/atlacp/internal/services/http"
     "github.com/go-faker/faker/v4"
@@ -202,8 +204,8 @@ func TestClient_CreateResource(t *testing.T) {
             BaseURL:    baseURL,
         }
     }
-    
-    
+
+
     t.Run("success with all parameters and fields", func(t *testing.T) {
         // Arrange - Use randomized data
         resourceName := "resource-" + faker.Word()
@@ -213,7 +215,7 @@ func TestClient_CreateResource(t *testing.T) {
           TokenType:  faker.Word(),
           TokenValue: faker.UUIDHyphenated(),
         }
-        
+
         server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
             // Verify request details
             assert.Equal(t, "POST", r.Method)
@@ -222,7 +224,7 @@ func TestClient_CreateResource(t *testing.T) {
 
             // Important to check token
             assert.Equal(t, mockTokenProvider.TokenType+" "+mockTokenProvider.TokenValue, r.Header.Get("Authorization"))
-            
+
             // Return complete successful response
             w.Header().Set("Content-Type", "application/json")
             w.WriteHeader(http.StatusCreated)
@@ -240,22 +242,22 @@ func TestClient_CreateResource(t *testing.T) {
             }`)
         }))
         defer server.Close()
-        
+
         deps := makeMockDeps(t, server.URL)
         client := NewClient(deps)
-        
+
         req := &CreateResourceRequest{
             Name:        resourceName,
             Description: resourceDesc,
             Amount:      resourceAmount,
             Tags:        []string{faker.Word(), faker.Word()},
         }
-        
+
         // Act
         resource, err := client.CreateResource(t.Context(), mockTokenProvider, CreateResourceParams{
             Request: req,
         })
-        
+
         // Assert
         require.NoError(t, err)
         assert.Equal(t, "resource-123", resource.ID)
@@ -267,7 +269,7 @@ func TestClient_CreateResource(t *testing.T) {
         assert.NotZero(t, resource.CreatedAt)
         assert.NotZero(t, resource.UpdatedAt)
     })
-    
+
     t.Run("success with required parameters only", func(t *testing.T) {
         // Arrange - Use randomized data
         resourceName := "resource-" + faker.Word()
@@ -275,7 +277,7 @@ func TestClient_CreateResource(t *testing.T) {
           TokenType:  faker.Word(),
           TokenValue: faker.UUIDHyphenated(),
         }
-        
+
         server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
             // Return minimal successful response
             w.Header().Set("Content-Type", "application/json")
@@ -286,25 +288,25 @@ func TestClient_CreateResource(t *testing.T) {
             }`)
         }))
         defer server.Close()
-        
+
         deps := makeMockDeps(t, server.URL)
         client := NewClient(deps)
-        
+
         req := &CreateResourceRequest{
             Name: resourceName, // Only required field
         }
-        
+
         // Act
         resource, err := client.CreateResource(t.Context(), mockTokenProvider, CreateResourceParams{
             Request: req,
         })
-        
+
         // Assert
         require.NoError(t, err)
         assert.Equal(t, "resource-456", resource.ID)
         assert.Equal(t, "minimal-resource", resource.Name)
     })
-    
+
     t.Run("handles API error", func(t *testing.T) {
         // Arrange
         resourceName := "resource-" + faker.Word()
@@ -312,50 +314,50 @@ func TestClient_CreateResource(t *testing.T) {
           TokenType:  faker.Word(),
           TokenValue: faker.UUIDHyphenated(),
         }
-        
+
         server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
             w.Header().Set("Content-Type", "application/json")
             w.WriteHeader(http.StatusBadRequest)
         }))
         defer server.Close()
-        
+
         deps := makeMockDeps(t, server.URL)
         client := NewClient(deps)
-        
+
         req := &CreateResourceRequest{
             Name: resourceName,
         }
-        
+
         // Act
         result, err := client.CreateResource(t.Context(), mockTokenProvider, CreateResourceParams{
             Request: req,
         })
-        
+
         // Assert
         require.Error(t, err)
         assert.Nil(t, result)
         assert.ErrorContains(t, err, "create resource failed")
     })
-    
+
     t.Run("handles token provider error", func(t *testing.T) {
         // Arrange
         resourceName := "resource-" + faker.Word()
         mockTokenProvider := &MockTokenProvider{
           Err: errors.New(faker.Sentence()),
         }
-        
+
         deps := makeMockDeps(t, "http://example.com")
         client := NewClient(deps)
-        
+
         req := &CreateResourceRequest{
             Name: resourceName,
         }
-        
+
         // Act
         result, err := client.CreateResource(t.Context(), mockTokenProvider, CreateResourceParams{
             Request: req,
         })
-        
+
         // Assert
         require.Error(t, err)
         assert.Nil(t, result)
@@ -451,7 +453,7 @@ This runs `golangci-lint` across the entire codebase and will catch common issue
        // Not using 'r' parameter triggers warning
        w.WriteHeader(http.StatusOK)
    }))
-   
+
    // ✅ Good: use underscore for unused parameters
    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
        w.WriteHeader(http.StatusOK)
@@ -462,9 +464,9 @@ This runs `golangci-lint` across the entire codebase and will catch common issue
    ```go
    // ❌ Bad: incorrect casing for acronyms
    type ShowPetByIdParams struct {
-       PetID string
+       PetId string
    }
-   
+
    // ✅ Good: acronyms should be all uppercase
    type ShowPetByIDParams struct {
        PetID string
@@ -475,7 +477,7 @@ This runs `golangci-lint` across the entire codebase and will catch common issue
    ```go
    // ❌ Bad: using context.Background() in tests
    result, err := client.CreatePets(context.Background(), tokenProvider, params)
-   
+
    // ✅ Good: use t.Context() in tests for better test lifecycle management
    result, err := client.CreatePets(t.Context(), tokenProvider, params)
    ```
@@ -487,7 +489,7 @@ This runs `golangci-lint` across the entire codebase and will catch common issue
        body, err := io.ReadAll(r.Body)
        require.NoError(t, err) // This can cause issues in handlers
    }
-   
+
    // ✅ Good: use assert.NoError in HTTP handlers
    func(w http.ResponseWriter, r *http.Request) {
        body, err := io.ReadAll(r.Body)
@@ -501,7 +503,7 @@ This runs `golangci-lint` across the entire codebase and will catch common issue
    func (m *MockTokenProvider) GetToken(ctx context.Context) (string, error) {
        return m.token, m.err
    }
-   
+
    // ✅ Good: mark unused parameters with underscore
    func (m *MockTokenProvider) GetToken(_ context.Context) (string, error) {
        return m.token, m.err
