@@ -20,11 +20,6 @@ func WithAuthTokenV2(ctx context.Context, token Token) context.Context {
 	return context.WithValue(ctx, authTokenKey{}, token)
 }
 
-// WithAuthToken adds a Bearer authentication token to the context (legacy API).
-func WithAuthToken(ctx context.Context, token string) context.Context {
-	return WithAuthTokenV2(ctx, Token{Type: "Bearer", Value: token})
-}
-
 // AuthTokenFromContext extracts the Token from the context.
 func AuthTokenFromContext(ctx context.Context) (Token, bool) {
 	token, ok := ctx.Value(authTokenKey{}).(Token)

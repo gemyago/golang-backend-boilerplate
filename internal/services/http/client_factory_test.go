@@ -25,11 +25,11 @@ func TestClientFactory(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
 		factory := NewClientFactory(deps)
-		token := faker.Word()
+		token := middleware.Token{Type: "Bearer", Value: faker.Word()}
 		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Check for auth header
 			authHeader := r.Header.Get("Authorization")
-			if authHeader != "Bearer "+token {
+			if authHeader != (token.Type + " " + token.Value) {
 				w.WriteHeader(http.StatusUnauthorized)
 				_, err := w.Write([]byte(`{"error": "unauthorized"}`))
 				assert.NoError(t, err)
@@ -48,7 +48,7 @@ func TestClientFactory(t *testing.T) {
 		// Create request with token in context
 		req, err := http.NewRequest(http.MethodGet, testServer.URL, nil)
 		require.NoError(t, err)
-		ctx := middleware.WithAuthToken(req.Context(), token)
+		ctx := middleware.WithAuthTokenV2(req.Context(), token)
 		req = req.WithContext(ctx)
 
 		resp, err := client.Do(req)

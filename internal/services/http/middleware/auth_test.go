@@ -35,11 +35,11 @@ func TestAuthenticationMiddleware(t *testing.T) {
 	t.Run("should add Bearer token when token is in context", func(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
-		tokenValue := faker.Word()
+		token := Token{Type: faker.Word(), Value: faker.Word()}
 		mockTransport := &MockRoundTripper{}
 		authMiddleware := NewAuthenticationMiddleware(mockTransport, deps)
 
-		ctx := WithAuthToken(t.Context(), tokenValue)
+		ctx := WithAuthTokenV2(t.Context(), token)
 		req := httptest.NewRequest(http.MethodGet, "https://api.example.com/test", nil)
 		req = req.WithContext(ctx)
 
@@ -49,7 +49,7 @@ func TestAuthenticationMiddleware(t *testing.T) {
 		}
 
 		mockTransport.On("RoundTrip", mock.MatchedBy(func(r *http.Request) bool {
-			return r.Header.Get("Authorization") == "Bearer "+tokenValue
+			return r.Header.Get("Authorization") == token.Type+" "+token.Value
 		})).Return(expectedResponse, nil)
 
 		// Act
@@ -121,11 +121,11 @@ func TestAuthenticationMiddleware(t *testing.T) {
 	t.Run("should not modify original request", func(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
-		tokenValue := faker.Word()
+		token := Token{Type: "Bearer", Value: faker.Word()}
 		mockTransport := &MockRoundTripper{}
 		authMiddleware := NewAuthenticationMiddleware(mockTransport, deps)
 
-		ctx := WithAuthToken(t.Context(), tokenValue)
+		ctx := WithAuthTokenV2(t.Context(), token)
 		originalReq := httptest.NewRequest(http.MethodGet, "https://api.example.com/test", nil)
 		originalReq = originalReq.WithContext(ctx)
 
