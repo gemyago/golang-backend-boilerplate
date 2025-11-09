@@ -73,6 +73,8 @@ Additional notes:
 - Formatting via `goimports` (included in lint set).
 
 ### Testing Style and Patterns
+
+More detailed testing best practices are in [doc/testing-best-practices.md](./doc/testing-best-practices.md). Key points:
 - Define tests in same package
 - Prefer single top-level test function per component and do multiple nested run blocks
 - Use makeMockDeps to initialize dependencies, no inline or repeated setup
