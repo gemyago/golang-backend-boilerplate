@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 )
 
 type MockNow struct {
@@ -17,8 +17,9 @@ var _ TimeProvider = &MockNow{}
 
 // NewMockNow constructor for MockNow.
 func NewMockNow() *MockNow {
+	fake := faker.New()
 	return &MockNow{
-		value: time.UnixMilli(faker.RandomUnixTime()),
+		value: time.UnixMilli(fake.Time().Unix(time.Now())),
 	}
 }
 

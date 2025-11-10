@@ -10,11 +10,12 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEcho(t *testing.T) {
+	fake := faker.New()
 	type mockDeps struct {
 		EchoController handlers.EchoController
 	}
@@ -30,7 +31,7 @@ func TestEcho(t *testing.T) {
 	}
 	t.Run("POST /echo", func(t *testing.T) {
 		t.Run("should respond with OK", func(t *testing.T) {
-			wantMessage := faker.Sentence()
+			wantMessage := fake.Lorem().Sentence(10)
 			reqBody := `{"message": "` + wantMessage + `"}`
 			req := httptest.NewRequest(
 				http.MethodPost,

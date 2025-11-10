@@ -8,21 +8,22 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_UpdatePet(t *testing.T) {
+	fake := faker.New()
 	t.Run("success with all parameters and fields", func(t *testing.T) {
 		// Arrange - Use randomized data
 		petID := rand.Int64N(1000)
-		petName := faker.Name()
-		photoUrls := []string{faker.URL(), faker.URL()}
+		petName := fake.Person().Name()
+		photoUrls := []string{fake.Internet().URL(), fake.Internet().URL()}
 		status := "sold"
 		mockTokenProvider := &MockTokenProvider{
-			TokenType:  faker.Word(),
-			TokenValue: faker.UUIDHyphenated(),
+			TokenType:  fake.Lorem().Word(),
+			TokenValue: fake.UUID().V4(),
 		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -72,11 +73,11 @@ func TestClient_UpdatePet(t *testing.T) {
 	t.Run("success with required parameters only", func(t *testing.T) {
 		// Arrange - Use randomized data
 		petID := rand.Int64N(1000)
-		petName := faker.Name()
-		photoUrls := []string{faker.URL()}
+		petName := fake.Person().Name()
+		photoUrls := []string{fake.Internet().URL()}
 		mockTokenProvider := &MockTokenProvider{
-			TokenType:  faker.Word(),
-			TokenValue: faker.UUIDHyphenated(),
+			TokenType:  fake.Lorem().Word(),
+			TokenValue: fake.UUID().V4(),
 		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -115,11 +116,11 @@ func TestClient_UpdatePet(t *testing.T) {
 	t.Run("handles API error", func(t *testing.T) {
 		// Arrange
 		petID := rand.Int64N(1000)
-		petName := faker.Name()
-		photoUrls := []string{faker.URL()}
+		petName := fake.Person().Name()
+		photoUrls := []string{fake.Internet().URL()}
 		mockTokenProvider := &MockTokenProvider{
-			TokenType:  faker.Word(),
-			TokenValue: faker.UUIDHyphenated(),
+			TokenType:  fake.Lorem().Word(),
+			TokenValue: fake.UUID().V4(),
 		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -151,10 +152,10 @@ func TestClient_UpdatePet(t *testing.T) {
 	t.Run("handles token provider error", func(t *testing.T) {
 		// Arrange
 		petID := rand.Int64N(1000)
-		petName := faker.Name()
-		photoUrls := []string{faker.URL()}
+		petName := fake.Person().Name()
+		photoUrls := []string{fake.Internet().URL()}
 		mockTokenProvider := &MockTokenProvider{
-			Err: errors.New(faker.Sentence()),
+			Err: errors.New(fake.Lorem().Sentence(10)),
 		}
 
 		deps := makeMockDeps(t, "http://example.com")

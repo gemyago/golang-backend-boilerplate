@@ -187,7 +187,7 @@ import (
 
     "github.com/gemyago/atlacp/internal/diag"
     httpservices "github.com/gemyago/atlacp/internal/services/http"
-    "github.com/go-faker/faker/v4"
+    "github.com/jaswdr/faker"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )

@@ -79,7 +79,7 @@ More detailed testing best practices are in [doc/testing-best-practices.md](./do
 - Prefer single top-level test function per component and do multiple nested run blocks
 - Use makeMockDeps to initialize dependencies, no inline or repeated setup
 - Use require.Error or require.ErrorIs when asserting errors
-- Use faker (github.com/go-faker/faker/v4) to generate random texts or other data
+- Use faker (github.com/jaswdr/faker) to generate random texts or other data
 - Follow [mockery](.context/mockery.md) for defining and generating mocks
 
 ## Security

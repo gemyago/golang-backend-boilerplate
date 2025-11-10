@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -32,10 +32,11 @@ func makeMockDeps() AuthenticationMiddlewareDeps {
 }
 
 func TestAuthenticationMiddleware(t *testing.T) {
+	fake := faker.New()
 	t.Run("should add Bearer token when token is in context", func(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
-		token := Token{Type: faker.Word(), Value: faker.Word()}
+		token := Token{Type: fake.Lorem().Word(), Value: fake.Lorem().Word()}
 		mockTransport := &MockRoundTripper{}
 		authMiddleware := NewAuthenticationMiddleware(mockTransport, deps)
 
@@ -64,7 +65,7 @@ func TestAuthenticationMiddleware(t *testing.T) {
 	t.Run("should add custom token type when using WithAuthTokenV2", func(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
-		tokenValue := faker.Word()
+		tokenValue := fake.Lorem().Word()
 		tokenType := "CustomType"
 		mockTransport := &MockRoundTripper{}
 		authMiddleware := NewAuthenticationMiddleware(mockTransport, deps)
@@ -121,7 +122,7 @@ func TestAuthenticationMiddleware(t *testing.T) {
 	t.Run("should not modify original request", func(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
-		token := Token{Type: "Bearer", Value: faker.Word()}
+		token := Token{Type: "Bearer", Value: fake.Lorem().Word()}
 		mockTransport := &MockRoundTripper{}
 		authMiddleware := NewAuthenticationMiddleware(mockTransport, deps)
 
@@ -148,7 +149,7 @@ func TestAuthenticationMiddleware(t *testing.T) {
 
 	t.Run("should extract token from context using AuthTokenFromContext", func(t *testing.T) {
 		// Arrange
-		token := Token{Type: "Bearer", Value: faker.Word()}
+		token := Token{Type: "Bearer", Value: fake.Lorem().Word()}
 		ctx := WithAuthTokenV2(t.Context(), token)
 
 		// Act

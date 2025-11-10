@@ -3,12 +3,13 @@ package main
 import (
 	"testing"
 
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMain(t *testing.T) {
+	fake := faker.New()
 	t.Run("http", func(t *testing.T) {
 		t.Run("should initialize app", func(t *testing.T) {
 			rootCmd := setupCommands()
@@ -19,14 +20,14 @@ func TestMain(t *testing.T) {
 			rootCmd := setupCommands()
 			rootCmd.SilenceErrors = true
 			rootCmd.SilenceUsage = true
-			rootCmd.SetArgs([]string{"http", "--noop", "-l", faker.Word(), "--logs-file", "../../test.log"})
+			rootCmd.SetArgs([]string{"http", "--noop", "-l", fake.Lorem().Word(), "--logs-file", "../../test.log"})
 			assert.Error(t, rootCmd.Execute())
 		})
 		t.Run("should fail if unexpected env", func(t *testing.T) {
 			rootCmd := setupCommands()
 			rootCmd.SilenceErrors = true
 			rootCmd.SilenceUsage = true
-			rootCmd.SetArgs([]string{"http", "--noop", "-e", faker.Word(), "--logs-file", "../../test.log"})
+			rootCmd.SetArgs([]string{"http", "--noop", "-e", fake.Lorem().Word(), "--logs-file", "../../test.log"})
 			gotErr := rootCmd.Execute()
 			assert.ErrorContains(t, gotErr, "failed to read config")
 		})
@@ -41,14 +42,14 @@ func TestMain(t *testing.T) {
 			rootCmd := setupCommands()
 			rootCmd.SilenceErrors = true
 			rootCmd.SilenceUsage = true
-			rootCmd.SetArgs([]string{"stdio", "--noop", "-l", faker.Word(), "--logs-file", "../../test.log"})
+			rootCmd.SetArgs([]string{"stdio", "--noop", "-l", fake.Lorem().Word(), "--logs-file", "../../test.log"})
 			assert.Error(t, rootCmd.Execute())
 		})
 		t.Run("should fail if unexpected env", func(t *testing.T) {
 			rootCmd := setupCommands()
 			rootCmd.SilenceErrors = true
 			rootCmd.SilenceUsage = true
-			rootCmd.SetArgs([]string{"stdio", "--noop", "-e", faker.Word(), "--logs-file", "../../test.log"})
+			rootCmd.SetArgs([]string{"stdio", "--noop", "-e", fake.Lorem().Word(), "--logs-file", "../../test.log"})
 			gotErr := rootCmd.Execute()
 			assert.ErrorContains(t, gotErr, "failed to read config")
 		})

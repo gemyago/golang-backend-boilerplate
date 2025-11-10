@@ -9,12 +9,13 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/services/http/middleware"
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClientFactory(t *testing.T) {
+	fake := faker.New()
 	makeMockDeps := func() ClientFactoryDeps {
 		return ClientFactoryDeps{
 			RootLogger: diag.RootTestLogger(),
@@ -25,7 +26,7 @@ func TestClientFactory(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
 		factory := NewClientFactory(deps)
-		token := middleware.Token{Type: "Bearer", Value: faker.Word()}
+		token := middleware.Token{Type: "Bearer", Value: fake.Lorem().Word()}
 		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Check for auth header
 			authHeader := r.Header.Get("Authorization")

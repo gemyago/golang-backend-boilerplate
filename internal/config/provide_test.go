@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -15,6 +15,8 @@ import (
 )
 
 func Test_provideConfigValue(t *testing.T) {
+	fake := faker.New()
+
 	t.Run("should provide config value as int", func(t *testing.T) {
 		cfg := viper.New()
 		intCfgKey := "int-cfg-key"
@@ -45,7 +47,7 @@ func Test_provideConfigValue(t *testing.T) {
 	t.Run("should provide config value as string", func(t *testing.T) {
 		cfg := viper.New()
 		configKey := "string-cfg"
-		cfg.Set(configKey, faker.Sentence())
+		cfg.Set(configKey, fake.Lorem().Sentence(10))
 
 		type configReceiver struct {
 			dig.In
