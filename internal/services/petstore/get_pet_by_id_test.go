@@ -15,24 +15,35 @@ import (
 
 func TestClient_GetPetByID(t *testing.T) {
 	fake := faker.New()
+
 	t.Run("success with all parameters and fields", func(t *testing.T) {
 		// Arrange - Use randomized data
 		petID := rand.Int64N(10) + 1 // 1 to 10 as per OpenAPI
-		name := fake.Person().Name()
-		photoUrls := []string{fake.Internet().URL(), fake.Internet().URL()}
-		status := "available"
 		mockTokenProvider := &MockTokenProvider{
 			TokenType:  fake.Lorem().Word(),
 			TokenValue: fake.UUID().V4(),
 		}
 
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			assert.Equal(t, "GET", req.Method)
-			assert.Equal(t, fmt.Sprintf("/pet/%d", petID), req.URL.Path)
+		// Prepare expected response with randomized data
+		responseName := "pet-" + fake.Person().Name()
+		responsePhotoUrls := []string{fake.Internet().URL(), fake.Internet().URL()}
+		responseStatus := "available"
+
+		expectedPet := Pet{
+			ID:        petID,
+			Name:      responseName,
+			PhotoUrls: responsePhotoUrls,
+			Status:    responseStatus,
+		}
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Verify request details
+			assert.Equal(t, "GET", r.Method)
+			assert.Equal(t, fmt.Sprintf("/pet/%d", petID), r.URL.Path)
 
 			// Important to check token
 			expectedAuth := mockTokenProvider.TokenType + " " + mockTokenProvider.TokenValue
-			assert.Equal(t, expectedAuth, req.Header.Get("Authorization"))
+			assert.Equal(t, expectedAuth, r.Header.Get("Authorization"))
 
 			// Return complete successful response
 			w.Header().Set("Content-Type", "application/json")
@@ -42,7 +53,7 @@ func TestClient_GetPetByID(t *testing.T) {
                 "name": "%s",
                 "photoUrls": ["%s", "%s"],
                 "status": "%s"
-            }`, petID, name, photoUrls[0], photoUrls[1], status)
+            }`, petID, responseName, responsePhotoUrls[0], responsePhotoUrls[1], responseStatus)
 			fmt.Fprint(w, response)
 		}))
 		defer server.Close()
@@ -56,20 +67,26 @@ func TestClient_GetPetByID(t *testing.T) {
 		})
 
 		// Assert
-		expected := Pet{ID: petID, Name: name, PhotoUrls: photoUrls, Status: status}
 		require.NoError(t, err)
-		assert.Equal(t, expected, *pet)
+		assert.Equal(t, expectedPet, *pet)
 	})
 
 	t.Run("success with required parameters only", func(t *testing.T) {
 		// Arrange - Use randomized data
 		petID := rand.Int64N(10) + 1
-		name := fake.Person().Name()
-		photoUrls := []string{fake.Internet().URL()}
-		status := ""
 		mockTokenProvider := &MockTokenProvider{
 			TokenType:  fake.Lorem().Word(),
 			TokenValue: fake.UUID().V4(),
+		}
+
+		// Prepare expected minimal response with randomized data
+		responseName := "minimal-pet-" + fake.Person().Name()
+		responsePhotoUrls := []string{fake.Internet().URL()}
+
+		expectedPet := Pet{
+			ID:        petID,
+			Name:      responseName,
+			PhotoUrls: responsePhotoUrls,
 		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -80,7 +97,7 @@ func TestClient_GetPetByID(t *testing.T) {
                 "id": %d,
                 "name": "%s",
                 "photoUrls": ["%s"]
-            }`, petID, name, photoUrls[0])
+            }`, petID, responseName, responsePhotoUrls[0])
 			fmt.Fprint(w, response)
 		}))
 		defer server.Close()
@@ -94,9 +111,8 @@ func TestClient_GetPetByID(t *testing.T) {
 		})
 
 		// Assert
-		expected := Pet{ID: petID, Name: name, PhotoUrls: photoUrls, Status: status}
 		require.NoError(t, err)
-		assert.Equal(t, expected, *pet)
+		assert.Equal(t, expectedPet, *pet)
 	})
 
 	t.Run("handles API error", func(t *testing.T) {

@@ -1,6 +1,6 @@
 package petstore
 
-// Pet represents a pet.
+// Pet represents a pet in the store.
 type Pet struct {
 	ID                 int64       `json:"id,omitempty"`
 	Category           *Category   `json:"category,omitempty"`

@@ -14,7 +14,7 @@ type UpdatePetParams struct {
 	Request *Pet
 }
 
-// UpdatePet updates an existing pet.
+// UpdatePet updates an existing pet in the store.
 func (c *Client) UpdatePet(ctx context.Context, tokenProvider TokenProvider, params UpdatePetParams) (*Pet, error) {
 	token, err := tokenProvider.GetToken(ctx)
 	if err != nil {

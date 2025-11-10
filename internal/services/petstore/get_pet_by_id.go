@@ -13,7 +13,7 @@ type GetPetByIDParams struct {
 	PetID int64
 }
 
-// GetPetByID retrieves a pet by its ID.
+// GetPetByID retrieves a pet by its ID from the store.
 func (c *Client) GetPetByID(ctx context.Context, tokenProvider TokenProvider, params GetPetByIDParams) (*Pet, error) {
 	token, err := tokenProvider.GetToken(ctx)
 	if err != nil {
