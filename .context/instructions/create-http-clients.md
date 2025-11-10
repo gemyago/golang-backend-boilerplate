@@ -2,7 +2,7 @@
 
 ## Overview
 
-You must strickly follow this instruction to create (or update) HTTP API clients from OpenAPI specifications
+You must strickly follow this instruction to create (or update) HTTP API clients from OpenAPI specifications. Do not use any third-party code generation tools, just follow templates from this document.
 
 ## Architectural Decisions
 
