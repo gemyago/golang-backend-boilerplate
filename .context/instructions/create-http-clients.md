@@ -216,6 +216,27 @@ func TestClient_CreateResource(t *testing.T) {
           TokenValue: faker.UUIDHyphenated(),
         }
 
+        // Prepare expected response with randomized data
+        responseID := "resource-" + faker.UUIDHyphenated()
+        responseName := "response-" + faker.Name()
+        responseTitle := faker.Word()
+        responseDesc := faker.Sentence()
+        responseTags := []string{faker.Word(), faker.Word()}
+        responseStatus := "active"
+        createdAt := "2023-01-01T00:00:00Z"
+        updatedAt := "2023-01-01T00:00:00Z"
+
+        expectedResponse := &Resource{
+            ID:          responseID,
+            Name:        responseName,
+            Title:       responseTitle,
+            Description: responseDesc,
+            Tags:        responseTags,
+            Status:      responseStatus,
+            CreatedAt:   createdAt,
+            UpdatedAt:   updatedAt,
+        }
+
         server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
             // Verify request details
             assert.Equal(t, "POST", r.Method)
@@ -229,17 +250,16 @@ func TestClient_CreateResource(t *testing.T) {
             w.Header().Set("Content-Type", "application/json")
             w.WriteHeader(http.StatusCreated)
 
-            // It's ok to have below data static. We're testing if serialization works. (keep this comment)
-            fmt.Fprint(w, `{
-                "id": "resource-123",
-                "name": "test-resource",
-                "title": "Test Resource",
-                "description": "Test description",
-                "tags": ["tag1", "tag2"],
-                "status": "active",
-                "created_at": "2023-01-01T00:00:00Z",
-                "updated_at": "2023-01-01T00:00:00Z"
-            }`)
+            fmt.Fprintf(w, `{
+                "id": "%s",
+                "name": "%s",
+                "title": "%s",
+                "description": "%s",
+                "tags": ["%s", "%s"],
+                "status": "%s",
+                "created_at": "%s",
+                "updated_at": "%s"
+            }`, responseID, responseName, responseTitle, responseDesc, responseTags[0], responseTags[1], responseStatus, createdAt, updatedAt)
         }))
         defer server.Close()
 
@@ -260,14 +280,8 @@ func TestClient_CreateResource(t *testing.T) {
 
         // Assert
         require.NoError(t, err)
-        assert.Equal(t, "resource-123", resource.ID)
-        assert.Equal(t, "test-resource", resource.Name)
-        assert.Equal(t, "Test Resource", resource.Title)
-        assert.Equal(t, "Test description", resource.Description)
-        assert.Equal(t, []string{"tag1", "tag2"}, resource.Tags)
-        assert.Equal(t, "active", resource.Status)
-        assert.NotZero(t, resource.CreatedAt)
-        assert.NotZero(t, resource.UpdatedAt)
+        // Compare entire structs to avoid field-by-field assertions
+        assert.Equal(t, expectedResponse, resource)
     })
 
     t.Run("success with required parameters only", func(t *testing.T) {
@@ -278,14 +292,18 @@ func TestClient_CreateResource(t *testing.T) {
           TokenValue: faker.UUIDHyphenated(),
         }
 
+        // Prepare expected minimal response with randomized data
+        expectedID := "resource-" + faker.UUIDHyphenated()
+        expectedName := "minimal-" + faker.Word()
+
         server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            // Return minimal successful response
+            // Return minimal successful response with randomized data
             w.Header().Set("Content-Type", "application/json")
             w.WriteHeader(http.StatusCreated)
-            fmt.Fprint(w, `{
-                "id": "resource-456",
-                "name": "minimal-resource"
-            }`)
+            fmt.Fprintf(w, `{
+                "id": "%s",
+                "name": "%s"
+            }`, expectedID, expectedName)
         }))
         defer server.Close()
 
@@ -303,8 +321,9 @@ func TestClient_CreateResource(t *testing.T) {
 
         // Assert
         require.NoError(t, err)
-        assert.Equal(t, "resource-456", resource.ID)
-        assert.Equal(t, "minimal-resource", resource.Name)
+        // Check only the fields that should be present in minimal response
+        assert.Equal(t, expectedID, resource.ID)
+        assert.Equal(t, expectedName, resource.Name)
     })
 
     t.Run("handles API error", func(t *testing.T) {

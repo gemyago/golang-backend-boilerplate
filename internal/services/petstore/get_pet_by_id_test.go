@@ -17,6 +17,9 @@ func TestClient_GetPetByID(t *testing.T) {
 	t.Run("success with all parameters and fields", func(t *testing.T) {
 		// Arrange - Use randomized data
 		petID := rand.Int64N(10) + 1 // 1 to 10 as per OpenAPI
+		name := faker.Name()
+		photoUrls := []string{faker.URL(), faker.URL()}
+		status := "available"
 		mockTokenProvider := &MockTokenProvider{
 			TokenType:  faker.Word(),
 			TokenValue: faker.UUIDHyphenated(),
@@ -33,12 +36,13 @@ func TestClient_GetPetByID(t *testing.T) {
 			// Return complete successful response
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, `{
-                "id": 123,
-                "name": "test-pet",
-                "photoUrls": ["url1", "url2"],
-                "status": "available"
-            }`)
+			response := fmt.Sprintf(`{
+                "id": %d,
+                "name": "%s",
+                "photoUrls": ["%s", "%s"],
+                "status": "%s"
+            }`, petID, name, photoUrls[0], photoUrls[1], status)
+			fmt.Fprint(w, response)
 		}))
 		defer server.Close()
 
@@ -51,16 +55,17 @@ func TestClient_GetPetByID(t *testing.T) {
 		})
 
 		// Assert
+		expected := Pet{ID: petID, Name: name, PhotoUrls: photoUrls, Status: status}
 		require.NoError(t, err)
-		assert.Equal(t, int64(123), pet.ID)
-		assert.Equal(t, "test-pet", pet.Name)
-		assert.Equal(t, []string{"url1", "url2"}, pet.PhotoUrls)
-		assert.Equal(t, "available", pet.Status)
+		assert.Equal(t, expected, *pet)
 	})
 
 	t.Run("success with required parameters only", func(t *testing.T) {
 		// Arrange - Use randomized data
 		petID := rand.Int64N(10) + 1
+		name := faker.Name()
+		photoUrls := []string{faker.URL()}
+		status := ""
 		mockTokenProvider := &MockTokenProvider{
 			TokenType:  faker.Word(),
 			TokenValue: faker.UUIDHyphenated(),
@@ -70,11 +75,12 @@ func TestClient_GetPetByID(t *testing.T) {
 			// Return minimal successful response
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, `{
-                "id": 456,
-                "name": "minimal-pet",
-                "photoUrls": ["url"]
-            }`)
+			response := fmt.Sprintf(`{
+                "id": %d,
+                "name": "%s",
+                "photoUrls": ["%s"]
+            }`, petID, name, photoUrls[0])
+			fmt.Fprint(w, response)
 		}))
 		defer server.Close()
 
@@ -87,10 +93,9 @@ func TestClient_GetPetByID(t *testing.T) {
 		})
 
 		// Assert
+		expected := Pet{ID: petID, Name: name, PhotoUrls: photoUrls, Status: status}
 		require.NoError(t, err)
-		assert.Equal(t, int64(456), pet.ID)
-		assert.Equal(t, "minimal-pet", pet.Name)
-		assert.Equal(t, []string{"url"}, pet.PhotoUrls)
+		assert.Equal(t, expected, *pet)
 	})
 
 	t.Run("handles API error", func(t *testing.T) {

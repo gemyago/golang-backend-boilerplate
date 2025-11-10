@@ -44,10 +44,12 @@ Never use static strings or values in tests unless absolutely necessary. Always 
 // DON'T DO THIS:
 user := "john_doe"  // Static name
 userID := 1234567890  // Static ID
+response := `{"id": 1234567890, "name": john_doe"}` // Static response data
 
 // DO THIS:
 user := "user-" + faker.Username()  // Randomized name
 userID := 100 + rand.IntN(10000)  // Randomized ID
+response := fmt.Sprintf(`{"id": %d, "name": "%s"}`, userID, user)  // Randomized response data matching request
 ```
 
 If static data is absolutely required (e.g., for testing specific edge cases or validation rules), add a comment explaining why:
