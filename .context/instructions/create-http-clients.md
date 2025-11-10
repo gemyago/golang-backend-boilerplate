@@ -205,23 +205,24 @@ func TestClient_CreateResource(t *testing.T) {
         }
     }
 
+    fake := faker.New()
 
     t.Run("success with all parameters and fields", func(t *testing.T) {
         // Arrange - Use randomized data
-        resourceName := "resource-" + faker.Word()
-        resourceDesc := faker.Sentence()
+        resourceName := "resource-" + fake.Lorem().Word()
+        resourceDesc := fake.Lorem().Sentence(10)
         resourceAmount := 100 + rand.IntN(10000)
         mockTokenProvider := &MockTokenProvider{
-          TokenType:  faker.Word(),
-          TokenValue: faker.UUIDHyphenated(),
+          TokenType:  fake.Lorem().Word(),
+          TokenValue: fake.UUID().V4(),
         }
 
         // Prepare expected response with randomized data
-        responseID := "resource-" + faker.UUIDHyphenated()
-        responseName := "response-" + faker.Name()
-        responseTitle := faker.Word()
-        responseDesc := faker.Sentence()
-        responseTags := []string{faker.Word(), faker.Word()}
+        responseID := "resource-" + fake.UUID().V4()
+        responseName := "response-" + fake.Person().Name()
+        responseTitle := fake.Lorem().Word()
+        responseDesc := fake.Lorem().Sentence(10)
+        responseTags := []string{fake.Lorem().Word(), fake.Lorem().Word()}
         responseStatus := "active"
         createdAt := "2023-01-01T00:00:00Z"
         updatedAt := "2023-01-01T00:00:00Z"
@@ -270,7 +271,7 @@ func TestClient_CreateResource(t *testing.T) {
             Name:        resourceName,
             Description: resourceDesc,
             Amount:      resourceAmount,
-            Tags:        []string{faker.Word(), faker.Word()},
+            Tags:        []string{fake.Lorem().Word(), fake.Lorem().Word()},
         }
 
         // Act
@@ -286,15 +287,15 @@ func TestClient_CreateResource(t *testing.T) {
 
     t.Run("success with required parameters only", func(t *testing.T) {
         // Arrange - Use randomized data
-        resourceName := "resource-" + faker.Word()
+        resourceName := "resource-" + fake.Lorem().Word()
         mockTokenProvider := &MockTokenProvider{
-          TokenType:  faker.Word(),
-          TokenValue: faker.UUIDHyphenated(),
+          TokenType:  fake.Lorem().Word(),
+          TokenValue: fake.UUID().V4(),
         }
 
         // Prepare expected minimal response with randomized data
-        expectedID := "resource-" + faker.UUIDHyphenated()
-        expectedName := "minimal-" + faker.Word()
+        expectedID := "resource-" + fake.UUID().V4()
+        expectedName := "minimal-" + fake.Lorem().Word()
 
         server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
             // Return minimal successful response with randomized data
@@ -328,10 +329,10 @@ func TestClient_CreateResource(t *testing.T) {
 
     t.Run("handles API error", func(t *testing.T) {
         // Arrange
-        resourceName := "resource-" + faker.Word()
+        resourceName := "resource-" + fake.Lorem().Word()
         mockTokenProvider := &MockTokenProvider{
-          TokenType:  faker.Word(),
-          TokenValue: faker.UUIDHyphenated(),
+          TokenType:  fake.Lorem().Word(),
+          TokenValue: fake.UUID().V4(),
         }
 
         server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -360,9 +361,9 @@ func TestClient_CreateResource(t *testing.T) {
 
     t.Run("handles token provider error", func(t *testing.T) {
         // Arrange
-        resourceName := "resource-" + faker.Word()
+        resourceName := "resource-" + fake.Lorem().Word()
         mockTokenProvider := &MockTokenProvider{
-          Err: errors.New(faker.Sentence()),
+          Err: errors.New(fake.Lorem().Sentence(10)),
         }
 
         deps := makeMockDeps(t, "http://example.com")

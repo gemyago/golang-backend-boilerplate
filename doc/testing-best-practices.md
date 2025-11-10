@@ -47,7 +47,8 @@ userID := 1234567890  // Static ID
 response := `{"id": 1234567890, "name": john_doe"}` // Static response data
 
 // DO THIS:
-user := "user-" + faker.Username()  // Randomized name
+fake := faker.New()
+user := "user-" + fake.Internet().User()  // Randomized name
 userID := 100 + rand.IntN(10000)  // Randomized ID
 response := fmt.Sprintf(`{"id": %d, "name": "%s"}`, userID, user)  // Randomized response data matching request
 ```
@@ -87,8 +88,8 @@ func WithRandomUserID(id string) RandomUserOpt {
 // Create generator function
 func NewRandomUser(fake *Faker, opts ...RandomUserOpt) User {
     user := User{
-        ID:   fake.UUIDHyphenated(),
-        Name: fake.Name(),
+        ID:   fake.UUID().V4(),
+        Name: fake.Person().Name(),
     }
 
     // Apply all options
@@ -101,7 +102,7 @@ func NewRandomUser(fake *Faker, opts ...RandomUserOpt) User {
 
 // In tests
 fake := faker.New()
-id := fake.UUIDHyphenated()
+id := fake.UUID().V4()
 user := NewRandomUser(fake, WithRandomUserID(id))
 ```
 
@@ -114,7 +115,7 @@ When using test factory functions, leverage their default values instead of over
 expectedPR := bitbucket.NewRandomPullRequest(
     fake,
     bitbucket.WithPullRequestID(100 + rand.IntN(10000)), // Already generated
-    bitbucket.WithPullRequestTitle("PR-" + faker.Sentence()), // Already generated
+    bitbucket.WithPullRequestTitle("PR-" + fake.Lorem().Sentence(10)), // Already generated
     // ...
 )
 
