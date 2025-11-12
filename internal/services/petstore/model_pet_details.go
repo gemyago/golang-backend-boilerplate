@@ -1,8 +1,8 @@
 package petstore
 
-// PetDetails represents detailed information about a pet.
+// PetDetails represents details of a pet.
 type PetDetails struct {
-	ID       int64     `json:"id,omitempty"`
-	Category *Category `json:"category,omitempty"`
-	Tag      *Tag      `json:"tag,omitempty"`
+	ID       int64     `json:"id"`
+	Category *Category `json:"category"`
+	Tag      *Tag      `json:"tag"`
 }

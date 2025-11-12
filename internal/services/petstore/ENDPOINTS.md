@@ -1,10 +1,10 @@
 # Petstore API Client Endpoints
 
 POST /pet
-Client method: AddPet(ctx, tokenProvider, AddPetParams)
+Client method: AddPet(ctx, AddPetParams)
 
 PUT /pet
-Client method: UpdatePet(ctx, tokenProvider, UpdatePetParams)
+Client method: UpdatePet(ctx, UpdatePetParams)
 
 GET /pet/{petId}
-Client method: GetPetByID(ctx, tokenProvider, GetPetByIDParams)
+Client method: GetPetByID(ctx, GetPetByIDParams)

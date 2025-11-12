@@ -4,28 +4,25 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/services/http"
+	httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/services/http"
 )
 
 // GetPetByIDParams contains parameters for getting a pet by ID.
 type GetPetByIDParams struct {
-	PetID int64
+	PetID string
 }
 
 // GetPetByID retrieves a pet by its ID from the store.
-func (c *Client) GetPetByID(
-	ctx context.Context,
-	params GetPetByIDParams,
-) (*Pet, error) {
+func (c *Client) GetPetByID(ctx context.Context, params GetPetByIDParams) (*Pet, error) {
 	var response Pet
-	path := fmt.Sprintf("/pet/%d", params.PetID)
-	err := http.SendRequest(ctx, c.httpClient, http.SendRequestParams[interface{}, Pet]{
+	path := fmt.Sprintf("/pet/%s", params.PetID)
+	err := httpsvc.SendRequest(ctx, c.httpClient, httpsvc.SendRequestParams[interface{}, Pet]{
 		Method: "GET",
 		URL:    c.baseURL + path,
 		Target: &response,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get pet by ID: %w", err)
+		return nil, fmt.Errorf("get pet by id failed: %w", err)
 	}
 
 	return &response, nil

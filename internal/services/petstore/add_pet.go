@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/services/http"
+	httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/services/http"
 )
 
 // AddPetParams contains parameters for adding a pet.
@@ -15,9 +15,8 @@ type AddPetParams struct {
 
 // AddPet adds a new pet to the store.
 func (c *Client) AddPet(ctx context.Context, params AddPetParams) (*Pet, error) {
-	// Make API call
 	var response Pet
-	err := http.SendRequest(ctx, c.httpClient, http.SendRequestParams[Pet, Pet]{
+	err := httpsvc.SendRequest(ctx, c.httpClient, httpsvc.SendRequestParams[Pet, Pet]{
 		Method: "POST",
 		URL:    c.baseURL + "/pet",
 		Body:   params.Request,

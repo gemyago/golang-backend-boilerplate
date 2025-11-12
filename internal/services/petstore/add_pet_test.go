@@ -2,36 +2,54 @@ package petstore
 
 import (
 	"fmt"
-	"math/rand/v2"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	httpservices "github.com/gemyago/golang-backend-boilerplate/internal/services/http"
 	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_AddPet(t *testing.T) {
+	makeMockDeps := func(t *testing.T, baseURL string) ClientDeps {
+		// Always include test name in the logger for better debugging
+		rootLogger := diag.RootTestLogger().With("test", t.Name())
+		return ClientDeps{
+			ClientFactory: httpservices.NewClientFactory(httpservices.ClientFactoryDeps{
+				RootLogger: rootLogger,
+			}),
+			RootLogger: rootLogger,
+			BaseURL:    baseURL,
+		}
+	}
+
 	fake := faker.New()
 
 	t.Run("success with all parameters and fields", func(t *testing.T) {
 		// Arrange - Use randomized data
 		petName := fake.Person().Name()
-		photoUrls := []string{fake.Internet().URL(), fake.Internet().URL()}
-		status := "available"
+		petPhotoUrls := []string{fake.Internet().URL(), fake.Internet().URL()}
+		petCategory := &Category{ID: fake.Int64(), Name: fake.Lorem().Word()}
+		petTags := []*Tag{{ID: fake.Int64(), Name: fake.Lorem().Word()}, {ID: fake.Int64(), Name: fake.Lorem().Word()}}
+		petStatus := PetStatusAvailable
+		petAvailableInstances := fake.Int32()
+		petDetailsID := fake.Int64()
+		petDetails := &PetDetails{ID: fake.Int64(), Category: petCategory, Tag: petTags[0]}
 
-		// Prepare expected response with randomized data
-		responseID := rand.Int64N(1000) + 1
-		responseName := "pet-" + fake.Person().Name()
-		responsePhotoUrls := []string{fake.Internet().URL(), fake.Internet().URL()}
-		responseStatus := "available"
-
-		expectedPet := Pet{
-			ID:        responseID,
-			Name:      responseName,
-			PhotoUrls: responsePhotoUrls,
-			Status:    responseStatus,
+		expectedID := fake.Int64()
+		expectedResponse := &Pet{
+			ID:                 expectedID,
+			Category:           petCategory,
+			Name:               petName,
+			PhotoUrls:          petPhotoUrls,
+			Tags:               petTags,
+			Status:             petStatus,
+			AvailableInstances: petAvailableInstances,
+			PetDetailsID:       petDetailsID,
+			PetDetails:         petDetails,
 		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,12 +61,21 @@ func TestClient_AddPet(t *testing.T) {
 			// Return complete successful response
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
+
 			fmt.Fprintf(w, `{
-                "id": %d,
-                "name": "%s",
-                "photoUrls": ["%s", "%s"],
-                "status": "%s"
-            }`, responseID, responseName, responsePhotoUrls[0], responsePhotoUrls[1], responseStatus)
+				"id": %d,
+				"category": {"id": %d, "name": "%s"},
+				"name": "%s",
+				"photoUrls": ["%s", "%s"],
+				"tags": [{"id": %d, "name": "%s"}, {"id": %d, "name": "%s"}],
+				"status": "%s",
+				"availableInstances": %d,
+				"petDetailsId": %d,
+				"petDetails": {"id": %d, "category": {"id": %d, "name": "%s"}, "tag": {"id": %d, "name": "%s"}}
+			}`, expectedID, petCategory.ID, petCategory.Name, petName, petPhotoUrls[0], petPhotoUrls[1],
+				petTags[0].ID, petTags[0].Name, petTags[1].ID, petTags[1].Name, petStatus,
+				petAvailableInstances, petDetailsID, petDetails.ID, petCategory.ID, petCategory.Name,
+				petTags[0].ID, petTags[0].Name)
 		}))
 		defer server.Close()
 
@@ -56,9 +83,14 @@ func TestClient_AddPet(t *testing.T) {
 		client := NewClient(deps)
 
 		req := &Pet{
-			Name:      petName,
-			PhotoUrls: photoUrls,
-			Status:    status,
+			Category:           petCategory,
+			Name:               petName,
+			PhotoUrls:          petPhotoUrls,
+			Tags:               petTags,
+			Status:             petStatus,
+			AvailableInstances: petAvailableInstances,
+			PetDetailsID:       petDetailsID,
+			PetDetails:         petDetails,
 		}
 
 		// Act
@@ -68,34 +100,28 @@ func TestClient_AddPet(t *testing.T) {
 
 		// Assert
 		require.NoError(t, err)
-		assert.Equal(t, expectedPet, *pet)
+		// Compare entire structs to avoid field-by-field assertions
+		assert.Equal(t, expectedResponse, pet)
 	})
 
 	t.Run("success with required parameters only", func(t *testing.T) {
 		// Arrange - Use randomized data
 		petName := fake.Person().Name()
-		photoUrls := []string{fake.Internet().URL()}
+		petPhotoUrls := []string{fake.Internet().URL()}
 
 		// Prepare expected minimal response with randomized data
-		responseID := rand.Int64N(1000) + 1
-		responseName := "minimal-pet-" + fake.Person().Name()
-		responsePhotoUrls := []string{fake.Internet().URL()}
-
-		expectedPet := Pet{
-			ID:        responseID,
-			Name:      responseName,
-			PhotoUrls: responsePhotoUrls,
-		}
+		expectedID := fake.Int64()
+		expectedName := fake.Person().Name()
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			// Return minimal successful response
+			// Return minimal successful response with randomized data
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, `{
-                "id": %d,
-                "name": "%s",
-                "photoUrls": ["%s"]
-            }`, responseID, responseName, responsePhotoUrls[0])
+				"id": %d,
+				"name": "%s",
+				"photoUrls": ["%s"]
+			}`, expectedID, expectedName, petPhotoUrls[0])
 		}))
 		defer server.Close()
 
@@ -103,8 +129,8 @@ func TestClient_AddPet(t *testing.T) {
 		client := NewClient(deps)
 
 		req := &Pet{
-			Name:      petName,
-			PhotoUrls: photoUrls,
+			Name:      petName, // Only required fields
+			PhotoUrls: petPhotoUrls,
 		}
 
 		// Act
@@ -114,13 +140,16 @@ func TestClient_AddPet(t *testing.T) {
 
 		// Assert
 		require.NoError(t, err)
-		assert.Equal(t, expectedPet, *pet)
+		// Check only the fields that should be present in minimal response
+		assert.Equal(t, expectedID, pet.ID)
+		assert.Equal(t, expectedName, pet.Name)
+		assert.Equal(t, petPhotoUrls, pet.PhotoUrls)
 	})
 
 	t.Run("handles API error", func(t *testing.T) {
 		// Arrange
 		petName := fake.Person().Name()
-		photoUrls := []string{fake.Internet().URL()}
+		petPhotoUrls := []string{fake.Internet().URL()}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
@@ -133,7 +162,7 @@ func TestClient_AddPet(t *testing.T) {
 
 		req := &Pet{
 			Name:      petName,
-			PhotoUrls: photoUrls,
+			PhotoUrls: petPhotoUrls,
 		}
 
 		// Act

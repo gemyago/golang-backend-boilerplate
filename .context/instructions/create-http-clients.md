@@ -51,7 +51,7 @@ type ClientDeps struct {
 
 		ClientFactory *http.ClientFactory
 		RootLogger    *slog.Logger
-		BaseURL       string `name:"config.serviceApi.baseURL"`
+		BaseURL       string `name:"config.serviceName.baseURL"`
 }
 
 func NewClient(
@@ -80,13 +80,13 @@ Example to send POST/PUT/PATCH requests (with http body):
 - AddPetParams - input params, declared in the same file
 
 ```go
-// AddPetParams contains parameters for creating a resource.
+// AddPetParams contains parameters for adding a pet.
 type AddPetParams struct {
 		// Request represents the request body for adding a pet.
 		Request *AddPetRequest
 }
 
-// AddPet is example to show how to send a request with body and response.
+// AddPet adds a new pet to the store.
 func (c *Client) AddPet(ctx context.Context, params AddPetParams) (*AddPetResponse, error) {
 		var response AddPetResponse
 		err = http.SendRequest(ctx, c.httpClient, http.SendRequestParams[AddPetRequest, AddPetResponse]{
