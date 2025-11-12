@@ -11,16 +11,14 @@ import (
 // authTokenKey is the context key for storing authentication tokens.
 type authTokenKey struct{}
 
-type Token *oauth2.Token
-
-// WithAuthTokenV2 adds a Token struct to the context.
-func WithAuthTokenV2(ctx context.Context, token Token) context.Context {
+// WithAuthTokenV2 adds an *oauth2.Token to the context.
+func WithAuthTokenV2(ctx context.Context, token *oauth2.Token) context.Context {
 	return context.WithValue(ctx, authTokenKey{}, token)
 }
 
-// AuthTokenFromContext extracts the Token from the context.
-func AuthTokenFromContext(ctx context.Context) (Token, bool) {
-	token, ok := ctx.Value(authTokenKey{}).(Token)
+// AuthTokenFromContext extracts the *oauth2.Token from the context.
+func AuthTokenFromContext(ctx context.Context) (*oauth2.Token, bool) {
+	token, ok := ctx.Value(authTokenKey{}).(*oauth2.Token)
 	return token, ok
 }
 
