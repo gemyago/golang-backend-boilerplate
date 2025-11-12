@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services/http/middleware"
 	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,17 +26,7 @@ func TestClientFactory(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
 		factory := NewClientFactory(deps)
-		token := oauth2.Token{TokenType: "Bearer", AccessToken: fake.Lorem().Word()}
-		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Check for auth header
-			authHeader := r.Header.Get("Authorization")
-			if authHeader != (token.TokenType + " " + token.AccessToken) {
-				w.WriteHeader(http.StatusUnauthorized)
-				_, err := w.Write([]byte(`{"error": "unauthorized"}`))
-				assert.NoError(t, err)
-				return
-			}
-
+		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			_, err := w.Write([]byte(`{"success": true, "all_middleware": true}`))
 			assert.NoError(t, err)
@@ -48,10 +37,8 @@ func TestClientFactory(t *testing.T) {
 		client := factory.CreateClient()
 
 		// Create request with token in context
-		req, err := http.NewRequest(http.MethodGet, testServer.URL, nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, testServer.URL, nil)
 		require.NoError(t, err)
-		ctx := middleware.WithAuthTokenV2(req.Context(), &token)
-		req = req.WithContext(ctx)
 
 		resp, err := client.Do(req)
 
@@ -68,6 +55,48 @@ func TestClientFactory(t *testing.T) {
 		assert.Equal(t, 30*time.Second, client.Timeout)
 	})
 
+	t.Run("should use auth token source", func(t *testing.T) {
+		// Arrange
+		deps := makeMockDeps()
+		factory := NewClientFactory(deps)
+		token := oauth2.Token{TokenType: fake.Lorem().Text(10), AccessToken: fake.Lorem().Word()}
+		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check for auth header
+			authHeader := r.Header.Get("Authorization")
+			if authHeader != (token.TokenType + " " + token.AccessToken) {
+				w.WriteHeader(http.StatusUnauthorized)
+				_, err := w.Write([]byte(`{"error": "unauthorized"}`))
+				assert.NoError(t, err)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			_, err := w.Write([]byte(`{"success": true, "auth_ok": true}`))
+			assert.NoError(t, err)
+		}))
+		defer testServer.Close()
+
+		// Act - all middleware enabled by default
+		client := factory.CreateClient(
+			WithAuthTokenSource(oauth2.StaticTokenSource(&token)),
+		)
+
+		// Create request with token in context
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, testServer.URL, nil)
+		require.NoError(t, err)
+
+		resp, err := client.Do(req)
+
+		// Assert
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		assert.Contains(t, string(body), "auth_ok")
+	})
+
 	t.Run("should create HTTP client with all middleware disabled", func(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
@@ -82,7 +111,6 @@ func TestClientFactory(t *testing.T) {
 
 		// Act - disable all middleware
 		client := factory.CreateClient(
-			WithAuth(false),
 			WithLogging(false),
 			WithErrorHandling(false),
 			WithTimeout(45*time.Second),

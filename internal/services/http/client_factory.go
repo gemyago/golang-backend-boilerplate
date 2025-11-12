@@ -7,11 +7,17 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/services/http/middleware"
 	"go.uber.org/dig"
+	"golang.org/x/oauth2"
 )
 
 const (
 	// defaultClientTimeout is the default timeout for HTTP clients.
 	defaultClientTimeout = 30 * time.Second
+
+	defaultMaxIdleConns          = 100
+	defaultIdleConnTimeout       = 90 * time.Second
+	defaultTLSHandshakeTimeout   = 10 * time.Second
+	defaultExpectContinueTimeout = 1 * time.Second
 )
 
 // ClientFactoryDeps contains dependencies for the client factory.
@@ -27,7 +33,7 @@ type ClientOption func(*clientConfig)
 // clientConfig holds internal configuration for HTTP client creation.
 type clientConfig struct {
 	timeout             time.Duration
-	enableAuth          bool
+	authTokenSource     oauth2.TokenSource
 	enableLogging       bool
 	enableErrorHandling bool
 }
@@ -39,10 +45,11 @@ func WithTimeout(timeout time.Duration) ClientOption {
 	}
 }
 
-// WithAuth sets whether authentication middleware is enabled.
-func WithAuth(enabled bool) ClientOption {
+// WithAuthTokenSource sets the OAuth2 token source for authentication.
+// Usually set to oauth2.StaticTokenSource for basic scenarios with fixed tokens.
+func WithAuthTokenSource(tokenSource oauth2.TokenSource) ClientOption {
 	return func(c *clientConfig) {
-		c.enableAuth = enabled
+		c.authTokenSource = tokenSource
 	}
 }
 
@@ -78,7 +85,6 @@ func NewClientFactory(deps ClientFactoryDeps) *ClientFactory {
 func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 	config := &clientConfig{
 		timeout:             defaultClientTimeout,
-		enableAuth:          true, // Default: enabled
 		enableLogging:       true, // Default: enabled
 		enableErrorHandling: true, // Default: enabled
 	}
@@ -88,7 +94,14 @@ func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 	}
 
 	// Start with the base transport
-	transport := http.DefaultTransport
+	var transport http.RoundTripper = &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          defaultMaxIdleConns,
+		IdleConnTimeout:       defaultIdleConnTimeout,
+		TLSHandshakeTimeout:   defaultTLSHandshakeTimeout,
+		ExpectContinueTimeout: defaultExpectContinueTimeout,
+	}
 
 	// Apply middleware in reverse order (innermost to outermost)
 	// Error handling middleware is applied closest to the base transport
@@ -98,11 +111,11 @@ func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 		})
 	}
 
-	// Auth middleware wraps error handling
-	if config.enableAuth {
-		transport = middleware.NewAuthenticationMiddleware(transport, middleware.AuthenticationMiddlewareDeps{
-			RootLogger: f.logger,
-		})
+	if config.authTokenSource != nil {
+		transport = &oauth2.Transport{
+			Source: config.authTokenSource,
+			Base:   transport,
+		}
 	}
 
 	// Logging middleware is outermost to capture full request lifecycle

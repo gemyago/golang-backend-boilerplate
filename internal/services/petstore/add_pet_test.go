@@ -1,7 +1,6 @@
 package petstore
 
 import (
-	"errors"
 	"fmt"
 	"math/rand/v2"
 	"net/http"
@@ -21,10 +20,6 @@ func TestClient_AddPet(t *testing.T) {
 		petName := fake.Person().Name()
 		photoUrls := []string{fake.Internet().URL(), fake.Internet().URL()}
 		status := "available"
-		mockTokenProvider := &MockTokenProvider{
-			TokenType:  fake.Lorem().Word(),
-			TokenValue: fake.UUID().V4(),
-		}
 
 		// Prepare expected response with randomized data
 		responseID := rand.Int64N(1000) + 1
@@ -44,10 +39,6 @@ func TestClient_AddPet(t *testing.T) {
 			assert.Equal(t, "POST", r.Method)
 			assert.Equal(t, "/pet", r.URL.Path)
 			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
-
-			// Important to check token
-			expectedAuth := mockTokenProvider.TokenType + " " + mockTokenProvider.TokenValue
-			assert.Equal(t, expectedAuth, r.Header.Get("Authorization"))
 
 			// Return complete successful response
 			w.Header().Set("Content-Type", "application/json")
@@ -71,7 +62,7 @@ func TestClient_AddPet(t *testing.T) {
 		}
 
 		// Act
-		pet, err := client.AddPet(t.Context(), mockTokenProvider, AddPetParams{
+		pet, err := client.AddPet(t.Context(), AddPetParams{
 			Request: req,
 		})
 
@@ -84,10 +75,6 @@ func TestClient_AddPet(t *testing.T) {
 		// Arrange - Use randomized data
 		petName := fake.Person().Name()
 		photoUrls := []string{fake.Internet().URL()}
-		mockTokenProvider := &MockTokenProvider{
-			TokenType:  fake.Lorem().Word(),
-			TokenValue: fake.UUID().V4(),
-		}
 
 		// Prepare expected minimal response with randomized data
 		responseID := rand.Int64N(1000) + 1
@@ -121,7 +108,7 @@ func TestClient_AddPet(t *testing.T) {
 		}
 
 		// Act
-		pet, err := client.AddPet(t.Context(), mockTokenProvider, AddPetParams{
+		pet, err := client.AddPet(t.Context(), AddPetParams{
 			Request: req,
 		})
 
@@ -134,10 +121,6 @@ func TestClient_AddPet(t *testing.T) {
 		// Arrange
 		petName := fake.Person().Name()
 		photoUrls := []string{fake.Internet().URL()}
-		mockTokenProvider := &MockTokenProvider{
-			TokenType:  fake.Lorem().Word(),
-			TokenValue: fake.UUID().V4(),
-		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
@@ -154,7 +137,7 @@ func TestClient_AddPet(t *testing.T) {
 		}
 
 		// Act
-		result, err := client.AddPet(t.Context(), mockTokenProvider, AddPetParams{
+		result, err := client.AddPet(t.Context(), AddPetParams{
 			Request: req,
 		})
 
@@ -162,33 +145,5 @@ func TestClient_AddPet(t *testing.T) {
 		require.Error(t, err)
 		assert.Nil(t, result)
 		assert.ErrorContains(t, err, "failed to add pet")
-	})
-
-	t.Run("handles token provider error", func(t *testing.T) {
-		// Arrange
-		petName := fake.Person().Name()
-		photoUrls := []string{fake.Internet().URL()}
-		mockTokenProvider := &MockTokenProvider{
-			Err: errors.New(fake.Lorem().Sentence(10)),
-		}
-
-		deps := makeMockDeps(t, "http://example.com")
-		client := NewClient(deps)
-
-		req := &Pet{
-			Name:      petName,
-			PhotoUrls: photoUrls,
-		}
-
-		// Act
-		result, err := client.AddPet(t.Context(), mockTokenProvider, AddPetParams{
-			Request: req,
-		})
-
-		// Assert
-		require.Error(t, err)
-		assert.Nil(t, result)
-		expectedError := fmt.Errorf("failed to get token: %w", mockTokenProvider.Err)
-		assert.Equal(t, expectedError.Error(), err.Error())
 	})
 }

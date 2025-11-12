@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/services/http"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services/http/middleware"
-	"golang.org/x/oauth2"
 )
 
 // AddPetParams contains parameters for adding a pet.
@@ -16,16 +14,10 @@ type AddPetParams struct {
 }
 
 // AddPet adds a new pet to the store.
-func (c *Client) AddPet(ctx context.Context, tokenProvider oauth2.TokenSource, params AddPetParams) (*Pet, error) {
-	token, err := tokenProvider.Token()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get token: %w", err)
-	}
-	ctxWithAuth := middleware.WithAuthTokenV2(ctx, token)
-
+func (c *Client) AddPet(ctx context.Context, params AddPetParams) (*Pet, error) {
 	// Make API call
 	var response Pet
-	err = http.SendRequest(ctxWithAuth, c.httpClient, http.SendRequestParams[Pet, Pet]{
+	err := http.SendRequest(ctx, c.httpClient, http.SendRequestParams[Pet, Pet]{
 		Method: "POST",
 		URL:    c.baseURL + "/pet",
 		Body:   params.Request,
