@@ -16,7 +16,7 @@ You will be given a reference on a specific task to to implement, usually pointi
 
 Read [AGENTS.md](../AGENTS.md) file for a reference of project structure. Read all the provided files to understand the context of the task.
 
-The implementation should follow [TDD principles](.ai/tdd-flow.md).
+The implementation should follow [TDD principles](.context/tdd-flow.md).
 
 Tests should follow [doc/testing-best-practices.md](../doc/testing-best-practices.md)
 
