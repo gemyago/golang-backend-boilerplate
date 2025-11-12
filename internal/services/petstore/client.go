@@ -25,9 +25,12 @@ type ClientDeps struct {
 }
 
 // NewClient creates a new Petstore API client.
-func NewClient(deps ClientDeps) *Client {
+func NewClient(
+	deps ClientDeps,
+	clientOpts ...httpservices.ClientOption,
+) *Client {
 	return &Client{
-		httpClient: deps.ClientFactory.CreateClient(),
+		httpClient: deps.ClientFactory.CreateClient(clientOpts...),
 		baseURL:    deps.BaseURL,
 		logger:     deps.RootLogger.WithGroup("petstore-client"),
 	}
