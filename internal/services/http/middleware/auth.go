@@ -4,16 +4,14 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+
+	"golang.org/x/oauth2"
 )
 
 // authTokenKey is the context key for storing authentication tokens.
 type authTokenKey struct{}
 
-// Token represents an authentication token with a type and value.
-type Token struct {
-	Type  string
-	Value string
-}
+type Token *oauth2.Token
 
 // WithAuthTokenV2 adds a Token struct to the context.
 func WithAuthTokenV2(ctx context.Context, token Token) context.Context {
@@ -53,7 +51,7 @@ func (a *AuthenticationMiddleware) RoundTrip(req *http.Request) (*http.Response,
 	token, hasToken := AuthTokenFromContext(req.Context())
 
 	// If no token in context, log and pass request through unchanged
-	if !hasToken || token.Value == "" {
+	if !hasToken || token == nil || token.AccessToken == "" {
 		a.logger.DebugContext(
 			req.Context(),
 			"No authentication token found in context, passing request through unchanged",
@@ -65,7 +63,7 @@ func (a *AuthenticationMiddleware) RoundTrip(req *http.Request) (*http.Response,
 	clonedReq := req.Clone(req.Context())
 
 	// Add Authorization header
-	clonedReq.Header.Set("Authorization", token.Type+" "+token.Value)
+	clonedReq.Header.Set("Authorization", token.TokenType+" "+token.AccessToken)
 
 	// Pass the modified request to the next transport
 	return a.transport.RoundTrip(clonedReq)

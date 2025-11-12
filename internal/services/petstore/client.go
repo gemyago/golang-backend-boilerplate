@@ -1,19 +1,15 @@
 package petstore
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
 
 	httpservices "github.com/gemyago/golang-backend-boilerplate/internal/services/http"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services/http/middleware"
 	"go.uber.org/dig"
+	"golang.org/x/oauth2"
 )
 
-// TokenProvider provides authentication tokens for API requests.
-type TokenProvider interface {
-	GetToken(ctx context.Context) (middleware.Token, error)
-}
+type TokenProvider oauth2.TokenSource
 
 // Client is the HTTP client for the Petstore API.
 type Client struct {

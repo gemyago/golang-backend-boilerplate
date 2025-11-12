@@ -12,6 +12,7 @@ import (
 	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 )
 
 func TestClientFactory(t *testing.T) {
@@ -26,11 +27,11 @@ func TestClientFactory(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
 		factory := NewClientFactory(deps)
-		token := middleware.Token{Type: "Bearer", Value: fake.Lorem().Word()}
+		token := oauth2.Token{TokenType: "Bearer", AccessToken: fake.Lorem().Word()}
 		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Check for auth header
 			authHeader := r.Header.Get("Authorization")
-			if authHeader != (token.Type + " " + token.Value) {
+			if authHeader != (token.TokenType + " " + token.AccessToken) {
 				w.WriteHeader(http.StatusUnauthorized)
 				_, err := w.Write([]byte(`{"error": "unauthorized"}`))
 				assert.NoError(t, err)
@@ -49,7 +50,7 @@ func TestClientFactory(t *testing.T) {
 		// Create request with token in context
 		req, err := http.NewRequest(http.MethodGet, testServer.URL, nil)
 		require.NoError(t, err)
-		ctx := middleware.WithAuthTokenV2(req.Context(), token)
+		ctx := middleware.WithAuthTokenV2(req.Context(), &token)
 		req = req.WithContext(ctx)
 
 		resp, err := client.Do(req)

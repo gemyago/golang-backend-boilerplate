@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 )
 
 // MockRoundTripper is a mock implementation of http.RoundTripper for testing.
@@ -36,7 +37,7 @@ func TestAuthenticationMiddleware(t *testing.T) {
 	t.Run("should add Bearer token when token is in context", func(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
-		token := Token{Type: fake.Lorem().Word(), Value: fake.Lorem().Word()}
+		token := &oauth2.Token{TokenType: fake.Lorem().Word(), AccessToken: fake.Lorem().Word()}
 		mockTransport := &MockRoundTripper{}
 		authMiddleware := NewAuthenticationMiddleware(mockTransport, deps)
 
@@ -50,7 +51,7 @@ func TestAuthenticationMiddleware(t *testing.T) {
 		}
 
 		mockTransport.On("RoundTrip", mock.MatchedBy(func(r *http.Request) bool {
-			return r.Header.Get("Authorization") == token.Type+" "+token.Value
+			return r.Header.Get("Authorization") == token.TokenType+" "+token.AccessToken
 		})).Return(expectedResponse, nil)
 
 		// Act
@@ -70,7 +71,7 @@ func TestAuthenticationMiddleware(t *testing.T) {
 		mockTransport := &MockRoundTripper{}
 		authMiddleware := NewAuthenticationMiddleware(mockTransport, deps)
 
-		token := Token{Type: tokenType, Value: tokenValue}
+		token := &oauth2.Token{TokenType: tokenType, AccessToken: tokenValue}
 		ctx := WithAuthTokenV2(t.Context(), token)
 		req := httptest.NewRequest(http.MethodGet, "https://api.example.com/test", nil)
 		req = req.WithContext(ctx)
@@ -122,7 +123,7 @@ func TestAuthenticationMiddleware(t *testing.T) {
 	t.Run("should not modify original request", func(t *testing.T) {
 		// Arrange
 		deps := makeMockDeps()
-		token := Token{Type: "Bearer", Value: fake.Lorem().Word()}
+		token := &oauth2.Token{TokenType: "Bearer", AccessToken: fake.Lorem().Word()}
 		mockTransport := &MockRoundTripper{}
 		authMiddleware := NewAuthenticationMiddleware(mockTransport, deps)
 
@@ -149,7 +150,7 @@ func TestAuthenticationMiddleware(t *testing.T) {
 
 	t.Run("should extract token from context using AuthTokenFromContext", func(t *testing.T) {
 		// Arrange
-		token := Token{Type: "Bearer", Value: fake.Lorem().Word()}
+		token := &oauth2.Token{TokenType: "Bearer", AccessToken: fake.Lorem().Word()}
 		ctx := WithAuthTokenV2(t.Context(), token)
 
 		// Act
@@ -157,6 +158,6 @@ func TestAuthenticationMiddleware(t *testing.T) {
 
 		// Assert
 		require.True(t, ok)
-		assert.Equal(t, token, extracted)
+		assert.Equal(t, *token, *extracted)
 	})
 }

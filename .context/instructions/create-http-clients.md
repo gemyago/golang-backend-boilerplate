@@ -32,9 +32,7 @@ Key decisions:
 
 This is `client.go` file content pattern:
 ```go
-type TokenProvider interface {
-    GetToken(ctx context.Context) (middleware.Token, error)
-}
+type TokenProvider oauth2.TokenSource
 
 type Client struct {
     httpClient *http.Client
@@ -75,7 +73,7 @@ type AddPetParams struct {
 
 // AddPet is example to show how to send a request with body and response.
 func (c *Client) AddPet(ctx context.Context, tokenProvider TokenProvider, params AddPetParams) (*AddPetResponse, error) {
-    token, err := tokenProvider.GetToken(ctx)
+    token, err := tokenProvider.Token()
     if err != nil {
         return nil, fmt.Errorf("failed to get token: %w", err)
     }
@@ -110,7 +108,7 @@ type GetPetByIdParams struct {
 
 // GetPetById is example to show how to send a request with no body and response.
 func (c *Client) GetPetById(ctx context.Context, tokenProvider TokenProvider, params GetPetByIdParams) (*GetPetByIDResponse, error) {
-    token, err := tokenProvider.GetToken(ctx)
+    token, err := tokenProvider.Token()
     if err != nil {
         return nil, fmt.Errorf("failed to get token: %w", err)
     }
@@ -190,6 +188,7 @@ import (
     "github.com/jaswdr/faker"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
+    "golang.org/x/oauth2"
 )
 
 func TestClient_CreateResource(t *testing.T) {
@@ -394,11 +393,11 @@ type MockTokenProvider struct {
 	Err        error
 }
 
-func (m *MockTokenProvider) GetToken(_ context.Context) (middleware.Token, error) {
+func (m *MockTokenProvider) Token() (*oauth2.Token, error) {
 	if m.Err != nil {
-		return middleware.Token{}, m.Err
+		return nil, m.Err
 	}
-	return middleware.Token{Type: m.TokenType, Value: m.TokenValue}, nil
+	return &oauth2.Token{TokenType: m.TokenType, AccessToken: m.TokenValue}, nil
 }
 ```
 

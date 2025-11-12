@@ -16,7 +16,7 @@ type AddPetParams struct {
 
 // AddPet adds a new pet to the store.
 func (c *Client) AddPet(ctx context.Context, tokenProvider TokenProvider, params AddPetParams) (*Pet, error) {
-	token, err := tokenProvider.GetToken(ctx)
+	token, err := tokenProvider.Token()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %w", err)
 	}

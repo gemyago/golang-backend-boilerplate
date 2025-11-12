@@ -1,12 +1,11 @@
 package petstore
 
 import (
-	"context"
 	"testing"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	httpservices "github.com/gemyago/golang-backend-boilerplate/internal/services/http"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services/http/middleware"
+	"golang.org/x/oauth2"
 )
 
 // MockTokenProvider is a simple mock implementation for testing.
@@ -16,11 +15,11 @@ type MockTokenProvider struct {
 	Err        error
 }
 
-func (m *MockTokenProvider) GetToken(_ context.Context) (middleware.Token, error) {
+func (m *MockTokenProvider) Token() (*oauth2.Token, error) {
 	if m.Err != nil {
-		return middleware.Token{}, m.Err
+		return nil, m.Err
 	}
-	return middleware.Token{Type: m.TokenType, Value: m.TokenValue}, nil
+	return &oauth2.Token{TokenType: m.TokenType, AccessToken: m.TokenValue}, nil
 }
 
 func makeMockDeps(t *testing.T, baseURL string) ClientDeps {
