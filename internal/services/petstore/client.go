@@ -6,10 +6,7 @@ import (
 
 	httpservices "github.com/gemyago/golang-backend-boilerplate/internal/services/http"
 	"go.uber.org/dig"
-	"golang.org/x/oauth2"
 )
-
-type TokenProvider oauth2.TokenSource
 
 // Client is the HTTP client for the Petstore API.
 type Client struct {

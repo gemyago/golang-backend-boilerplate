@@ -6,6 +6,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/services/http"
 	"github.com/gemyago/golang-backend-boilerplate/internal/services/http/middleware"
+	"golang.org/x/oauth2"
 )
 
 // GetPetByIDParams contains parameters for getting a pet by ID.
@@ -14,7 +15,11 @@ type GetPetByIDParams struct {
 }
 
 // GetPetByID retrieves a pet by its ID from the store.
-func (c *Client) GetPetByID(ctx context.Context, tokenProvider TokenProvider, params GetPetByIDParams) (*Pet, error) {
+func (c *Client) GetPetByID(
+	ctx context.Context,
+	tokenProvider oauth2.TokenSource,
+	params GetPetByIDParams,
+) (*Pet, error) {
 	token, err := tokenProvider.Token()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %w", err)

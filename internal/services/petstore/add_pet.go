@@ -6,6 +6,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/services/http"
 	"github.com/gemyago/golang-backend-boilerplate/internal/services/http/middleware"
+	"golang.org/x/oauth2"
 )
 
 // AddPetParams contains parameters for adding a pet.
@@ -15,7 +16,7 @@ type AddPetParams struct {
 }
 
 // AddPet adds a new pet to the store.
-func (c *Client) AddPet(ctx context.Context, tokenProvider TokenProvider, params AddPetParams) (*Pet, error) {
+func (c *Client) AddPet(ctx context.Context, tokenProvider oauth2.TokenSource, params AddPetParams) (*Pet, error) {
 	token, err := tokenProvider.Token()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %w", err)
