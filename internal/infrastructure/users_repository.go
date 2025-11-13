@@ -51,9 +51,9 @@ func (r *UsersRepository) CreateUser(ctx context.Context, user User) error {
 	return err
 }
 
-func (r *UsersRepository) UpdateUser(ctx context.Context, user *User) error {
+func (r *UsersRepository) UpdateUser(ctx context.Context, user User) error {
 	// Update updated_at timestamp to current time
-	user.UpdatedAt = time.Now()
+	user.UpdatedAt = r.time.Now()
 
 	// Update user
 	query := `

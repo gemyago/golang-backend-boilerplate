@@ -39,6 +39,14 @@ func MockNowValue(p TimeProvider) time.Time {
 	return mp.value
 }
 
+func SetMockNowValue(p TimeProvider, val time.Time) {
+	mp, ok := p.(*MockNow)
+	if !ok {
+		panic("provided TimeProvider is not a MockNow")
+	}
+	mp.SetValue(val)
+}
+
 const defaultTestShutdownTimeout = 30 * time.Second
 
 func NewTestShutdownHooks() *ShutdownHooks {
