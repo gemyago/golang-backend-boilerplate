@@ -50,6 +50,10 @@ AI must almost **always** use `--noop` to dry-run startup checks without externa
 
 ## Architecture Overview (map, link—don’t duplicate)
 
+Some key architectural decisions:
+- All components should follow "accept interface and return struct" principle. Strong justification is required to deviate.
+- Consumer should define interfaces for dependencies, not the provider.
+
 The application applies some hexagonal architecture principles with layers mapped as follows:
 - Incoming adapters: `internal/api` (HTTP, MCP)
   - HTTP layer: spec `internal/api/http/v1routes.yaml`; generated routes/controllers under `internal/api/http/v1routes/*`
