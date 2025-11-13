@@ -364,18 +364,112 @@ func TestUsersRepository(t *testing.T) {
 		})
 	})
 
-	t.Run("ListUsers should return not implemented", func(t *testing.T) {
-		// Given
-		db, err := sql.Open("sqlite", ":memory:")
-		require.NoError(t, err)
-		defer db.Close()
+	t.Run("ListUsers", func(t *testing.T) {
+		fake := faker.New()
 
-		repo := NewUsersRepository(db)
+		t.Run("should return all users", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
 
-		// When
-		_, err = repo.ListUsers(ctx)
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
 
-		// Then
-		assert.EqualError(t, err, "not implemented")
+			// Create multiple users
+			user1 := NewRandomUser(fake)
+			user2 := NewRandomUser(fake)
+			user3 := NewRandomUser(fake)
+
+			err = repo.CreateUser(ctx, user1)
+			require.NoError(t, err)
+			err = repo.CreateUser(ctx, user2)
+			require.NoError(t, err)
+			err = repo.CreateUser(ctx, user3)
+			require.NoError(t, err)
+
+			// When
+			users, err := repo.ListUsers(ctx)
+
+			// Then
+			require.NoError(t, err)
+			require.Len(t, users, 3)
+
+			// Verify all users are returned (order may vary, so check by content)
+			userMap := make(map[string]*User)
+			for _, u := range users {
+				userMap[u.ID] = u
+			}
+
+			assert.Contains(t, userMap, user1.ID)
+			assert.Contains(t, userMap, user2.ID)
+			assert.Contains(t, userMap, user3.ID)
+
+			assert.Equal(t, user1.Name, userMap[user1.ID].Name)
+			assert.Equal(t, user1.Email, userMap[user1.ID].Email)
+			assert.Equal(t, user2.Name, userMap[user2.ID].Name)
+			assert.Equal(t, user2.Email, userMap[user2.ID].Email)
+			assert.Equal(t, user3.Name, userMap[user3.ID].Name)
+			assert.Equal(t, user3.Email, userMap[user3.ID].Email)
+		})
+
+		t.Run("should return empty slice when no users", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
+
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
+
+			// When
+			users, err := repo.ListUsers(ctx)
+
+			// Then
+			require.NoError(t, err)
+			assert.Empty(t, users)
+		})
+
+		t.Run("should return users in consistent order by created_at", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
+
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
+
+			// Create users with specific timestamps to test ordering
+			user1 := NewRandomUser(fake, WithUserTimestamps(time.Now().Add(-time.Hour), time.Now().Add(-time.Hour)))
+			user2 := NewRandomUser(fake, WithUserTimestamps(time.Now().Add(-time.Minute), time.Now().Add(-time.Minute)))
+			user3 := NewRandomUser(fake, WithUserTimestamps(time.Now(), time.Now()))
+
+			err = repo.CreateUser(ctx, user1)
+			require.NoError(t, err)
+			err = repo.CreateUser(ctx, user2)
+			require.NoError(t, err)
+			err = repo.CreateUser(ctx, user3)
+			require.NoError(t, err)
+
+			// When
+			users, err := repo.ListUsers(ctx)
+
+			// Then
+			require.NoError(t, err)
+			require.Len(t, users, 3)
+
+			// Should be ordered by created_at ascending (oldest first)
+			assert.True(
+				t,
+				users[0].CreatedAt.Before(users[1].CreatedAt) || users[0].CreatedAt.Equal(users[1].CreatedAt),
+			)
+			assert.True(
+				t,
+				users[1].CreatedAt.Before(users[2].CreatedAt) || users[1].CreatedAt.Equal(users[2].CreatedAt),
+			)
+		})
 	})
 }

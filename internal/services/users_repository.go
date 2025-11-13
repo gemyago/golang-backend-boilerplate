@@ -140,6 +140,37 @@ func (r *sqliteUsersRepository) GetUserByEmail(ctx context.Context, email string
 	return user, nil
 }
 
-func (r *sqliteUsersRepository) ListUsers(_ context.Context) ([]*User, error) {
-	return nil, errors.New("not implemented")
+func (r *sqliteUsersRepository) ListUsers(ctx context.Context) ([]*User, error) {
+	query := `
+		SELECT id, name, email, created_at, updated_at
+		FROM users
+		ORDER BY created_at ASC
+	`
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*User
+	for rows.Next() {
+		user := &User{}
+		scanErr := rows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
+		if scanErr != nil {
+			return nil, scanErr
+		}
+		users = append(users, user)
+	}
+
+	if rowsErr := rows.Err(); rowsErr != nil {
+		return nil, rowsErr
+	}
+
+	return users, nil
 }
