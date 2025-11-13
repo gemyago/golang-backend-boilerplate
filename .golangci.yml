@@ -450,7 +450,7 @@ linters:
         linters: [ revive ]
       - text: 'exported \S+ \S+ should have comment( \(or a comment on this block\))? or be unexported'
         linters: [ revive ]
-      - path: '_test\.go'
+      - path: '_test\.go|_testing\.go'
         linters:
           - bodyclose
           - dupl
@@ -461,3 +461,4 @@ linters:
           - noctx
           - wrapcheck
           - gocognit
+          - mnd

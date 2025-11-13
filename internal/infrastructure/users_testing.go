@@ -39,10 +39,11 @@ func WithUserTimestamps(createdAt, updatedAt time.Time) RandomUserOpt {
 }
 
 func NewRandomUser(fake faker.Faker, opts ...RandomUserOpt) *User {
+	randomPrefix := "(" + fake.RandomStringWithLength(5) + ") "
 	user := &User{
 		ID:        uuid.Must(uuid.NewV4()).String(),
-		Name:      fake.Person().Name(),
-		Email:     fake.Internet().Email(),
+		Name:      randomPrefix + fake.Person().Name(),
+		Email:     randomPrefix + fake.Internet().Email(),
 		CreatedAt: fake.Time().Time(time.Now().Add(-time.Hour * pastYearHours)), // Random time in the past year
 		UpdatedAt: fake.Time().Time(time.Now().Add(-time.Hour * pastYearHours)),
 	}

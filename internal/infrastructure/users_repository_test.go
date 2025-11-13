@@ -19,34 +19,44 @@ func TestUsersRepository(t *testing.T) {
 		t.Cleanup(func() {
 			db.instance.Close()
 		})
-		return UsersRepositoryDeps{DB: db}
+		return UsersRepositoryDeps{
+			DB:   db,
+			Time: NewMockNow(),
+		}
 	}
 
 	t.Run("CreateUser", func(t *testing.T) {
 		fake := faker.New()
 
-		t.Run("should create user and be retrievable", func(t *testing.T) {
+		t.Run("should create user", func(t *testing.T) {
 			ctx := t.Context()
 
 			// Given
 			deps := makeMockDeps(t)
 			repo := NewUsersRepository(deps)
+			mockNow := MockNowValue(deps.Time)
 
-			user := NewRandomUser(fake)
+			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
 
 			// When
-			err := repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, *user)
 
 			// Then
 			require.NoError(t, err)
 			assert.NotEmpty(t, user.ID)
 
 			// Verify user was created in database
-			var count int
-			query := "SELECT COUNT(*) FROM users WHERE id = ?"
-			err = deps.DB.instance.QueryRowContext(ctx, query, user.ID).Scan(&count)
+			var gotUser User
+			query := "SELECT id, name, email, created_at, updated_at FROM users WHERE id = ?"
+			err = deps.DB.instance.QueryRowContext(ctx, query, user.ID).Scan(
+				&gotUser.ID,
+				&gotUser.Name,
+				&gotUser.Email,
+				&gotUser.CreatedAt,
+				&gotUser.UpdatedAt,
+			)
 			require.NoError(t, err)
-			assert.Equal(t, 1, count)
+			assert.Equal(t, *user, gotUser)
 		})
 
 		t.Run("should return error for duplicate email", func(t *testing.T) {
@@ -61,42 +71,16 @@ func TestUsersRepository(t *testing.T) {
 			user2 := NewRandomUser(fake, WithUserEmail(email))
 
 			// Create first user
-			err := repo.CreateUser(ctx, user1)
+			err := repo.CreateUser(ctx, *user1)
 			require.NoError(t, err)
 
 			// When - try to create second user with same email
-			err = repo.CreateUser(ctx, user2)
+			err = repo.CreateUser(ctx, *user2)
 
 			// Then
 			require.Error(t, err)
 			// Should be a unique constraint error
 			assert.Contains(t, err.Error(), "UNIQUE constraint failed")
-		})
-
-		t.Run("should set timestamps correctly", func(t *testing.T) {
-			ctx := t.Context()
-
-			// Given
-			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
-
-			beforeCreate := time.Now()
-			user := NewRandomUser(fake, WithUserTimestamps(time.Time{}, time.Time{}))
-
-			// When
-			err := repo.CreateUser(ctx, user)
-
-			// Then
-			require.NoError(t, err)
-
-			// Verify timestamps are set in database
-			var createdAt, updatedAt time.Time
-			query := "SELECT created_at, updated_at FROM users WHERE id = ?"
-			err = deps.DB.instance.QueryRowContext(ctx, query, user.ID).Scan(&createdAt, &updatedAt)
-			require.NoError(t, err)
-			assert.True(t, createdAt.After(beforeCreate) || createdAt.Equal(beforeCreate))
-			assert.True(t, updatedAt.After(beforeCreate) || updatedAt.Equal(beforeCreate))
-			assert.Equal(t, createdAt, updatedAt)
 		})
 
 		t.Run("should generate UUID when ID is empty", func(t *testing.T) {
@@ -109,18 +93,17 @@ func TestUsersRepository(t *testing.T) {
 			user := NewRandomUser(fake, WithUserID("")) // Empty ID to trigger UUID generation
 
 			// When
-			err := repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, *user)
 
 			// Then
 			require.NoError(t, err)
-			assert.NotEmpty(t, user.ID) // Should have generated a UUID
 
 			// Verify user was created with the generated ID
-			var count int
-			query := "SELECT COUNT(*) FROM users WHERE id = ?"
-			err = deps.DB.instance.QueryRowContext(ctx, query, user.ID).Scan(&count)
+			var gotID string
+			query := "SELECT id FROM users WHERE name = ?"
+			err = deps.DB.instance.QueryRowContext(ctx, query, user.Name).Scan(&gotID)
 			require.NoError(t, err)
-			assert.Equal(t, 1, count)
+			assert.NotEmpty(t, gotID)
 		})
 	})
 
@@ -135,7 +118,7 @@ func TestUsersRepository(t *testing.T) {
 			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
-			err := repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, *user)
 			require.NoError(t, err)
 
 			originalCreatedAt := user.CreatedAt
@@ -169,7 +152,7 @@ func TestUsersRepository(t *testing.T) {
 			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
-			err := repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, *user)
 			require.NoError(t, err)
 
 			originalCreatedAt := user.CreatedAt
@@ -218,11 +201,11 @@ func TestUsersRepository(t *testing.T) {
 			repo := NewUsersRepository(deps)
 
 			user1 := NewRandomUser(fake)
-			err := repo.CreateUser(ctx, user1)
+			err := repo.CreateUser(ctx, *user1)
 			require.NoError(t, err)
 
 			user2 := NewRandomUser(fake)
-			err = repo.CreateUser(ctx, user2)
+			err = repo.CreateUser(ctx, *user2)
 			require.NoError(t, err)
 
 			// Try to update user2 with user1's email
@@ -249,7 +232,7 @@ func TestUsersRepository(t *testing.T) {
 			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
-			err := repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, *user)
 			require.NoError(t, err)
 
 			// Verify user exists
@@ -295,7 +278,7 @@ func TestUsersRepository(t *testing.T) {
 			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
-			err := repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, *user)
 			require.NoError(t, err)
 
 			// When
@@ -339,7 +322,7 @@ func TestUsersRepository(t *testing.T) {
 			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
-			err := repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, *user)
 			require.NoError(t, err)
 
 			// When
@@ -387,11 +370,11 @@ func TestUsersRepository(t *testing.T) {
 			user2 := NewRandomUser(fake)
 			user3 := NewRandomUser(fake)
 
-			err := repo.CreateUser(ctx, user1)
+			err := repo.CreateUser(ctx, *user1)
 			require.NoError(t, err)
-			err = repo.CreateUser(ctx, user2)
+			err = repo.CreateUser(ctx, *user2)
 			require.NoError(t, err)
-			err = repo.CreateUser(ctx, user3)
+			err = repo.CreateUser(ctx, *user3)
 			require.NoError(t, err)
 
 			// When
@@ -446,11 +429,11 @@ func TestUsersRepository(t *testing.T) {
 			user2 := NewRandomUser(fake, WithUserTimestamps(time.Now().Add(-time.Minute), time.Now().Add(-time.Minute)))
 			user3 := NewRandomUser(fake, WithUserTimestamps(time.Now(), time.Now()))
 
-			err := repo.CreateUser(ctx, user1)
+			err := repo.CreateUser(ctx, *user1)
 			require.NoError(t, err)
-			err = repo.CreateUser(ctx, user2)
+			err = repo.CreateUser(ctx, *user2)
 			require.NoError(t, err)
-			err = repo.CreateUser(ctx, user3)
+			err = repo.CreateUser(ctx, *user3)
 			require.NoError(t, err)
 
 			// When

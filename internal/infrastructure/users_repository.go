@@ -18,25 +18,27 @@ type User struct {
 }
 
 type UsersRepository struct {
-	db *sql.DB
+	db   *sql.DB
+	time TimeProvider
 }
 
 type UsersRepositoryDeps struct {
-	DB *Database
+	DB   *Database
+	Time TimeProvider
 }
 
 func NewUsersRepository(deps UsersRepositoryDeps) *UsersRepository {
-	return &UsersRepository{db: deps.DB.instance}
+	return &UsersRepository{db: deps.DB.instance, time: deps.Time}
 }
 
-func (r *UsersRepository) CreateUser(ctx context.Context, user *User) error {
+func (r *UsersRepository) CreateUser(ctx context.Context, user User) error {
 	// Generate UUID if not provided
 	if user.ID == "" {
 		user.ID = uuid.Must(uuid.NewV4()).String()
 	}
 
 	// Set timestamps
-	now := time.Now()
+	now := r.time.Now()
 	user.CreatedAt = now
 	user.UpdatedAt = now
 
