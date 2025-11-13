@@ -69,8 +69,31 @@ func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user *User) erro
 	return err
 }
 
-func (r *sqliteUsersRepository) UpdateUser(_ context.Context, _ *User) error {
-	return errors.New("not implemented")
+func (r *sqliteUsersRepository) UpdateUser(ctx context.Context, user *User) error {
+	// Update updated_at timestamp to current time
+	user.UpdatedAt = time.Now()
+
+	// Update user
+	query := `
+		UPDATE users
+		SET name = ?, email = ?, updated_at = ?
+		WHERE id = ?
+	`
+	result, err := r.db.ExecContext(ctx, query, user.Name, user.Email, user.UpdatedAt, user.ID)
+	if err != nil {
+		return err
+	}
+
+	// Verify user exists (check affected rows)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
 
 func (r *sqliteUsersRepository) DeleteUser(_ context.Context, _ string) error {

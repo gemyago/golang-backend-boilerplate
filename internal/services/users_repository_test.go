@@ -123,20 +123,130 @@ func TestUsersRepository(t *testing.T) {
 		})
 	})
 
-	t.Run("UpdateUser should return not implemented", func(t *testing.T) {
-		// Given
-		db, err := sql.Open("sqlite", ":memory:")
-		require.NoError(t, err)
-		defer db.Close()
+	t.Run("UpdateUser", func(t *testing.T) {
+		fake := faker.New()
 
-		repo := NewUsersRepository(db)
-		user := &User{}
+		t.Run("should update user fields correctly", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
 
-		// When
-		err = repo.UpdateUser(ctx, user)
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
 
-		// Then
-		assert.EqualError(t, err, "not implemented")
+			user := NewRandomUser(fake)
+			err = repo.CreateUser(ctx, user)
+			require.NoError(t, err)
+
+			originalCreatedAt := user.CreatedAt
+			originalUpdatedAt := user.UpdatedAt
+
+			// Update user details
+			user.Name = fake.Person().Name()
+			user.Email = fake.Internet().Email()
+
+			// When
+			err = repo.UpdateUser(ctx, user)
+
+			// Then
+			require.NoError(t, err)
+
+			// Verify user was updated in database
+			updatedUser, err := repo.GetUserByID(ctx, user.ID)
+			require.NoError(t, err)
+			assert.Equal(t, user.Name, updatedUser.Name)
+			assert.Equal(t, user.Email, updatedUser.Email)
+			assert.Equal(t, user.ID, updatedUser.ID)
+			assert.True(t, originalCreatedAt.Equal(updatedUser.CreatedAt))
+			assert.True(t, updatedUser.UpdatedAt.After(originalUpdatedAt))
+		})
+
+		t.Run("should update updated_at timestamp and keep created_at same", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
+
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
+
+			user := NewRandomUser(fake)
+			err = repo.CreateUser(ctx, user)
+			require.NoError(t, err)
+
+			originalCreatedAt := user.CreatedAt
+			originalUpdatedAt := user.UpdatedAt
+
+			time.Sleep(1 * time.Millisecond) // Ensure timestamp difference
+
+			// Update user
+			user.Name = "Updated Name"
+
+			// When
+			err = repo.UpdateUser(ctx, user)
+
+			// Then
+			require.NoError(t, err)
+
+			// Verify timestamps
+			updatedUser, err := repo.GetUserByID(ctx, user.ID)
+			require.NoError(t, err)
+			assert.True(t, originalCreatedAt.Equal(updatedUser.CreatedAt))
+			assert.True(t, updatedUser.UpdatedAt.After(originalUpdatedAt))
+		})
+
+		t.Run("should return error for non-existent user", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
+
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
+
+			user := NewRandomUser(fake)
+
+			// When
+			err = repo.UpdateUser(ctx, user)
+
+			// Then
+			require.Error(t, err)
+			assert.Equal(t, sql.ErrNoRows, err)
+		})
+
+		t.Run("should return error for email conflict with another user", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
+
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
+
+			user1 := NewRandomUser(fake)
+			err = repo.CreateUser(ctx, user1)
+			require.NoError(t, err)
+
+			user2 := NewRandomUser(fake)
+			err = repo.CreateUser(ctx, user2)
+			require.NoError(t, err)
+
+			// Try to update user2 with user1's email
+			user2.Email = user1.Email
+
+			// When
+			err = repo.UpdateUser(ctx, user2)
+
+			// Then
+			require.Error(t, err)
+			// Should be a unique constraint error
+			assert.Contains(t, err.Error(), "UNIQUE constraint failed")
+		})
 	})
 
 	t.Run("DeleteUser should return not implemented", func(t *testing.T) {
