@@ -31,6 +31,17 @@ func NewUsersRepository(deps UsersRepositoryDeps) *UsersRepository {
 	return &UsersRepository{db: deps.DB.instance, time: deps.Time}
 }
 
+func (r *UsersRepository) ensureRowsUpdated(result sql.Result) error {
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 func (r *UsersRepository) CreateUser(ctx context.Context, user User) error {
 	// Generate UUID if not provided
 	if user.ID == "" {
@@ -67,15 +78,7 @@ func (r *UsersRepository) UpdateUser(ctx context.Context, user User) error {
 	}
 
 	// Verify user exists (check affected rows)
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return sql.ErrNoRows
-	}
-
-	return nil
+	return r.ensureRowsUpdated(result)
 }
 
 func (r *UsersRepository) DeleteUser(ctx context.Context, userID string) error {
@@ -88,15 +91,7 @@ func (r *UsersRepository) DeleteUser(ctx context.Context, userID string) error {
 		return err
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return sql.ErrNoRows
-	}
-
-	return nil
+	return r.ensureRowsUpdated(result)
 }
 
 func (r *UsersRepository) GetUserByID(ctx context.Context, userID string) (*User, error) {
