@@ -155,35 +155,103 @@ func TestUsersRepository(t *testing.T) {
 	})
 
 	t.Run("GetUserByID", func(t *testing.T) {
-		t.Run("should return not implemented", func(t *testing.T) {
+		fake := faker.New()
+
+		t.Run("should retrieve existing user correctly with all fields", func(t *testing.T) {
 			// Given
 			db, err := sql.Open("sqlite", ":memory:")
 			require.NoError(t, err)
 			defer db.Close()
 
 			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
+
+			user := NewRandomUser(fake)
+			err = repo.CreateUser(ctx, user)
+			require.NoError(t, err)
 
 			// When
-			_, err = repo.GetUserByID(ctx, "user-id")
+			retrievedUser, err := repo.GetUserByID(ctx, user.ID)
 
 			// Then
-			assert.EqualError(t, err, "not implemented")
+			require.NoError(t, err)
+			require.NotNil(t, retrievedUser)
+			assert.Equal(t, user.ID, retrievedUser.ID)
+			assert.Equal(t, user.Name, retrievedUser.Name)
+			assert.Equal(t, user.Email, retrievedUser.Email)
+			assert.True(t, user.CreatedAt.Equal(retrievedUser.CreatedAt))
+			assert.True(t, user.UpdatedAt.Equal(retrievedUser.UpdatedAt))
+		})
+
+		t.Run("should return error for non-existent user", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
+
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
+
+			// When
+			retrievedUser, err := repo.GetUserByID(ctx, "non-existent-id")
+
+			// Then
+			require.Error(t, err)
+			assert.Equal(t, sql.ErrNoRows, err)
+			assert.Nil(t, retrievedUser)
 		})
 	})
 
-	t.Run("GetUserByEmail should return not implemented", func(t *testing.T) {
-		// Given
-		db, err := sql.Open("sqlite", ":memory:")
-		require.NoError(t, err)
-		defer db.Close()
+	t.Run("GetUserByEmail", func(t *testing.T) {
+		fake := faker.New()
 
-		repo := NewUsersRepository(db)
+		t.Run("should find user by email", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
 
-		// When
-		_, err = repo.GetUserByEmail(ctx, "user@example.com")
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
 
-		// Then
-		assert.EqualError(t, err, "not implemented")
+			user := NewRandomUser(fake)
+			err = repo.CreateUser(ctx, user)
+			require.NoError(t, err)
+
+			// When
+			retrievedUser, err := repo.GetUserByEmail(ctx, user.Email)
+
+			// Then
+			require.NoError(t, err)
+			require.NotNil(t, retrievedUser)
+			assert.Equal(t, user.ID, retrievedUser.ID)
+			assert.Equal(t, user.Name, retrievedUser.Name)
+			assert.Equal(t, user.Email, retrievedUser.Email)
+			assert.True(t, user.CreatedAt.Equal(retrievedUser.CreatedAt))
+			assert.True(t, user.UpdatedAt.Equal(retrievedUser.UpdatedAt))
+		})
+
+		t.Run("should return error for non-existent email", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
+
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
+
+			// When
+			retrievedUser, err := repo.GetUserByEmail(ctx, "nonexistent@example.com")
+
+			// Then
+			require.Error(t, err)
+			assert.Equal(t, sql.ErrNoRows, err)
+			assert.Nil(t, retrievedUser)
+		})
 	})
 
 	t.Run("ListUsers should return not implemented", func(t *testing.T) {

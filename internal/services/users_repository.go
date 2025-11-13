@@ -77,12 +77,44 @@ func (r *sqliteUsersRepository) DeleteUser(_ context.Context, _ string) error {
 	return errors.New("not implemented")
 }
 
-func (r *sqliteUsersRepository) GetUserByID(_ context.Context, _ string) (*User, error) {
-	return nil, errors.New("not implemented")
+func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) (*User, error) {
+	query := `
+		SELECT id, name, email, created_at, updated_at
+		FROM users
+		WHERE id = ?
+	`
+	user := &User{}
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
-func (r *sqliteUsersRepository) GetUserByEmail(_ context.Context, _ string) (*User, error) {
-	return nil, errors.New("not implemented")
+func (r *sqliteUsersRepository) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	query := `
+		SELECT id, name, email, created_at, updated_at
+		FROM users
+		WHERE email = ?
+	`
+	user := &User{}
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (r *sqliteUsersRepository) ListUsers(_ context.Context) ([]*User, error) {
