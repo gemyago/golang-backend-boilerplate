@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/gofrs/uuid/v5"
@@ -96,8 +95,25 @@ func (r *sqliteUsersRepository) UpdateUser(ctx context.Context, user *User) erro
 	return nil
 }
 
-func (r *sqliteUsersRepository) DeleteUser(_ context.Context, _ string) error {
-	return errors.New("not implemented")
+func (r *sqliteUsersRepository) DeleteUser(ctx context.Context, userID string) error {
+	query := `
+		DELETE FROM users
+		WHERE id = ?
+	`
+	result, err := r.db.ExecContext(ctx, query, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
 
 func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) (*User, error) {

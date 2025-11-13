@@ -121,6 +121,33 @@ func TestUsersRepository(t *testing.T) {
 			assert.True(t, updatedAt.After(beforeCreate) || updatedAt.Equal(beforeCreate))
 			assert.Equal(t, createdAt, updatedAt)
 		})
+
+		t.Run("should generate UUID when ID is empty", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
+
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
+
+			user := NewRandomUser(fake, WithUserID("")) // Empty ID to trigger UUID generation
+
+			// When
+			err = repo.CreateUser(ctx, user)
+
+			// Then
+			require.NoError(t, err)
+			assert.NotEmpty(t, user.ID) // Should have generated a UUID
+
+			// Verify user was created with the generated ID
+			var count int
+			query := "SELECT COUNT(*) FROM users WHERE id = ?"
+			err = db.QueryRowContext(ctx, query, user.ID).Scan(&count)
+			require.NoError(t, err)
+			assert.Equal(t, 1, count)
+		})
 	})
 
 	t.Run("UpdateUser", func(t *testing.T) {
@@ -249,19 +276,56 @@ func TestUsersRepository(t *testing.T) {
 		})
 	})
 
-	t.Run("DeleteUser should return not implemented", func(t *testing.T) {
-		// Given
-		db, err := sql.Open("sqlite", ":memory:")
-		require.NoError(t, err)
-		defer db.Close()
+	t.Run("DeleteUser", func(t *testing.T) {
+		fake := faker.New()
 
-		repo := NewUsersRepository(db)
+		t.Run("should delete user successfully", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
 
-		// When
-		err = repo.DeleteUser(ctx, "user-id")
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
 
-		// Then
-		assert.EqualError(t, err, "not implemented")
+			user := NewRandomUser(fake)
+			err = repo.CreateUser(ctx, user)
+			require.NoError(t, err)
+
+			// Verify user exists
+			_, err = repo.GetUserByID(ctx, user.ID)
+			require.NoError(t, err)
+
+			// When
+			err = repo.DeleteUser(ctx, user.ID)
+
+			// Then
+			require.NoError(t, err)
+
+			// Verify user was deleted
+			_, err = repo.GetUserByID(ctx, user.ID)
+			require.Error(t, err)
+			assert.Equal(t, sql.ErrNoRows, err)
+		})
+
+		t.Run("should return error for non-existent user", func(t *testing.T) {
+			// Given
+			db, err := sql.Open("sqlite", ":memory:")
+			require.NoError(t, err)
+			defer db.Close()
+
+			repo := NewUsersRepository(db)
+			err = repo.(*sqliteUsersRepository).initSchema(ctx)
+			require.NoError(t, err)
+
+			// When
+			err = repo.DeleteUser(ctx, "non-existent-id")
+
+			// Then
+			require.Error(t, err)
+			assert.Equal(t, sql.ErrNoRows, err)
+		})
 	})
 
 	t.Run("GetUserByID", func(t *testing.T) {
