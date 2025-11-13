@@ -1,4 +1,3 @@
-.openapi-generator-ignore
 handlers/echo_controller.go
 handlers/echo_params.go
 handlers/handlers.go
