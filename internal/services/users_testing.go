@@ -1,0 +1,55 @@
+//go:build !release
+
+package services
+
+import (
+	"time"
+
+	"github.com/gofrs/uuid/v5"
+	"github.com/jaswdr/faker"
+)
+
+const pastYearHours = 24 * 365
+
+type RandomUserOpt func(*User)
+
+func WithUserID(id string) RandomUserOpt {
+	return func(u *User) {
+		u.ID = id
+	}
+}
+
+func WithUserName(name string) RandomUserOpt {
+	return func(u *User) {
+		u.Name = name
+	}
+}
+
+func WithUserEmail(email string) RandomUserOpt {
+	return func(u *User) {
+		u.Email = email
+	}
+}
+
+func WithUserTimestamps(createdAt, updatedAt time.Time) RandomUserOpt {
+	return func(u *User) {
+		u.CreatedAt = createdAt
+		u.UpdatedAt = updatedAt
+	}
+}
+
+func NewRandomUser(fake faker.Faker, opts ...RandomUserOpt) *User {
+	user := &User{
+		ID:        uuid.Must(uuid.NewV4()).String(),
+		Name:      fake.Person().Name(),
+		Email:     fake.Internet().Email(),
+		CreatedAt: fake.Time().Time(time.Now().Add(-time.Hour * pastYearHours)), // Random time in the past year
+		UpdatedAt: fake.Time().Time(time.Now().Add(-time.Hour * pastYearHours)),
+	}
+
+	for _, opt := range opts {
+		opt(user)
+	}
+
+	return user
+}

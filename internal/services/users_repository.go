@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/gofrs/uuid/v5"
 	_ "modernc.org/sqlite" // SQLite driver
 )
 
@@ -48,8 +49,24 @@ func (r *sqliteUsersRepository) initSchema(ctx context.Context) error {
 	return err
 }
 
-func (r *sqliteUsersRepository) CreateUser(_ context.Context, _ *User) error {
-	return errors.New("not implemented")
+func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user *User) error {
+	// Generate UUID if not provided
+	if user.ID == "" {
+		user.ID = uuid.Must(uuid.NewV4()).String()
+	}
+
+	// Set timestamps
+	now := time.Now()
+	user.CreatedAt = now
+	user.UpdatedAt = now
+
+	// Insert user
+	query := `
+		INSERT INTO users (id, name, email, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?)
+	`
+	_, err := r.db.ExecContext(ctx, query, user.ID, user.Name, user.Email, user.CreatedAt, user.UpdatedAt)
+	return err
 }
 
 func (r *sqliteUsersRepository) UpdateUser(_ context.Context, _ *User) error {
