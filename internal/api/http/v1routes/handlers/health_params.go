@@ -17,3 +17,41 @@ var _ = time.Time{}
 type _ func() Error
 
 
+
+type healthControllerBuilder struct {
+	// GET /health
+	//
+	// Request type: none
+	//
+	// Response type: HealthResponsePayload
+	HealthCheck genericHandlerBuilder[
+		void,
+		*HealthResponsePayload,
+		handlerActionFuncNoParams[void, *HealthResponsePayload],
+		httpHandlerActionFuncNoParams[void, *HealthResponsePayload],
+	]
+}
+
+func newHealthControllerBuilder(app *RootHandler) *healthControllerBuilder {
+	return &healthControllerBuilder{
+		// GET /health
+		HealthCheck: newGenericHandlerBuilder(
+			app,
+			newHandlerAdapterNoParams[
+				void,
+				*HealthResponsePayload,
+			](),
+			newHTTPHandlerAdapterNoParams[
+				void,
+				*HealthResponsePayload,
+			](),
+			makeActionBuilderParams[
+				void,
+				*HealthResponsePayload,
+			]{
+				defaultStatus: 200,
+				paramsParser:  makeVoidParamsParser(app),
+			},
+		),
+	}
+}

@@ -17,7 +17,7 @@ type sendEchoTransformer struct{}
 
 func (sendEchoTransformer) TransformRequest(
 	_ *http.Request,
-	echoReq *handlers.EchoSendEchoRequest,
+	echoReq *models.SendEchoParams,
 ) (*app.EchoData, error) {
 	return (*app.EchoData)(echoReq.Payload), nil
 }
@@ -30,7 +30,7 @@ func (sendEchoTransformer) TransformResponse(
 }
 
 func (c EchoController) SendEcho(b handlers.HandlerBuilder[
-	*handlers.EchoSendEchoRequest,
+	*models.SendEchoParams,
 	*models.EchoResponsePayload,
 ]) http.Handler {
 	return b.HandleWith(

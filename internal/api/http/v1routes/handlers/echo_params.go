@@ -20,15 +20,15 @@ type paramsParserEchoSendEcho struct {
 	bindPayload requestParamBinder[*http.Request, *EchoRequestPayload]
 }
 
-func (p *paramsParserEchoSendEcho) parse(router httpRouter, req *http.Request) (*EchoSendEchoRequest, error) {
+func (p *paramsParserEchoSendEcho) parse(router httpRouter, req *http.Request) (*SendEchoParams, error) {
 	bindingCtx := BindingContext{}
-	reqParams := &EchoSendEchoRequest{}
+	reqParams := &SendEchoParams{}
 	// body params
 	p.bindPayload(bindingCtx.Fork("body"), readRequestBodyValue(req), &reqParams.Payload)
 	return reqParams, bindingCtx.AggregatedError()
 }
 
-func newParamsParserEchoSendEcho(rootHandler *RootHandler) paramsParser[*EchoSendEchoRequest] {
+func newParamsParserEchoSendEcho(rootHandler *RootHandler) paramsParser[*SendEchoParams] {
 	return &paramsParserEchoSendEcho{
 		bindPayload: newRequestParamBinder(binderParams[*http.Request, *EchoRequestPayload]{
 			required: true,
@@ -37,5 +37,43 @@ func newParamsParserEchoSendEcho(rootHandler *RootHandler) paramsParser[*EchoSen
 			),
 			validateValue: NewEchoRequestPayloadValidator(),
 		}),
+	}
+}
+
+type echoControllerBuilder struct {
+	// POST /echo
+	//
+	// Request type: SendEchoParams,
+	//
+	// Response type: EchoResponsePayload
+	SendEcho genericHandlerBuilder[
+		*SendEchoParams,
+		*EchoResponsePayload,
+		handlerActionFunc[*SendEchoParams, *EchoResponsePayload],
+		httpHandlerActionFunc[*SendEchoParams, *EchoResponsePayload],
+	]
+}
+
+func newEchoControllerBuilder(app *RootHandler) *echoControllerBuilder {
+	return &echoControllerBuilder{
+		// POST /echo
+		SendEcho: newGenericHandlerBuilder(
+			app,
+			newHandlerAdapter[
+				*SendEchoParams,
+				*EchoResponsePayload,
+			](),
+			newHTTPHandlerAdapter[
+				*SendEchoParams,
+				*EchoResponsePayload,
+			](),
+			makeActionBuilderParams[
+				*SendEchoParams,
+				*EchoResponsePayload,
+			]{
+				defaultStatus: 200,
+				paramsParser:  newParamsParserEchoSendEcho(app),
+			},
+		),
 	}
 }

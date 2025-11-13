@@ -3,75 +3,22 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"time"
 
 	. "github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
 )
 
-// Below is to workaround unused imports.
-var _ = http.MethodGet
-var _ = time.Time{}
-var _ = json.Unmarshal
-var _ = fmt.Sprint
+// Below is to workaround unused imports if that happens.
 type _ func() EchoRequestPayload
-
-// EchoSendEchoRequest represents params for sendEcho operation
-//
-// Request: POST /echo.
-type EchoSendEchoRequest struct {
-	// Payload is parsed from request body and declared as payload.
-	Payload *EchoRequestPayload
-}
-
-type echoControllerBuilder struct {
-	// POST /echo
-	//
-	// Request type: EchoSendEchoRequest,
-	//
-	// Response type: EchoResponsePayload
-	SendEcho genericHandlerBuilder[
-		*EchoSendEchoRequest,
-		*EchoResponsePayload,
-		handlerActionFunc[*EchoSendEchoRequest, *EchoResponsePayload],
-		httpHandlerActionFunc[*EchoSendEchoRequest, *EchoResponsePayload],
-	]
-}
-
-func newEchoControllerBuilder(app *RootHandler) *echoControllerBuilder {
-	return &echoControllerBuilder{
-		// POST /echo
-		SendEcho: newGenericHandlerBuilder(
-			app,
-			newHandlerAdapter[
-				*EchoSendEchoRequest,
-				*EchoResponsePayload,
-			](),
-			newHTTPHandlerAdapter[
-				*EchoSendEchoRequest,
-				*EchoResponsePayload,
-			](),
-			makeActionBuilderParams[
-				*EchoSendEchoRequest,
-				*EchoResponsePayload,
-			]{
-				defaultStatus: 200,
-				paramsParser:  newParamsParserEchoSendEcho(app),
-			},
-		),
-	}
-}
 
 type EchoController interface {
 	// POST /echo
 	//
-	// Request type: EchoSendEchoRequest,
+	// Request type: SendEchoParams,
 	//
 	// Response type: EchoResponsePayload
 	SendEcho(HandlerBuilder[
-		*EchoSendEchoRequest,
+		*SendEchoParams,
 		*EchoResponsePayload,
 	]) http.Handler
 }
