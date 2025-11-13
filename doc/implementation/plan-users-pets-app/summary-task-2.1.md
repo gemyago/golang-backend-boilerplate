@@ -8,7 +8,7 @@ Successfully implemented the UsersRepository interface and schema as specified i
 
 ### Files Created
 
-1. **`internal/services/users_repository.go`**
+1. **`internal/infrastructure/users_repository.go`**
    - Defined `User` struct with fields: ID, Name, Email, CreatedAt, UpdatedAt (using time.Time)
    - Defined `UsersRepository` interface with all required methods:
      - CreateUser(ctx context.Context, user *User) error
@@ -21,7 +21,7 @@ Successfully implemented the UsersRepository interface and schema as specified i
    - Added constructor `NewUsersRepository(db *sql.DB) UsersRepository`
    - Implemented schema creation for users table with proper constraints
 
-2. **`internal/services/users_repository_test.go`**
+2. **`internal/infrastructure/users_repository_test.go`**
    - Created test structure following project conventions
    - Added test for schema initialization that verifies the users table is created correctly
 
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS users (
 ## Verification
 
 - **Lint**: `make lint` passes with no errors
-- **Tests**: `go test -v ./internal/services/ --run TestUsersRepository` passes
+- **Tests**: `go test -v ./internal/infrastructure/ --run TestUsersRepository` passes
 - **Schema Test**: Verifies that the users table is created successfully in SQLite
 
 ## Notes

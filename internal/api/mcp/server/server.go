@@ -8,7 +8,7 @@ import (
 
 	httpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services"
+	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/gofrs/uuid/v5"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"

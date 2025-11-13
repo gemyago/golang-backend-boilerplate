@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/services/http"
+	httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
 )
 
 // UpdatePetParams contains parameters for updating a pet.

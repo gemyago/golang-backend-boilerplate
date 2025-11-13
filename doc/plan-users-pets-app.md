@@ -76,10 +76,10 @@ The application follows hexagonal architecture with three main layers:
 - Domain models and errors in the same files
 
 ### Layer 3: Outgoing Adapters (Services)
-- Location: `internal/services`
+- Location: `internal/infrastructure`
 - **UsersRepository**: `users_repository.go` - User CRUD in SQLite
 - **PetsRepository**: `pets_repository.go` - User-pet relationships in SQLite
-- **Petstore Client**: Already exists in `internal/services/petstore` - External API integration
+- **Petstore Client**: Already exists in `internal/infrastructure/petstore` - External API integration
 - Uses `modernc.org/sqlite` (pure Go, no cgo)
 
 ### Data Flow
@@ -118,12 +118,12 @@ CREATE TABLE user_pets (
 ### 4.2 Services Layer
 
 **Files to Create:**
-- `internal/services/users_repository.go` - User repository interface and implementation
-- `internal/services/users_repository_test.go` - User repository tests
-- `internal/services/pets_repository.go` - Pets repository interface and implementation
-- `internal/services/pets_repository_test.go` - Pets repository tests
-- `internal/services/users_testing.go` - Test helpers and factories for users
-- `internal/services/pets_testing.go` - Test helpers and factories for pets
+- `internal/infrastructure/users_repository.go` - User repository interface and implementation
+- `internal/infrastructure/users_repository_test.go` - User repository tests
+- `internal/infrastructure/pets_repository.go` - Pets repository interface and implementation
+- `internal/infrastructure/pets_repository_test.go` - Pets repository tests
+- `internal/infrastructure/users_testing.go` - Test helpers and factories for users
+- `internal/infrastructure/pets_testing.go` - Test helpers and factories for pets
 
 **UsersRepository Interface:**
 ```go
@@ -570,7 +570,7 @@ components:
 - Return proper error responses using the Error schema
 
 **Files to Update for Registration:**
-- `internal/services/register.go` - Register UsersRepository, PetsRepository, and DB connection
+- `internal/infrastructure/register.go` - Register UsersRepository, PetsRepository, and DB connection
 - `internal/app/register.go` - Register UserCommands, PetsCommands, UserQueries, PetsQueries
 - `internal/api/http/v1controllers/register.go` - Register UsersController and PetsController
 - `internal/api/http/v1routes.go` - Wire up users and pets routes
@@ -700,12 +700,12 @@ The plan is comprehensive based on the existing architecture. Minor details that
 ### Files to Create (New)
 
 **Services Layer:**
-- `internal/services/users_repository.go` - Users repository interface and implementation
-- `internal/services/users_repository_test.go` - Users repository tests
-- `internal/services/pets_repository.go` - Pets repository interface and implementation
-- `internal/services/pets_repository_test.go` - Pets repository tests
-- `internal/services/users_testing.go` - Test helpers for users
-- `internal/services/pets_testing.go` - Test helpers for pets
+- `internal/infrastructure/users_repository.go` - Users repository interface and implementation
+- `internal/infrastructure/users_repository_test.go` - Users repository tests
+- `internal/infrastructure/pets_repository.go` - Pets repository interface and implementation
+- `internal/infrastructure/pets_repository_test.go` - Pets repository tests
+- `internal/infrastructure/users_testing.go` - Test helpers for users
+- `internal/infrastructure/pets_testing.go` - Test helpers for pets
 
 **Application Layer:**
 - `internal/app/users_commands.go` - User commands implementation with models and errors
@@ -731,7 +731,7 @@ The plan is comprehensive based on the existing architecture. Minor details that
 - `internal/api/http/v1routes.go` - Register users and pets routes
 - `internal/api/http/v1controllers/register.go` - Register UsersController and PetsController
 - `internal/app/register.go` - Register all commands and queries services
-- `internal/services/register.go` - Register repositories and DB connection
+- `internal/infrastructure/register.go` - Register repositories and DB connection
 - `internal/config/default.json` - Add database configuration
 - `go.mod` - Add `modernc.org/sqlite` dependency
 - `.mockery.yaml` - Add interfaces for mocking
@@ -786,33 +786,33 @@ This implementation will follow TDD approach as per [tdd-flow.md](../.context/td
 ### Phase 2: Database Layer - Users Repository
 
 **Task 2.1: Create UsersRepository interface and schema**
-- Create `internal/services/users_repository.go`
+- Create `internal/infrastructure/users_repository.go`
 - Define `User` struct with ID, Name, Email, CreatedAt, UpdatedAt fields (using time.Time)
 - Define `UsersRepository` interface with all methods
 - Create `sqliteUsersRepository` struct implementing the interface
 - Add constructor `NewUsersRepository(db *sql.DB) UsersRepository`
 - Implement schema initialization (CREATE TABLE IF NOT EXISTS for users)
 - Add stub implementations for all interface methods (return `errors.New("not implemented")`)
-- Create `internal/services/users_repository_test.go` with basic test structure
+- Create `internal/infrastructure/users_repository_test.go` with basic test structure
 - Write test for schema initialization (verify table is created)
-- Run: `go test -v ./internal/services/ --run TestUsersRepository`
+- Run: `go test -v ./internal/infrastructure/ --run TestUsersRepository`
 - Success criteria: `make test` passes
 - Implementation status: NOT STARTED
 
 **Task 2.2: Implement and test CreateUser**
-- Create `internal/services/users_testing.go` with factory: `NewRandomUser(fake *faker.Faker, opts ...RandomUserOpt)`
+- Create `internal/infrastructure/users_testing.go` with factory: `NewRandomUser(fake *faker.Faker, opts ...RandomUserOpt)`
 - In `users_repository_test.go`, write tests for CreateUser:
   - Happy path: user is created and can be retrieved
   - Error case: duplicate email returns unique constraint error
   - Edge case: timestamps are set correctly
-- Run: `go test -v ./internal/services/ --run TestUsersRepository/CreateUser`
+- Run: `go test -v ./internal/infrastructure/ --run TestUsersRepository/CreateUser`
   - Verify failures are expected (not implemented yet)
 - Implement `CreateUser` in `users_repository.go`:
   - Generate UUID if ID is empty
   - Set timestamps (created_at, updated_at) to current time
   - Execute INSERT statement
   - Handle unique constraint violation for email
-- Run: `go test -v ./internal/services/ --run TestUsersRepository/CreateUser`
+- Run: `go test -v ./internal/infrastructure/ --run TestUsersRepository/CreateUser`
   - Verify all tests pass
 - Success criteria: `make test` passes
 - Implementation status: NOT STARTED
@@ -826,7 +826,7 @@ This implementation will follow TDD approach as per [tdd-flow.md](../.context/td
   - Error case: non-existent email returns error
 - Run tests to verify failures
 - Implement `GetUserByID` and `GetUserByEmail` in `users_repository.go`
-- Run: `go test -v ./internal/services/ --run "TestUsersRepository/(GetUserByID|GetUserByEmail)"`
+- Run: `go test -v ./internal/infrastructure/ --run "TestUsersRepository/(GetUserByID|GetUserByEmail)"`
   - Verify all tests pass
 - Success criteria: `make test` passes
 - Implementation status: NOT STARTED
@@ -843,7 +843,7 @@ This implementation will follow TDD approach as per [tdd-flow.md](../.context/td
   - Update updated_at timestamp to current time
   - Handle unique constraint violation for email
   - Verify user exists (check affected rows)
-- Run: `go test -v ./internal/services/ --run TestUsersRepository/UpdateUser`
+- Run: `go test -v ./internal/infrastructure/ --run TestUsersRepository/UpdateUser`
   - Verify all tests pass
 - Success criteria: `make test` passes
 - Implementation status: NOT STARTED
@@ -855,7 +855,7 @@ This implementation will follow TDD approach as per [tdd-flow.md](../.context/td
   - Order: users returned in consistent order (e.g., by created_at)
 - Run tests to verify failures
 - Implement `ListUsers` in `users_repository.go`
-- Run: `go test -v ./internal/services/ --run TestUsersRepository/ListUsers`
+- Run: `go test -v ./internal/infrastructure/ --run TestUsersRepository/ListUsers`
   - Verify all tests pass
 - Success criteria: `make test` passes
 - Implementation status: NOT STARTED
@@ -867,7 +867,7 @@ This implementation will follow TDD approach as per [tdd-flow.md](../.context/td
 - Run tests to verify failures
 - Implement `DeleteUser` in `users_repository.go`
   - Verify user exists before delete (or check affected rows)
-- Run: `go test -v ./internal/services/ --run TestUsersRepository/DeleteUser`
+- Run: `go test -v ./internal/infrastructure/ --run TestUsersRepository/DeleteUser`
   - Verify all tests pass
 - Success criteria: `make test` passes
 - Implementation status: NOT STARTED
@@ -875,31 +875,31 @@ This implementation will follow TDD approach as per [tdd-flow.md](../.context/td
 ### Phase 3: Database Layer - Pets Repository
 
 **Task 3.1: Create PetsRepository interface and schema**
-- Create `internal/services/pets_repository.go`
+- Create `internal/infrastructure/pets_repository.go`
 - Define `UserPet` struct with UserID, PetID, CreatedAt fields (using time.Time)
 - Define `PetsRepository` interface with all methods
 - Create `sqlitePetsRepository` struct implementing the interface
 - Add constructor `NewPetsRepository(db *sql.DB) PetsRepository`
 - Implement schema initialization (CREATE TABLE IF NOT EXISTS for user_pets)
 - Add stub implementations for all interface methods
-- Create `internal/services/pets_repository_test.go` with basic test structure
+- Create `internal/infrastructure/pets_repository_test.go` with basic test structure
 - Write test for schema initialization
-- Run: `go test -v ./internal/services/ --run TestPetsRepository`
+- Run: `go test -v ./internal/infrastructure/ --run TestPetsRepository`
 - Success criteria: `make test` passes
 - Implementation status: NOT STARTED
 
 **Task 3.2: Implement and test AddUserPet**
-- Create `internal/services/pets_testing.go` with factory: `NewRandomUserPet(fake *faker.Faker, opts ...RandomUserPetOpt)`
+- Create `internal/infrastructure/pets_testing.go` with factory: `NewRandomUserPet(fake *faker.Faker, opts ...RandomUserPetOpt)`
 - In `pets_repository_test.go`, write tests for AddUserPet:
   - Happy path: relationship is created
   - Error case: non-existent user returns foreign key error
   - Idempotent: adding same pet twice succeeds (use INSERT OR IGNORE or check duplicate)
-- Run: `go test -v ./internal/services/ --run TestPetsRepository/AddUserPet`
+- Run: `go test -v ./internal/infrastructure/ --run TestPetsRepository/AddUserPet`
   - Verify failures are expected
 - Implement `AddUserPet` in `pets_repository.go`:
   - Set timestamp to current time
   - Use INSERT OR IGNORE for idempotency
-- Run: `go test -v ./internal/services/ --run TestPetsRepository/AddUserPet`
+- Run: `go test -v ./internal/infrastructure/ --run TestPetsRepository/AddUserPet`
   - Verify all tests pass
 - Success criteria: `make test` passes
 - Implementation status: NOT STARTED
@@ -914,7 +914,7 @@ This implementation will follow TDD approach as per [tdd-flow.md](../.context/td
   - Returns false when relationship doesn't exist
 - Run tests to verify failures
 - Implement `GetUserPetIDs` and `HasUserPet` in `pets_repository.go`
-- Run: `go test -v ./internal/services/ --run "TestPetsRepository/(GetUserPetIDs|HasUserPet)"`
+- Run: `go test -v ./internal/infrastructure/ --run "TestPetsRepository/(GetUserPetIDs|HasUserPet)"`
   - Verify all tests pass
 - Success criteria: `make test` passes
 - Implementation status: NOT STARTED
@@ -925,7 +925,7 @@ This implementation will follow TDD approach as per [tdd-flow.md](../.context/td
   - Idempotent: removing non-existent relationship succeeds (or is idempotent)
 - Run tests to verify failures
 - Implement `RemoveUserPet` in `pets_repository.go`
-- Run: `go test -v ./internal/services/ --run TestPetsRepository/RemoveUserPet`
+- Run: `go test -v ./internal/infrastructure/ --run TestPetsRepository/RemoveUserPet`
   - Verify all tests pass
 - Success criteria: `make test` passes
 - Implementation status: NOT STARTED
@@ -938,7 +938,7 @@ This implementation will follow TDD approach as per [tdd-flow.md](../.context/td
 - Implementation status: NOT STARTED
 
 **Task 3.6: Register repositories in DI container**
-- Update `internal/services/register.go`:
+- Update `internal/infrastructure/register.go`:
   - Add database connection provider that reads path from config
   - Add database initialization (open connection, create schemas)
   - Add UsersRepository provider using NewUsersRepository

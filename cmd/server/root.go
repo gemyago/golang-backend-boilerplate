@@ -9,7 +9,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/config"
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services"
+	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"

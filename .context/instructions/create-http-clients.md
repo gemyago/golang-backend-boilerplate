@@ -192,7 +192,7 @@ import (
 		"testing"
 
 		"github.com/gemyago/atlacp/internal/diag"
-		httpservices "github.com/gemyago/golang-backend-boilerplate/internal/services/http"
+		httpservices "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
 		"github.com/jaswdr/faker"
 		"github.com/stretchr/testify/assert"
 		"github.com/stretchr/testify/require"

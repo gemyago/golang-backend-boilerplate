@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
-	httpservices "github.com/gemyago/golang-backend-boilerplate/internal/services/http"
+	httpservices "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
 	"go.uber.org/dig"
 )
 

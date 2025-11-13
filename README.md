@@ -63,7 +63,7 @@ Feel free to use any other branch name. In this case please make sure to update 
 * [internal/api/http](./internal/api/http) - includes http routes related stuff
   * [internal/api/http/v1routes.yaml](./internal/api/http/v1routes.yaml) - OpenAPI spec for the api routes. HTTP layer is generated with [apigen](github.com/gemyago/apigen)
 * `internal/app` - place to add application layer code (e.g business logic).
-* `internal/services` - lower level components are supposed to be here (e.g database access layer e.t.c).
+* `internal/infrastructure` - lower level components are supposed to be here (e.g database access layer e.t.c).
 
 ## Project Setup
 

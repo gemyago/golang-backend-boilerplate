@@ -28,5 +28,5 @@ Both methods use `QueryRowContext` to execute SELECT queries and scan results in
 - No regressions introduced
 
 ## Files Modified
-- `internal/services/users_repository.go`: Added implementations for GetUserByID and GetUserByEmail
-- `internal/services/users_repository_test.go`: Added comprehensive tests for both methods
+- `internal/infrastructure/users_repository.go`: Added implementations for GetUserByID and GetUserByEmail
+- `internal/infrastructure/users_repository_test.go`: Added comprehensive tests for both methods

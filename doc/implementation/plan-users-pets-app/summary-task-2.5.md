@@ -27,5 +27,5 @@ The method follows the same patterns as other repository methods, using proper c
 - No regressions introduced
 
 ## Files Modified
-- `internal/services/users_repository.go`: Added implementation for ListUsers method
-- `internal/services/users_repository_test.go`: Added comprehensive tests for ListUsers method
+- `internal/infrastructure/users_repository.go`: Added implementation for ListUsers method
+- `internal/infrastructure/users_repository_test.go`: Added comprehensive tests for ListUsers method

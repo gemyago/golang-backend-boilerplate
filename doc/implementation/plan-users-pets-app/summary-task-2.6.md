@@ -6,13 +6,13 @@ Successfully implemented the `DeleteUser` method in the `UsersRepository` interf
 
 ## Changes Made
 
-### internal/services/users_repository.go
+### internal/infrastructure/users_repository.go
 - Implemented `DeleteUser(ctx context.Context, userID string) error` method
 - Added proper error handling using `RowsAffected()` to verify user existence
 - Returns `sql.ErrNoRows` when attempting to delete a non-existent user
 - Removed unused `errors` import
 
-### internal/services/users_repository_test.go
+### internal/infrastructure/users_repository_test.go
 - Replaced the placeholder test with comprehensive test cases for `DeleteUser`
 - Added test for successful user deletion
 - Added test for error case when trying to delete non-existent user
@@ -34,6 +34,6 @@ The `DeleteUser` method:
 
 ## Verification
 
-- All tests pass: `go test -v ./internal/services/ --run TestUsersRepository/DeleteUser`
+- All tests pass: `go test -v ./internal/infrastructure/ --run TestUsersRepository/DeleteUser`
 - Linting passes: `make lint`
 - Implementation follows existing code patterns and error handling conventions

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/services/http/middleware"
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http/middleware"
 	"go.uber.org/dig"
 	"golang.org/x/oauth2"
 )

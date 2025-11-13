@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/services/http"
+	httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
 	"go.uber.org/dig"
 )
 

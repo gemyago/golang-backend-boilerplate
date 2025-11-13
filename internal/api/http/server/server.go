@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services"
+	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	sloghttp "github.com/samber/slog-http"
 	"go.uber.org/dig"
 )

@@ -58,7 +58,7 @@ The application applies some hexagonal architecture principles with layers mappe
 - Incoming adapters: `internal/api` (HTTP, MCP)
   - HTTP layer: spec `internal/api/http/v1routes.yaml`; generated routes/controllers under `internal/api/http/v1routes/*`
 - Application layer: `internal/app` (business logic, DI)
-- Outgoing adapters: `internal/services` (DB, external APIs e.t.c)
+- Outgoing adapters: `internal/infrastructure` (DB, external APIs e.t.c)
 
 The Application layer is structured to follow CQRS principles:
 - Data mutations are handled by Commands
