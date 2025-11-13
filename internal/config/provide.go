@@ -59,5 +59,8 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 		provideConfigValue(cfg, "mcpServer.version").asString(),
 		provideConfigValue(cfg, "mcpServer.httpHost").asString(),
 		provideConfigValue(cfg, "mcpServer.httpPort").asInt(),
+
+		// database config
+		provideConfigValue(cfg, "database.dsn").asString(),
 	)
 }

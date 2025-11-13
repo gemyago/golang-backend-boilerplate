@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
@@ -8,11 +9,12 @@ import (
 	"go.uber.org/dig"
 )
 
-func Register(container *dig.Container) error {
+func Register(rootCtx context.Context, container *dig.Container) error {
 	return di.ProvideAll(container,
 		NewTimeProvider,
 		di.ProvideValue(time.NewTicker),
 		NewShutdownHooks,
 		httpservices.NewClientFactory,
+		newDBProvider(rootCtx),
 	)
 }

@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"database/sql"
 	"testing"
 	"time"
@@ -12,47 +11,31 @@ import (
 )
 
 func TestUsersRepository(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("should initialize schema", func(t *testing.T) {
-		// Given
-		db, err := sql.Open("sqlite", ":memory:")
+	makeMockDeps := func(t *testing.T) UsersRepositoryDeps {
+		db, err := newDBProvider(t.Context())(DatabaseConfig{
+			DSN: ":memory:",
+		})
 		require.NoError(t, err)
-		defer db.Close()
-
-		repo := NewUsersRepository(db)
-
-		// When
-		err = repo.(*sqliteUsersRepository).initSchema(ctx)
-
-		// Then
-		require.NoError(t, err)
-
-		// Verify table exists
-		var count int
-		query := "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='users'"
-		err = db.QueryRowContext(ctx, query).Scan(&count)
-		require.NoError(t, err)
-		assert.Equal(t, 1, count)
-	})
+		t.Cleanup(func() {
+			db.instance.Close()
+		})
+		return UsersRepositoryDeps{DB: db}
+	}
 
 	t.Run("CreateUser", func(t *testing.T) {
 		fake := faker.New()
 
 		t.Run("should create user and be retrievable", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
 
 			// When
-			err = repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, user)
 
 			// Then
 			require.NoError(t, err)
@@ -61,27 +44,24 @@ func TestUsersRepository(t *testing.T) {
 			// Verify user was created in database
 			var count int
 			query := "SELECT COUNT(*) FROM users WHERE id = ?"
-			err = db.QueryRowContext(ctx, query, user.ID).Scan(&count)
+			err = deps.DB.instance.QueryRowContext(ctx, query, user.ID).Scan(&count)
 			require.NoError(t, err)
 			assert.Equal(t, 1, count)
 		})
 
 		t.Run("should return error for duplicate email", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			email := fake.Internet().Email()
 			user1 := NewRandomUser(fake, WithUserEmail(email))
 			user2 := NewRandomUser(fake, WithUserEmail(email))
 
 			// Create first user
-			err = repo.CreateUser(ctx, user1)
+			err := repo.CreateUser(ctx, user1)
 			require.NoError(t, err)
 
 			// When - try to create second user with same email
@@ -94,20 +74,17 @@ func TestUsersRepository(t *testing.T) {
 		})
 
 		t.Run("should set timestamps correctly", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			beforeCreate := time.Now()
 			user := NewRandomUser(fake, WithUserTimestamps(time.Time{}, time.Time{}))
 
 			// When
-			err = repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, user)
 
 			// Then
 			require.NoError(t, err)
@@ -115,7 +92,7 @@ func TestUsersRepository(t *testing.T) {
 			// Verify timestamps are set in database
 			var createdAt, updatedAt time.Time
 			query := "SELECT created_at, updated_at FROM users WHERE id = ?"
-			err = db.QueryRowContext(ctx, query, user.ID).Scan(&createdAt, &updatedAt)
+			err = deps.DB.instance.QueryRowContext(ctx, query, user.ID).Scan(&createdAt, &updatedAt)
 			require.NoError(t, err)
 			assert.True(t, createdAt.After(beforeCreate) || createdAt.Equal(beforeCreate))
 			assert.True(t, updatedAt.After(beforeCreate) || updatedAt.Equal(beforeCreate))
@@ -123,19 +100,16 @@ func TestUsersRepository(t *testing.T) {
 		})
 
 		t.Run("should generate UUID when ID is empty", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake, WithUserID("")) // Empty ID to trigger UUID generation
 
 			// When
-			err = repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, user)
 
 			// Then
 			require.NoError(t, err)
@@ -144,7 +118,7 @@ func TestUsersRepository(t *testing.T) {
 			// Verify user was created with the generated ID
 			var count int
 			query := "SELECT COUNT(*) FROM users WHERE id = ?"
-			err = db.QueryRowContext(ctx, query, user.ID).Scan(&count)
+			err = deps.DB.instance.QueryRowContext(ctx, query, user.ID).Scan(&count)
 			require.NoError(t, err)
 			assert.Equal(t, 1, count)
 		})
@@ -154,17 +128,14 @@ func TestUsersRepository(t *testing.T) {
 		fake := faker.New()
 
 		t.Run("should update user fields correctly", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
-			err = repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, user)
 			require.NoError(t, err)
 
 			originalCreatedAt := user.CreatedAt
@@ -191,17 +162,14 @@ func TestUsersRepository(t *testing.T) {
 		})
 
 		t.Run("should update updated_at timestamp and keep created_at same", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
-			err = repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, user)
 			require.NoError(t, err)
 
 			originalCreatedAt := user.CreatedAt
@@ -226,19 +194,16 @@ func TestUsersRepository(t *testing.T) {
 		})
 
 		t.Run("should return error for non-existent user", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
 
 			// When
-			err = repo.UpdateUser(ctx, user)
+			err := repo.UpdateUser(ctx, user)
 
 			// Then
 			require.Error(t, err)
@@ -246,17 +211,14 @@ func TestUsersRepository(t *testing.T) {
 		})
 
 		t.Run("should return error for email conflict with another user", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			user1 := NewRandomUser(fake)
-			err = repo.CreateUser(ctx, user1)
+			err := repo.CreateUser(ctx, user1)
 			require.NoError(t, err)
 
 			user2 := NewRandomUser(fake)
@@ -280,17 +242,14 @@ func TestUsersRepository(t *testing.T) {
 		fake := faker.New()
 
 		t.Run("should delete user successfully", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
-			err = repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, user)
 			require.NoError(t, err)
 
 			// Verify user exists
@@ -310,17 +269,14 @@ func TestUsersRepository(t *testing.T) {
 		})
 
 		t.Run("should return error for non-existent user", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
+			// Given
+			db := makeMockDeps(t)
 			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
 
 			// When
-			err = repo.DeleteUser(ctx, "non-existent-id")
+			err := repo.DeleteUser(ctx, "non-existent-id")
 
 			// Then
 			require.Error(t, err)
@@ -332,17 +288,14 @@ func TestUsersRepository(t *testing.T) {
 		fake := faker.New()
 
 		t.Run("should retrieve existing user correctly with all fields", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
-			err = repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, user)
 			require.NoError(t, err)
 
 			// When
@@ -359,14 +312,11 @@ func TestUsersRepository(t *testing.T) {
 		})
 
 		t.Run("should return error for non-existent user", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			// When
 			retrievedUser, err := repo.GetUserByID(ctx, "non-existent-id")
@@ -382,17 +332,14 @@ func TestUsersRepository(t *testing.T) {
 		fake := faker.New()
 
 		t.Run("should find user by email", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
-			err = repo.CreateUser(ctx, user)
+			err := repo.CreateUser(ctx, user)
 			require.NoError(t, err)
 
 			// When
@@ -409,14 +356,11 @@ func TestUsersRepository(t *testing.T) {
 		})
 
 		t.Run("should return error for non-existent email", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			// When
 			retrievedUser, err := repo.GetUserByEmail(ctx, "nonexistent@example.com")
@@ -432,21 +376,18 @@ func TestUsersRepository(t *testing.T) {
 		fake := faker.New()
 
 		t.Run("should return all users", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			// Create multiple users
 			user1 := NewRandomUser(fake)
 			user2 := NewRandomUser(fake)
 			user3 := NewRandomUser(fake)
 
-			err = repo.CreateUser(ctx, user1)
+			err := repo.CreateUser(ctx, user1)
 			require.NoError(t, err)
 			err = repo.CreateUser(ctx, user2)
 			require.NoError(t, err)
@@ -479,14 +420,11 @@ func TestUsersRepository(t *testing.T) {
 		})
 
 		t.Run("should return empty slice when no users", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			// When
 			users, err := repo.ListUsers(ctx)
@@ -497,21 +435,18 @@ func TestUsersRepository(t *testing.T) {
 		})
 
 		t.Run("should return users in consistent order by created_at", func(t *testing.T) {
-			// Given
-			db, err := sql.Open("sqlite", ":memory:")
-			require.NoError(t, err)
-			defer db.Close()
+			ctx := t.Context()
 
-			repo := NewUsersRepository(db)
-			err = repo.(*sqliteUsersRepository).initSchema(ctx)
-			require.NoError(t, err)
+			// Given
+			deps := makeMockDeps(t)
+			repo := NewUsersRepository(deps)
 
 			// Create users with specific timestamps to test ordering
 			user1 := NewRandomUser(fake, WithUserTimestamps(time.Now().Add(-time.Hour), time.Now().Add(-time.Hour)))
 			user2 := NewRandomUser(fake, WithUserTimestamps(time.Now().Add(-time.Minute), time.Now().Add(-time.Minute)))
 			user3 := NewRandomUser(fake, WithUserTimestamps(time.Now(), time.Now()))
 
-			err = repo.CreateUser(ctx, user1)
+			err := repo.CreateUser(ctx, user1)
 			require.NoError(t, err)
 			err = repo.CreateUser(ctx, user2)
 			require.NoError(t, err)

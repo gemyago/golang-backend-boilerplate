@@ -17,38 +17,19 @@ type User struct {
 	UpdatedAt time.Time
 }
 
-type UsersRepository interface {
-	CreateUser(ctx context.Context, user *User) error
-	UpdateUser(ctx context.Context, user *User) error
-	DeleteUser(ctx context.Context, userID string) error
-	GetUserByID(ctx context.Context, userID string) (*User, error)
-	GetUserByEmail(ctx context.Context, email string) (*User, error)
-	ListUsers(ctx context.Context) ([]*User, error)
-}
-
-type sqliteUsersRepository struct {
+type UsersRepository struct {
 	db *sql.DB
 }
 
-func NewUsersRepository(db *sql.DB) UsersRepository {
-	return &sqliteUsersRepository{db: db}
+type UsersRepositoryDeps struct {
+	DB *Database
 }
 
-func (r *sqliteUsersRepository) initSchema(ctx context.Context) error {
-	query := `
-		CREATE TABLE IF NOT EXISTS users (
-			id TEXT PRIMARY KEY,
-			name TEXT NOT NULL,
-			email TEXT NOT NULL UNIQUE,
-			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-		);
-	`
-	_, err := r.db.ExecContext(ctx, query)
-	return err
+func NewUsersRepository(deps UsersRepositoryDeps) *UsersRepository {
+	return &UsersRepository{db: deps.DB.instance}
 }
 
-func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user *User) error {
+func (r *UsersRepository) CreateUser(ctx context.Context, user *User) error {
 	// Generate UUID if not provided
 	if user.ID == "" {
 		user.ID = uuid.Must(uuid.NewV4()).String()
@@ -68,7 +49,7 @@ func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user *User) erro
 	return err
 }
 
-func (r *sqliteUsersRepository) UpdateUser(ctx context.Context, user *User) error {
+func (r *UsersRepository) UpdateUser(ctx context.Context, user *User) error {
 	// Update updated_at timestamp to current time
 	user.UpdatedAt = time.Now()
 
@@ -95,7 +76,7 @@ func (r *sqliteUsersRepository) UpdateUser(ctx context.Context, user *User) erro
 	return nil
 }
 
-func (r *sqliteUsersRepository) DeleteUser(ctx context.Context, userID string) error {
+func (r *UsersRepository) DeleteUser(ctx context.Context, userID string) error {
 	query := `
 		DELETE FROM users
 		WHERE id = ?
@@ -116,7 +97,7 @@ func (r *sqliteUsersRepository) DeleteUser(ctx context.Context, userID string) e
 	return nil
 }
 
-func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) (*User, error) {
+func (r *UsersRepository) GetUserByID(ctx context.Context, userID string) (*User, error) {
 	query := `
 		SELECT id, name, email, created_at, updated_at
 		FROM users
@@ -136,7 +117,7 @@ func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) 
 	return user, nil
 }
 
-func (r *sqliteUsersRepository) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+func (r *UsersRepository) GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	query := `
 		SELECT id, name, email, created_at, updated_at
 		FROM users
@@ -156,7 +137,7 @@ func (r *sqliteUsersRepository) GetUserByEmail(ctx context.Context, email string
 	return user, nil
 }
 
-func (r *sqliteUsersRepository) ListUsers(ctx context.Context) ([]*User, error) {
+func (r *UsersRepository) ListUsers(ctx context.Context) ([]*User, error) {
 	query := `
 		SELECT id, name, email, created_at, updated_at
 		FROM users

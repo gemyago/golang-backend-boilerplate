@@ -1,6 +1,6 @@
 {
   "database": {
-    "path": "./data/app.db"
+    "dsn": "./data/app.db"
   },
   "defaultLogLevel": "INFO",
   "gracefulShutdownTimeout": "10s",
