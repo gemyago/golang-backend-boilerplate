@@ -1,0 +1,73 @@
+package services
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"time"
+
+	_ "modernc.org/sqlite" // SQLite driver
+)
+
+type User struct {
+	ID        string
+	Name      string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type UsersRepository interface {
+	CreateUser(ctx context.Context, user *User) error
+	UpdateUser(ctx context.Context, user *User) error
+	DeleteUser(ctx context.Context, userID string) error
+	GetUserByID(ctx context.Context, userID string) (*User, error)
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
+	ListUsers(ctx context.Context) ([]*User, error)
+}
+
+type sqliteUsersRepository struct {
+	db *sql.DB
+}
+
+func NewUsersRepository(db *sql.DB) UsersRepository {
+	return &sqliteUsersRepository{db: db}
+}
+
+func (r *sqliteUsersRepository) initSchema(ctx context.Context) error {
+	query := `
+		CREATE TABLE IF NOT EXISTS users (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			email TEXT NOT NULL UNIQUE,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+	`
+	_, err := r.db.ExecContext(ctx, query)
+	return err
+}
+
+func (r *sqliteUsersRepository) CreateUser(_ context.Context, _ *User) error {
+	return errors.New("not implemented")
+}
+
+func (r *sqliteUsersRepository) UpdateUser(_ context.Context, _ *User) error {
+	return errors.New("not implemented")
+}
+
+func (r *sqliteUsersRepository) DeleteUser(_ context.Context, _ string) error {
+	return errors.New("not implemented")
+}
+
+func (r *sqliteUsersRepository) GetUserByID(_ context.Context, _ string) (*User, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *sqliteUsersRepository) GetUserByEmail(_ context.Context, _ string) (*User, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *sqliteUsersRepository) ListUsers(_ context.Context) ([]*User, error) {
+	return nil, errors.New("not implemented")
+}
