@@ -29,11 +29,15 @@ func TestPetsRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
+			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := newUsersRepository(usersDeps)
 			fake := faker.New()
-			userPet := NewRandomUserPet(fake)
-
+			user := NewRandomUser(fake)
+			err := usersRepo.CreateUser(ctx, *user)
+			require.NoError(t, err)
+			userPet := NewRandomUserPet(fake, WithUserPetUserID(user.ID))
 			// When
-			err := repo.AddUserPet(ctx, *userPet)
+			err = repo.AddUserPet(ctx, *userPet)
 
 			// Then
 			require.NoError(t, err)
@@ -45,8 +49,13 @@ func TestPetsRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
+			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := newUsersRepository(usersDeps)
 			fake := faker.New()
-			userPet := NewRandomUserPet(fake)
+			user := NewRandomUser(fake)
+			err := usersRepo.CreateUser(ctx, *user)
+			require.NoError(t, err)
+			userPet := NewRandomUserPet(fake, WithUserPetUserID(user.ID))
 
 			// When - Add same pet twice
 			err1 := repo.AddUserPet(ctx, *userPet)
@@ -65,9 +74,14 @@ func TestPetsRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
+			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := newUsersRepository(usersDeps)
 			fake := faker.New()
-			userPet := NewRandomUserPet(fake)
-			err := repo.AddUserPet(ctx, *userPet)
+			user := NewRandomUser(fake)
+			err := usersRepo.CreateUser(ctx, *user)
+			require.NoError(t, err)
+			userPet := NewRandomUserPet(fake, WithUserPetUserID(user.ID))
+			err = repo.AddUserPet(ctx, *userPet)
 			require.NoError(t, err)
 
 			// Verify relationship exists
@@ -116,10 +130,17 @@ func TestPetsRepository(t *testing.T) {
 			userID := fake.RandomStringWithLength(10)
 
 			// Create multiple pets for the user
+			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := newUsersRepository(usersDeps)
+			user := NewRandomUser(fake)
+			user.ID = userID
+			err := usersRepo.CreateUser(ctx, *user)
+			require.NoError(t, err)
+
 			petIDs := []int64{123, 456, 789}
 			for _, petID := range petIDs {
 				userPet := NewRandomUserPet(fake, WithUserPetUserID(userID), WithUserPetPetID(petID))
-				err := repo.AddUserPet(ctx, *userPet)
+				err = repo.AddUserPet(ctx, *userPet)
 				require.NoError(t, err)
 			}
 
@@ -177,9 +198,14 @@ func TestPetsRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
+			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := newUsersRepository(usersDeps)
 			fake := faker.New()
-			userPet := NewRandomUserPet(fake)
-			err := repo.AddUserPet(ctx, *userPet)
+			user := NewRandomUser(fake)
+			err := usersRepo.CreateUser(ctx, *user)
+			require.NoError(t, err)
+			userPet := NewRandomUserPet(fake, WithUserPetUserID(user.ID))
+			err = repo.AddUserPet(ctx, *userPet)
 			require.NoError(t, err)
 
 			// When
@@ -227,6 +253,50 @@ func TestPetsRepository(t *testing.T) {
 			// Then
 			require.Error(t, err)
 			require.False(t, exists)
+		})
+	})
+
+	t.Run("CascadeDelete", func(t *testing.T) {
+		t.Run("should delete all pet relationships when user is deleted", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			petsRepo := newPetsRepository(deps)
+			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := newUsersRepository(usersDeps)
+			fake := faker.New()
+			mockNow := MockNowValue(deps.Time)
+
+			// Create a user
+			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
+			err := usersRepo.CreateUser(ctx, *user)
+			require.NoError(t, err)
+
+			// Add multiple pets to the user
+			petIDs := []int64{123, 456, 789}
+			for _, petID := range petIDs {
+				userPet := NewRandomUserPet(fake, WithUserPetUserID(user.ID), WithUserPetPetID(petID))
+				err = petsRepo.AddUserPet(ctx, *userPet)
+				require.NoError(t, err)
+			}
+
+			// Verify relationships exist
+			petIDsBefore, err := petsRepo.GetUserPetIDs(ctx, user.ID)
+			require.NoError(t, err)
+			require.Len(t, petIDsBefore, 3)
+			require.Equal(t, petIDs, petIDsBefore)
+
+			// When - Delete the user
+			err = usersRepo.DeleteUser(ctx, user.ID)
+
+			// Then - User deletion should succeed
+			require.NoError(t, err)
+
+			// Verify all pet relationships are deleted (CASCADE delete)
+			petIDsAfter, err := petsRepo.GetUserPetIDs(ctx, user.ID)
+			require.NoError(t, err)
+			require.Empty(t, petIDsAfter)
 		})
 	})
 }
