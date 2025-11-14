@@ -76,36 +76,127 @@ func TestPetsRepository(t *testing.T) {
 	})
 
 	t.Run("GetUserPetIDs", func(t *testing.T) {
-		t.Run("should return not implemented error", func(t *testing.T) {
+		t.Run("should return all pet IDs for user in consistent order", func(t *testing.T) {
 			ctx := t.Context()
 
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
+			fake := faker.New()
+			userID := fake.RandomStringWithLength(10)
+
+			// Create multiple pets for the user
+			petIDs := []int64{123, 456, 789}
+			for _, petID := range petIDs {
+				userPet := NewRandomUserPet(fake, WithUserPetUserID(userID), WithUserPetPetID(petID))
+				err := repo.AddUserPet(ctx, *userPet)
+				require.NoError(t, err)
+			}
 
 			// When
-			_, err := repo.GetUserPetIDs(ctx, "user-id")
+			result, err := repo.GetUserPetIDs(ctx, userID)
+
+			// Then
+			require.NoError(t, err)
+			require.Len(t, result, 3)
+			require.Equal(t, petIDs, result) // Should be in order added
+		})
+
+		t.Run("should return empty slice when user has no pets", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newPetsRepository(deps)
+			fake := faker.New()
+			userID := fake.RandomStringWithLength(10)
+
+			// When
+			result, err := repo.GetUserPetIDs(ctx, userID)
+
+			// Then
+			require.NoError(t, err)
+			require.Empty(t, result)
+		})
+
+		t.Run("should return error when database query fails", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newPetsRepository(deps)
+			fake := faker.New()
+			userID := fake.RandomStringWithLength(10)
+
+			// Close the database to simulate query failure
+			deps.DB.instance.Close()
+
+			// When
+			result, err := repo.GetUserPetIDs(ctx, userID)
 
 			// Then
 			require.Error(t, err)
-			require.Contains(t, err.Error(), "not implemented")
+			require.Nil(t, result)
 		})
 	})
 
 	t.Run("HasUserPet", func(t *testing.T) {
-		t.Run("should return not implemented error", func(t *testing.T) {
+		t.Run("should return true when relationship exists", func(t *testing.T) {
 			ctx := t.Context()
 
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
+			fake := faker.New()
+			userPet := NewRandomUserPet(fake)
+			err := repo.AddUserPet(ctx, *userPet)
+			require.NoError(t, err)
 
 			// When
-			_, err := repo.HasUserPet(ctx, "user-id", 123)
+			exists, err := repo.HasUserPet(ctx, userPet.UserID, userPet.PetID)
+
+			// Then
+			require.NoError(t, err)
+			require.True(t, exists)
+		})
+
+		t.Run("should return false when relationship doesn't exist", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newPetsRepository(deps)
+			fake := faker.New()
+			userID := fake.RandomStringWithLength(10)
+			petID := fake.Int64Between(1, 10000)
+
+			// When
+			exists, err := repo.HasUserPet(ctx, userID, petID)
+
+			// Then
+			require.NoError(t, err)
+			require.False(t, exists)
+		})
+
+		t.Run("should return error when database query fails", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newPetsRepository(deps)
+			fake := faker.New()
+			userID := fake.RandomStringWithLength(10)
+			petID := fake.Int64Between(1, 10000)
+
+			// Close the database to simulate query failure
+			deps.DB.instance.Close()
+
+			// When
+			exists, err := repo.HasUserPet(ctx, userID, petID)
 
 			// Then
 			require.Error(t, err)
-			require.Contains(t, err.Error(), "not implemented")
+			require.False(t, exists)
 		})
 	})
 }

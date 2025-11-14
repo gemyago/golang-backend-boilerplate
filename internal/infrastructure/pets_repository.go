@@ -42,10 +42,43 @@ func (r *sqlitePetsRepository) RemoveUserPet(_ context.Context, _ string, _ int6
 	return errors.New("not implemented")
 }
 
-func (r *sqlitePetsRepository) GetUserPetIDs(_ context.Context, _ string) ([]int64, error) {
-	return nil, errors.New("not implemented")
+func (r *sqlitePetsRepository) GetUserPetIDs(ctx context.Context, userID string) ([]int64, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT pet_id FROM user_pets
+		WHERE user_id = ?
+		ORDER BY created_at
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var petIDs []int64
+	for rows.Next() {
+		var petID int64
+		if scanErr := rows.Scan(&petID); scanErr != nil {
+			return nil, scanErr
+		}
+		petIDs = append(petIDs, petID)
+	}
+
+	if rowsErr := rows.Err(); rowsErr != nil {
+		return nil, rowsErr
+	}
+
+	return petIDs, nil
 }
 
-func (r *sqlitePetsRepository) HasUserPet(_ context.Context, _ string, _ int64) (bool, error) {
-	return false, errors.New("not implemented")
+func (r *sqlitePetsRepository) HasUserPet(ctx context.Context, userID string, petID int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM user_pets
+			WHERE user_id = ? AND pet_id = ?
+		)
+	`, userID, petID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }
