@@ -1,6 +1,6 @@
 # Instruction to finalize task
 
-Your job is to verify if codebase is in compilable state and commit all changes if so.
+Your job is to **verify** if codebase is in compilable state and commit all changes if so. You should **NOT** be updating any files or do any other modifications.
 
 Use **exactly** the below steps:
 - Run checks: `make lint` and `make test`
