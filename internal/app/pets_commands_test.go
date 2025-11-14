@@ -2,21 +2,25 @@ package app
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"testing"
 
 	"github.com/jaswdr/faker"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
 )
 
 func TestPetsCommands(t *testing.T) {
 	fake := faker.New()
-	makeMockDeps := func(_ *testing.T) PetsCommandsDeps {
+	makeMockDeps := func(t *testing.T) PetsCommandsDeps {
 		return PetsCommandsDeps{
-			PetsRepo:       nil, // TODO: Add mock when available
-			UsersRepo:      nil, // TODO: Add mock when available
-			PetstoreClient: nil, // TODO: Add mock when available
+			PetsRepo:       NewMockPetsRepository(t),
+			UsersRepo:      NewMockUsersRepository(t),
+			PetstoreClient: NewMockPetstoreClient(t),
 			RootLogger:     diag.RootTestLogger(),
 		}
 	}
@@ -35,24 +39,127 @@ func TestPetsCommands(t *testing.T) {
 	})
 
 	t.Run("AddPet", func(t *testing.T) {
-		t.Run("should return not implemented error", func(t *testing.T) {
+		t.Run("should create pet and add relationship", func(t *testing.T) {
+			// Given
+			deps := makeMockDeps(t)
+			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
+			mockPetstoreClient := deps.PetstoreClient.(*MockPetstoreClient)
+			mockPetsRepo := deps.PetsRepo.(*MockPetsRepository)
+			commands := NewPetsCommands(deps)
+			ctx := context.Background()
+			req := NewRandomAddPetRequest(fake)
+
+			user := &User{ID: req.UserID}
+			petID := int64(123)
+			pet := &petstore.Pet{
+				ID:        petID,
+				Name:      req.Name,
+				Status:    petstore.PetStatus(req.Status),
+				PhotoUrls: req.PhotoUrls,
+			}
+
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, req.UserID).Return(user, nil)
+			mockPetstoreClient.EXPECT().AddPet(mock.Anything, mock.MatchedBy(func(params petstore.AddPetParams) bool {
+				if params.Request == nil {
+					return false
+				}
+				return params.Request.Name == req.Name &&
+					string(params.Request.Status) == req.Status &&
+					len(params.Request.PhotoUrls) == len(req.PhotoUrls)
+			})).Return(pet, nil)
+			mockPetsRepo.EXPECT().AddUserPet(mock.Anything, mock.MatchedBy(func(up UserPet) bool {
+				return up.UserID == req.UserID &&
+					up.PetID == petID &&
+					!up.CreatedAt.IsZero()
+			})).Return(nil)
+
+			// When
+			resp, err := commands.AddPet(ctx, *req)
+
+			// Then
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+			require.Equal(t, petID, resp.PetID)
+		})
+
+		t.Run("should return ErrInvalidInput for empty name", func(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			commands := NewPetsCommands(deps)
 			ctx := context.Background()
-			req := AddPetRequest{
-				UserID:    fake.UUID().V4(),
-				Name:      fake.Person().Name(),
-				Status:    "available",
-				PhotoUrls: []string{fake.Internet().URL()},
-			}
+			req := NewRandomAddPetRequest(fake)
+			req.Name = ""
 
 			// When
-			resp, err := commands.AddPet(ctx, req)
+			resp, err := commands.AddPet(ctx, *req)
 
 			// Then
 			require.Error(t, err)
-			require.Equal(t, "not implemented", err.Error())
+			require.Equal(t, ErrInvalidInput, err)
+			require.Nil(t, resp)
+		})
+
+		t.Run("should return ErrUserNotFound when user doesn't exist", func(t *testing.T) {
+			// Given
+			deps := makeMockDeps(t)
+			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
+			commands := NewPetsCommands(deps)
+			ctx := context.Background()
+			req := NewRandomAddPetRequest(fake)
+
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, req.UserID).Return((*User)(nil), sql.ErrNoRows)
+
+			// When
+			resp, err := commands.AddPet(ctx, *req)
+
+			// Then
+			require.Error(t, err)
+			require.Equal(t, ErrUserNotFound, err)
+			require.Nil(t, resp)
+		})
+
+		t.Run("should return ErrPetCreationFailed when petstore creation fails", func(t *testing.T) {
+			// Given
+			deps := makeMockDeps(t)
+			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
+			mockPetstoreClient := deps.PetstoreClient.(*MockPetstoreClient)
+			commands := NewPetsCommands(deps)
+			ctx := context.Background()
+			req := NewRandomAddPetRequest(fake)
+
+			user := &User{ID: req.UserID}
+			mockErr := errors.New("petstore boom")
+
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, req.UserID).Return(user, nil)
+			mockPetstoreClient.EXPECT().AddPet(mock.Anything, mock.Anything).Return((*petstore.Pet)(nil), mockErr)
+
+			// When
+			resp, err := commands.AddPet(ctx, *req)
+
+			// Then
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrPetCreationFailed)
+			require.Nil(t, resp)
+		})
+
+		t.Run("should propagate unexpected user repo error", func(t *testing.T) {
+			// Given
+			deps := makeMockDeps(t)
+			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
+			commands := NewPetsCommands(deps)
+			ctx := context.Background()
+			req := NewRandomAddPetRequest(fake)
+
+			mockErr := errors.New("unexpected db error")
+
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, req.UserID).Return((*User)(nil), mockErr)
+
+			// When
+			resp, err := commands.AddPet(ctx, *req)
+
+			// Then
+			require.Error(t, err)
+			require.ErrorIs(t, err, mockErr)
 			require.Nil(t, resp)
 		})
 	})

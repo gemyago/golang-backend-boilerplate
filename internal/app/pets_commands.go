@@ -2,9 +2,13 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
+	"time"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
 	"go.uber.org/dig"
 )
 
@@ -55,9 +59,41 @@ func NewPetsCommands(deps PetsCommandsDeps) *PetsCommands {
 	}
 }
 
-func (c *PetsCommands) AddPet(_ context.Context, _ AddPetRequest) (*AddPetResponse, error) {
-	// TODO: Implement AddPet command
-	return nil, errors.New("not implemented")
+func (c *PetsCommands) AddPet(ctx context.Context, req AddPetRequest) (*AddPetResponse, error) {
+	if req.Name == "" {
+		return nil, ErrInvalidInput
+	}
+
+	_, getUserErr := c.usersRepo.GetUserByID(ctx, req.UserID)
+	if getUserErr != nil {
+		if errors.Is(getUserErr, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to get user: %w", getUserErr)
+	}
+
+	petReq := &petstore.Pet{
+		Name:      req.Name,
+		Status:    petstore.PetStatus(req.Status),
+		PhotoUrls: req.PhotoUrls,
+	}
+
+	pet, addPetErr := c.petstoreClient.AddPet(ctx, petstore.AddPetParams{Request: petReq})
+	if addPetErr != nil {
+		return nil, fmt.Errorf("%w: %w", ErrPetCreationFailed, addPetErr)
+	}
+
+	userPet := UserPet{
+		UserID:    req.UserID,
+		PetID:     pet.ID,
+		CreatedAt: time.Now(),
+	}
+
+	if addUserPetErr := c.petsRepo.AddUserPet(ctx, userPet); addUserPetErr != nil {
+		return nil, fmt.Errorf("failed to add user pet relationship: %w", addUserPetErr)
+	}
+
+	return &AddPetResponse{PetID: pet.ID}, nil
 }
 
 func (c *PetsCommands) RemovePet(_ context.Context, _ string, _ int64) error {

@@ -18,3 +18,13 @@ packages:
           dir: internal/app
           structname: MockUsersRepository
           pkgname: app
+      PetsRepository:
+        config:
+          dir: internal/app
+          structname: MockPetsRepository
+          pkgname: app
+      PetstoreClient:
+        config:
+          dir: internal/app
+          structname: MockPetstoreClient
+          pkgname: app
