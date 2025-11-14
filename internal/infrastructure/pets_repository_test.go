@@ -3,7 +3,7 @@ package services
 import (
 	"testing"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/app"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,19 +23,38 @@ func TestPetsRepository(t *testing.T) {
 	}
 
 	t.Run("AddUserPet", func(t *testing.T) {
-		t.Run("should return not implemented error", func(t *testing.T) {
+		t.Run("should create relationship successfully", func(t *testing.T) {
 			ctx := t.Context()
 
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
+			fake := faker.New()
+			userPet := NewRandomUserPet(fake)
 
 			// When
-			err := repo.AddUserPet(ctx, app.UserPet{})
+			err := repo.AddUserPet(ctx, *userPet)
 
 			// Then
-			require.Error(t, err)
-			require.Contains(t, err.Error(), "not implemented")
+			require.NoError(t, err)
+		})
+
+		t.Run("should be idempotent when adding same pet twice", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newPetsRepository(deps)
+			fake := faker.New()
+			userPet := NewRandomUserPet(fake)
+
+			// When - Add same pet twice
+			err1 := repo.AddUserPet(ctx, *userPet)
+			err2 := repo.AddUserPet(ctx, *userPet)
+
+			// Then
+			require.NoError(t, err1)
+			require.NoError(t, err2)
 		})
 	})
 
