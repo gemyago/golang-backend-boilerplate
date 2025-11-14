@@ -30,11 +30,6 @@ type UpdateUserRequest struct {
 }
 
 // Domain errors.
-var (
-	ErrUserNotFound      = errors.New("user not found")
-	ErrUserEmailConflict = errors.New("user with this email already exists")
-	ErrInvalidInput      = errors.New("invalid input")
-)
 
 // UserCommands is a concrete struct (not an interface).
 // Controllers use this directly.

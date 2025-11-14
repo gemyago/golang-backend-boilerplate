@@ -2,7 +2,14 @@ package app
 
 import (
 	"context"
+	"errors"
 	"time"
+)
+
+var (
+	ErrUserNotFound      = errors.New("user not found")
+	ErrUserEmailConflict = errors.New("user with this email already exists")
+	ErrInvalidInput      = errors.New("invalid input")
 )
 
 // User represents a user entity with all attributes needed for persistence and business logic.

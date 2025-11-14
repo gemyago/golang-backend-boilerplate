@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 
@@ -32,13 +33,21 @@ func NewUserQueries(deps UserQueriesDeps) *UserQueries {
 	}
 }
 
-func (q *UserQueries) GetUserByID(_ context.Context, _ string) (*User, error) {
-	// Fetch from repository.
-	// Return user (without timestamps for API response).
-	return nil, errors.New("not implemented")
+func (q *UserQueries) GetUserByID(ctx context.Context, userID string) (*User, error) {
+	user, err := q.usersRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return user, nil
 }
 
-func (q *UserQueries) ListUsers(_ context.Context) ([]*User, error) {
-	// Fetch all from repository.
-	return nil, errors.New("not implemented")
+func (q *UserQueries) ListUsers(ctx context.Context) ([]*User, error) {
+	users, err := q.usersRepo.ListUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
