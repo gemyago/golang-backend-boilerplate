@@ -12,8 +12,7 @@ Please review project level [AGENTS.md](../AGENTS.md). This file complements it 
 
 The application applies hexagonal architecture principles with layers mapped as follows:
 - Application layer: `internal/app` (business logic)
-- Incoming adapters (APIs): `internal/api` (HTTP, MCP)
-  - HTTP layer: spec `internal/api/http/v1routes.yaml`; generated routes/controllers under `internal/api/http/v1routes/*`
+- Incoming adapters (APIs): `internal/api` (HTTP, MCP, ...)
 - Outgoing adapters: `internal/infrastructure` (DB, external APIs e.t.c)
 
 Additional notes:
@@ -31,6 +30,10 @@ Application layer defines data types and behavior of the entire application. Ext
 The Application layer is structured to follow CQRS principles:
 - Data mutations are handled by Commands
 - Data read operations are handled by Queries
+
+Example components:
+- Users commands: [internal/app/users_commands.go](./app/users_commands.go)
+- Users commands tests: [internal/app/users_commands_test.go](./app/users_commands_test.go)
 
 ## Incoming adapters (API Layer)
 
