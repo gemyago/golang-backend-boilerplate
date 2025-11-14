@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
 
@@ -12,7 +13,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type mockPetsRepository struct{}
+type mockPetsRepository struct {
+	GetUserPetIDsFn func(context.Context, string) ([]int64, error)
+	// Add other Fns if needed, but for now, only GetUserPetIDs is used in queries
+}
+
+func (m *mockPetsRepository) GetUserPetIDs(ctx context.Context, userID string) ([]int64, error) {
+	if m.GetUserPetIDsFn != nil {
+		return m.GetUserPetIDsFn(ctx, userID)
+	}
+	return nil, errors.New("not implemented")
+}
 
 func (m *mockPetsRepository) AddUserPet(_ context.Context, _ UserPet) error {
 	return errors.New("not implemented")
@@ -20,10 +31,6 @@ func (m *mockPetsRepository) AddUserPet(_ context.Context, _ UserPet) error {
 
 func (m *mockPetsRepository) RemoveUserPet(_ context.Context, _ string, _ int64) error {
 	return errors.New("not implemented")
-}
-
-func (m *mockPetsRepository) GetUserPetIDs(_ context.Context, _ string) ([]int64, error) {
-	return nil, errors.New("not implemented")
 }
 
 func (m *mockPetsRepository) HasUserPet(_ context.Context, _ string, _ int64) (bool, error) {
@@ -95,12 +102,199 @@ func TestPetsQueries(t *testing.T) {
 	t.Run("ListUserPets", func(t *testing.T) {
 		t.Parallel()
 
-		deps := makeMockPetsQueriesDeps()
-		queries := NewPetsQueries(deps)
+		t.Run("should return list of pets from petstore for existing user", func(t *testing.T) {
+			// Given
+			deps := makeMockPetsQueriesDeps()
+			mockUsersRepo := deps.UsersRepo.(*mockUsersRepository)
+			mockPetsRepo := deps.PetsRepo.(*mockPetsRepository)
+			mockPetstoreClient := deps.PetstoreClient.(*mockPetstoreClient)
+			queries := NewPetsQueries(deps)
 
-		_, err := queries.ListUserPets(context.Background(), "123")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "not implemented")
+			ctx := context.Background()
+			userID := "user-123"
+			petID1 := int64(1)
+			petID2 := int64(2)
+
+			user := &User{ID: userID}
+			mockUsersRepo.getUserByIDFn = func(_ context.Context, _ string) (*User, error) {
+				return user, nil
+			}
+
+			mockPetsRepo.GetUserPetIDsFn = func(_ context.Context, id string) ([]int64, error) { // Assuming we add this Fn
+				require.Equal(t, userID, id)
+				return []int64{petID1, petID2}, nil
+			}
+
+			pet1 := &petstore.Pet{ID: petID1, Name: "Pet 1"}
+			pet2 := &petstore.Pet{ID: petID2, Name: "Pet 2"}
+
+			mockPetstoreClient.getPetByIDFn = func(_ context.Context, params petstore.GetPetByIDParams) (*petstore.Pet, error) {
+				petIDStr := params.PetID
+				switch petIDStr {
+				case "1":
+					return pet1, nil
+				case "2":
+					return pet2, nil
+				default:
+					return nil, errors.New("unexpected pet ID")
+				}
+			}
+
+			// When
+			pets, err := queries.ListUserPets(ctx, userID)
+
+			// Then
+			require.NoError(t, err)
+			require.Len(t, pets, 2)
+			require.Equal(t, pet1, pets[0])
+			require.Equal(t, pet2, pets[1])
+		})
+
+		t.Run("should return ErrUserNotFound for non-existent user", func(t *testing.T) {
+			// Given
+			deps := makeMockPetsQueriesDeps()
+			mockUsersRepo := deps.UsersRepo.(*mockUsersRepository)
+			queries := NewPetsQueries(deps)
+
+			ctx := context.Background()
+			userID := "non-existent"
+
+			mockUsersRepo.getUserByIDFn = func(_ context.Context, _ string) (*User, error) {
+				return nil, sql.ErrNoRows
+			}
+
+			// When
+			pets, err := queries.ListUserPets(ctx, userID)
+
+			// Then
+			require.ErrorIs(t, err, ErrUserNotFound)
+			require.Nil(t, pets)
+		})
+
+		t.Run("should return empty slice when user has no pets", func(t *testing.T) {
+			// Given
+			deps := makeMockPetsQueriesDeps()
+			mockUsersRepo := deps.UsersRepo.(*mockUsersRepository)
+			mockPetsRepo := deps.PetsRepo.(*mockPetsRepository)
+			queries := NewPetsQueries(deps)
+
+			ctx := context.Background()
+			userID := "user-no-pets"
+
+			user := &User{ID: userID}
+			mockUsersRepo.getUserByIDFn = func(_ context.Context, _ string) (*User, error) {
+				return user, nil
+			}
+
+			mockPetsRepo.GetUserPetIDsFn = func(_ context.Context, id string) ([]int64, error) {
+				require.Equal(t, userID, id)
+				return []int64{}, nil
+			}
+
+			// When
+			pets, err := queries.ListUserPets(ctx, userID)
+
+			// Then
+			require.NoError(t, err)
+			require.Empty(t, pets)
+		})
+
+		t.Run("should skip missing pets in petstore and log warning", func(t *testing.T) {
+			// Given
+			deps := makeMockPetsQueriesDeps()
+			mockUsersRepo := deps.UsersRepo.(*mockUsersRepository)
+			mockPetsRepo := deps.PetsRepo.(*mockPetsRepository)
+			mockPetstoreClient := deps.PetstoreClient.(*mockPetstoreClient)
+			queries := NewPetsQueries(deps)
+
+			ctx := context.Background()
+			userID := "user-missing-pets"
+			petID1 := int64(1)
+			petID2 := int64(999) // Missing
+
+			user := &User{ID: userID}
+			mockUsersRepo.getUserByIDFn = func(_ context.Context, _ string) (*User, error) {
+				return user, nil
+			}
+
+			mockPetsRepo.GetUserPetIDsFn = func(_ context.Context, id string) ([]int64, error) {
+				require.Equal(t, userID, id)
+				return []int64{petID1, petID2}, nil
+			}
+
+			pet1 := &petstore.Pet{ID: petID1, Name: "Pet 1"}
+
+			mockPetstoreClient.getPetByIDFn = func(_ context.Context, params petstore.GetPetByIDParams) (*petstore.Pet, error) {
+				petIDStr := params.PetID
+				switch petIDStr {
+				case "1":
+					return pet1, nil
+				case "999":
+					return nil, errors.New("pet not found") // Simulate missing pet
+				default:
+					return nil, errors.New("unexpected")
+				}
+			}
+
+			// When
+			pets, err := queries.ListUserPets(ctx, userID)
+
+			// Then
+			require.NoError(t, err)
+			require.Len(t, pets, 1)
+			require.Equal(t, pet1, pets[0])
+			// Note: Logging is not asserted here; in production, it would log warning for missing pet 999
+		})
+
+		t.Run("should propagate unexpected error from users repository", func(t *testing.T) {
+			// Given
+			deps := makeMockPetsQueriesDeps()
+			mockUsersRepo := deps.UsersRepo.(*mockUsersRepository)
+			queries := NewPetsQueries(deps)
+
+			ctx := context.Background()
+			userID := "user-unexpected-error"
+
+			mockErr := errors.New("unexpected db error")
+			mockUsersRepo.getUserByIDFn = func(_ context.Context, _ string) (*User, error) {
+				return nil, mockErr
+			}
+
+			// When
+			pets, err := queries.ListUserPets(ctx, userID)
+
+			// Then
+			require.ErrorIs(t, err, mockErr)
+			require.Nil(t, pets)
+		})
+
+		t.Run("should propagate error from pets repository", func(t *testing.T) {
+			// Given
+			deps := makeMockPetsQueriesDeps()
+			mockUsersRepo := deps.UsersRepo.(*mockUsersRepository)
+			mockPetsRepo := deps.PetsRepo.(*mockPetsRepository)
+			queries := NewPetsQueries(deps)
+
+			ctx := context.Background()
+			userID := "user-pets-error"
+
+			user := &User{ID: userID}
+			mockUsersRepo.getUserByIDFn = func(_ context.Context, _ string) (*User, error) {
+				return user, nil
+			}
+
+			mockErr := errors.New("pets repo error")
+			mockPetsRepo.GetUserPetIDsFn = func(_ context.Context, _ string) ([]int64, error) {
+				return nil, mockErr
+			}
+
+			// When
+			pets, err := queries.ListUserPets(ctx, userID)
+
+			// Then
+			require.ErrorIs(t, err, mockErr)
+			require.Nil(t, pets)
+		})
 	})
 }
 

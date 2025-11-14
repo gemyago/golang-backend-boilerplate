@@ -2,8 +2,11 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
+	"strconv"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
 	"go.uber.org/dig"
@@ -39,6 +42,39 @@ func NewPetsQueries(deps PetsQueriesDeps) *PetsQueries {
 	}
 }
 
-func (q *PetsQueries) ListUserPets(_ context.Context, _ string) ([]*petstore.Pet, error) {
-	return nil, errors.New("not implemented")
+func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petstore.Pet, error) {
+	// Verify user exists
+	_, err := q.usersRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// Get pet IDs for the user
+	petIDs, err := q.petsRepo.GetUserPetIDs(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user pet IDs: %w", err)
+	}
+
+	// Fetch pet details from Petstore for each ID
+	var pets []*petstore.Pet
+	for _, petID := range petIDs {
+		pet, petErr := q.petstoreClient.GetPetByID(ctx, petstore.GetPetByIDParams{
+			PetID: strconv.FormatInt(petID, 10),
+		})
+		if petErr != nil {
+			// Log warning and skip missing pet
+			q.logger.WarnContext(ctx,
+				"failed to fetch pet details from petstore",
+				slog.Int64("pet_id", petID),
+				slog.String("error", petErr.Error()),
+			)
+			continue
+		}
+		pets = append(pets, pet)
+	}
+
+	return pets, nil
 }
