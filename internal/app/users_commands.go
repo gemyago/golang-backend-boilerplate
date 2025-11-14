@@ -2,9 +2,14 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
+	"regexp"
+	"strings"
+	"time"
 
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/dig"
 )
 
@@ -54,13 +59,45 @@ func NewUserCommands(deps UserCommandsDeps) *UserCommands {
 	}
 }
 
-func (c *UserCommands) CreateUser(_ context.Context, _ CreateUserRequest) (*CreateUserResponse, error) {
-	// Validate input
+func (c *UserCommands) CreateUser(ctx context.Context, req CreateUserRequest) (*CreateUserResponse, error) {
+	// Normalize input
+	req.Name = strings.TrimSpace(req.Name)
+	req.Email = strings.TrimSpace(req.Email)
+
+	// Basic validation
+	if req.Name == "" || req.Email == "" {
+		return nil, ErrInvalidInput
+	}
+	emailRe := regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+	if !emailRe.MatchString(req.Email) {
+		return nil, ErrInvalidInput
+	}
+
 	// Check email uniqueness
-	// Generate UUID
-	// Create user in repository
-	// Return user ID
-	return nil, errors.New("not implemented")
+	existing, err := c.usersRepo.GetUserByEmail(ctx, req.Email)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		// unexpected repository error
+		return nil, err
+	}
+	if existing != nil {
+		return nil, ErrUserEmailConflict
+	}
+
+	// Generate UUID and create user
+	id := uuid.Must(uuid.NewV4()).String()
+	now := time.Now().UTC()
+	user := User{
+		ID:        id,
+		Name:      req.Name,
+		Email:     req.Email,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	if err = c.usersRepo.CreateUser(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return &CreateUserResponse{UserID: id}, nil
 }
 
 func (c *UserCommands) UpdateUser(_ context.Context, _ UpdateUserRequest) error {
