@@ -11,3 +11,10 @@ packages:
           dir: internal/diag
           structname: MockSlogHandler
           pkgname: diag
+  github.com/gemyago/golang-backend-boilerplate/internal/app:
+    interfaces:
+      UsersRepository:
+        config:
+          dir: internal/app
+          structname: MockUsersRepository
+          pkgname: app
