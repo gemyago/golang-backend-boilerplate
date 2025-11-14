@@ -1,5 +1,39 @@
 # Plan: Users & Pets App Implementation
 
+## Plan Refinement Summary
+
+**Last Updated:** Based on actual `users_repository.go` and `register.go` implementation
+
+This plan has been refined to match the established implementation patterns in the codebase. Key refinements:
+
+### Infrastructure Layer Pattern (Unexported)
+- ✅ Repository structs: `sqliteUsersRepository`, `sqlitePetsRepository` (lowercase, unexported)
+- ✅ Repository constructors: `newUsersRepository`, `newPetsRepository` (lowercase, unexported)
+- ✅ Dependency structs: `usersRepositoryDeps`, `petsRepositoryDeps` (lowercase, unexported)
+- ✅ DI registration: `di.ProvideAs[app.UsersRepository](newUsersRepository)` wraps unexported constructor
+- ✅ Database access: `deps.DB.instance` (Database struct wraps `*sql.DB`)
+- ✅ Compile-time checks: `var _ app.UsersRepository = (*sqliteUsersRepository)(nil)`
+
+### Application Layer Pattern (Exported)
+- ✅ Service structs: `UserCommands`, `PetsQueries` (uppercase, exported)
+- ✅ Service constructors: `NewUserCommands`, `NewPetsQueries` (uppercase, exported)
+- ✅ Dependency structs: `UserCommandsDeps`, `PetsQueriesDeps` (uppercase, exported)
+- ✅ DI registration: Direct constructor (e.g., `NewUserCommands`), no `di.ProvideAs` wrapper
+- ✅ Return concrete types: `*UserCommands`, `*PetsQueries` (not interfaces)
+
+### Database Schema Pattern
+- ✅ Schema functions: `initUsersSchema`, `initUserPetsSchema` in `database.go`
+- ✅ Orchestration: Combined in `newDBProvider` using `errors.Join`
+- ✅ Idempotency: `CREATE TABLE IF NOT EXISTS`
+
+**Verification Status:**
+- `internal/infrastructure/users_repository.go` - ✅ Already updated
+- `internal/infrastructure/register.go` - ✅ Already updated with `di.ProvideAs` pattern
+
+All remaining tasks follow these established patterns.
+
+---
+
 ## 1. Introduction/Overview
 
 This plan outlines the implementation of a simple users and pets management application that demonstrates the architecture patterns of the golang-backend-boilerplate project. The application follows hexagonal architecture with CQRS principles where Commands handle data mutations and Queries handle data retrieval operations.
@@ -506,16 +540,20 @@ type sqliteUsersRepository struct {
 	time TimeProvider
 }
 
-type UsersRepositoryDeps struct {
+// Ensure sqliteUsersRepository implements app.UsersRepository.
+var _ app.UsersRepository = (*sqliteUsersRepository)(nil)
+
+type usersRepositoryDeps struct {
 	dig.In
 	
 	DB   *Database
 	Time TimeProvider
 }
 
-// NewUsersRepository returns a concrete implementation of app.UsersRepository
+// newUsersRepository returns a concrete implementation of app.UsersRepository
 // This follows "accept interface, return struct" principle
-func NewUsersRepository(deps UsersRepositoryDeps) *sqliteUsersRepository {
+// Note: constructor is unexported (lowercase) - DI registration handles interface wrapping
+func newUsersRepository(deps usersRepositoryDeps) *sqliteUsersRepository {
 	return &sqliteUsersRepository{
 		db:   deps.DB.instance,
 		time: deps.Time,
@@ -526,7 +564,7 @@ func NewUsersRepository(deps UsersRepositoryDeps) *sqliteUsersRepository {
 // Methods use app.User entity directly
 func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user app.User) error {
 	// Generate UUID if not provided
-	// Set timestamps
+	// Set timestamps using time provider
 	// INSERT into database
 	// Handle unique constraint violations
 	return nil
@@ -555,15 +593,20 @@ type sqlitePetsRepository struct {
 	time TimeProvider
 }
 
-type PetsRepositoryDeps struct {
+// Ensure sqlitePetsRepository implements app.PetsRepository.
+var _ app.PetsRepository = (*sqlitePetsRepository)(nil)
+
+type petsRepositoryDeps struct {
 	dig.In
 	
 	DB   *Database
 	Time TimeProvider
 }
 
-// NewPetsRepository returns a concrete implementation of app.PetsRepository
-func NewPetsRepository(deps PetsRepositoryDeps) *sqlitePetsRepository {
+// newPetsRepository returns a concrete implementation of app.PetsRepository
+// This follows "accept interface, return struct" principle
+// Note: constructor is unexported (lowercase) - DI registration handles interface wrapping
+func newPetsRepository(deps petsRepositoryDeps) *sqlitePetsRepository {
 	return &sqlitePetsRepository{
 		db:   deps.DB.instance,
 		time: deps.Time,
@@ -966,7 +1009,106 @@ Configuration in `internal/config/default.json`:
 - Avoids conflict with `infrastructure` being a directory name
 - Clear that these are service implementations
 
-## 6. Implementation Status
+### 5.13 Constructor Naming Pattern by Layer
+
+**Decision**: Infrastructure layer uses unexported constructors; application layer uses exported constructors.
+
+**Rationale**:
+- **Infrastructure layer (unexported)**:
+  - Structs: unexported (e.g., `sqliteUsersRepository`, `sqlitePetsRepository`)
+  - Constructors: unexported (e.g., `newUsersRepository`, `newPetsRepository`)
+  - Deps structs: unexported (e.g., `usersRepositoryDeps`, `petsRepositoryDeps`)
+  - Registration: `di.ProvideAs[app.Interface](newConstructor)` wraps to provide interface
+  - Rationale: Implementation details should not be exposed outside infrastructure package
+- **Application layer (exported)**:
+  - Structs: exported (e.g., `UserCommands`, `PetsQueries`)
+  - Constructors: exported (e.g., `NewUserCommands`, `NewPetsQueries`)
+  - Deps structs: exported (e.g., `UserCommandsDeps`, `PetsQueriesDeps`)
+  - Registration: Direct registration in DI (e.g., `NewUserCommands`)
+  - Rationale: These are primary application services, part of the public API of the app layer
+- **Compile-time checks**: `var _ app.Interface = (*implementation)(nil)` ensures interface compliance
+- **"Accept interface, return struct"**: All constructors return concrete types, consumers receive what they need via DI
+- **Pattern consistency**: Clear distinction between internal adapters (infrastructure) and public services (app)
+
+### 5.14 Database Schema Initialization Pattern
+
+**Decision**: Each repository has a dedicated schema initialization function called from `newDBProvider` using `errors.Join`.
+
+**Rationale**:
+- **Dedicated functions**: Each table/feature has its own `initXxxSchema(ctx, db)` function
+- **Central orchestration**: `newDBProvider` in `database.go` combines all schema init calls using `errors.Join`
+- **Error aggregation**: `errors.Join` collects all initialization errors into a single error
+- **Simplicity over migrations**: For this boilerplate, schema is initialized on startup (not production-ready)
+- **Pattern example**:
+  ```go
+  if err = errors.Join(
+      initUsersSchema(ctx, db),
+      initUserPetsSchema(ctx, db),
+  ); err != nil {
+      return nil, fmt.Errorf("failed to initialize schema: %w", err)
+  }
+  ```
+- **Location**: All schema functions live in `internal/infrastructure/database.go`
+- **Idempotency**: Use `CREATE TABLE IF NOT EXISTS` for safe restarts
+
+### 5.15 Quick Reference: Infrastructure vs Application Layer Patterns
+
+| Aspect | Infrastructure Layer | Application Layer |
+|--------|---------------------|-------------------|
+| **Struct Names** | `sqliteUsersRepository` (unexported) | `UserCommands` (exported) |
+| **Constructor Names** | `newUsersRepository` (unexported) | `NewUserCommands` (exported) |
+| **Deps Struct Names** | `usersRepositoryDeps` (unexported) | `UserCommandsDeps` (exported) |
+| **DI Registration** | `di.ProvideAs[app.UsersRepository](newUsersRepository)` | `NewUserCommands` (direct) |
+| **Return Type** | `*sqliteUsersRepository` (concrete) | `*UserCommands` (concrete) |
+| **DI Provides As** | `app.UsersRepository` (interface) | `*UserCommands` (concrete) |
+| **Compile Check** | `var _ app.UsersRepository = (*sqliteUsersRepository)(nil)` | Not needed |
+| **Package** | `package services` | `package app` |
+| **Location** | `internal/infrastructure/` | `internal/app/` |
+| **Purpose** | Hide implementation details | Expose application services |
+
+**Example Registration Comparison:**
+
+```go
+// Infrastructure layer (internal/infrastructure/register.go)
+di.ProvideAs[app.UsersRepository](newUsersRepository)
+// Returns *sqliteUsersRepository, provides as app.UsersRepository interface
+
+// Application layer (internal/app/register.go)
+NewUserCommands
+// Returns *UserCommands, provides as *UserCommands concrete struct
+```
+
+## 6. Implementation Notes
+
+### Pattern Refinements Based on Actual Implementation
+
+This plan has been refined to match the actual implementation patterns established in the codebase:
+
+**Infrastructure Layer Patterns:**
+- Repository structs are **unexported** (e.g., `sqliteUsersRepository`, not `SQLiteUsersRepository`)
+- Repository constructors are **unexported** (e.g., `newUsersRepository`, not `NewUsersRepository`)
+- Dependency structs are **unexported** (e.g., `usersRepositoryDeps`, not `UsersRepositoryDeps`)
+- Registration uses `di.ProvideAs[app.Interface](newConstructor)` to wrap unexported constructor and provide interface
+- Compile-time checks: `var _ app.Interface = (*implementation)(nil)` ensure interface compliance
+- Database access via `deps.DB.instance` (Database is a wrapper struct with `instance` field)
+
+**Application Layer Patterns:**
+- Service structs are **exported** (e.g., `UserCommands`, `PetsQueries`)
+- Service constructors are **exported** (e.g., `NewUserCommands`, `NewPetsQueries`)
+- Dependency structs are **exported** (e.g., `UserCommandsDeps`, `PetsQueriesDeps`)
+- Registration uses direct constructor registration (e.g., `NewUserCommands`) without `di.ProvideAs`
+- Services are concrete structs, not interfaces - consumers receive `*UserCommands` directly
+
+**Database Schema Patterns:**
+- Each table has dedicated `initXxxSchema(ctx context.Context, db *sql.DB) error` function
+- All schema init functions are combined in `newDBProvider` using `errors.Join`
+- Schema functions use `CREATE TABLE IF NOT EXISTS` for idempotency
+- All schema functions live in `internal/infrastructure/database.go`
+
+**Key Insight:**
+The distinction between exported (app layer) and unexported (infrastructure layer) constructors creates a clear boundary: infrastructure details are hidden, while application services are part of the public API.
+
+## 7. Implementation Status
 
 Based on task summaries in `doc/implementation/plan-users-pets-app/`:
 
@@ -997,7 +1139,7 @@ Based on task summaries in `doc/implementation/plan-users-pets-app/`:
 - **Phase 9**: HTTP Controllers - Pets
 - **Phase 10**: Integration & Final Verification
 
-## 7. Related Files
+## 8. Related Files
 
 ### Files to Create (New)
 
@@ -1044,11 +1186,13 @@ Based on task summaries in `doc/implementation/plan-users-pets-app/`:
 - `internal/api/http/v1routes/models/*.go` - Request/response models
 - `internal/api/http/v1routes/handlers/*.go` - Handler interfaces
 
-## 8. Task List
+## 9. Task List
 
 This implementation follows TDD approach as per [tdd-flow.md](../.context/tdd-flow.md). Each task should leave the codebase in a buildable state with all tests passing (`make test`).
 
 ### Phase 0: Refactor Existing Code to Match Architecture
+
+**Note:** `users_repository.go` and `register.go` have been updated to follow the refined pattern (unexported structs/constructors, `di.ProvideAs` registration). Verify these changes and ensure all remaining infrastructure components follow the same pattern.
 
 **Task 0.1: Define UsersRepository interface and User entity in app layer**
 - Create `internal/app/users_repository.go`
@@ -1061,13 +1205,15 @@ This implementation follows TDD approach as per [tdd-flow.md](../.context/tdd-fl
 - Write summary to `doc/implementation/plan-users-pets-app/summary-task-0.1.md`
 - Success criteria: File created, interface and entity defined, code compiles after next task
 
-**Task 0.2: Refactor users repository implementation**
+**Task 0.2: Refactor users repository implementation** ✅ COMPLETED (verify)
 - Update `internal/infrastructure/users_repository.go`:
   - Import `github.com/gemyago/golang-backend-boilerplate/internal/app`
   - Change all method signatures to use `app.User` instead of local User struct
   - Remove local User struct definition
   - Keep `sqliteUsersRepository` unexported (lowercase)
-  - Update `NewUsersRepository` to return `*sqliteUsersRepository` (concrete struct)
+  - Rename `UsersRepositoryDeps` to `usersRepositoryDeps` (unexported)
+  - Rename `NewUsersRepository` to `newUsersRepository` (unexported) and return `*sqliteUsersRepository` (concrete struct)
+  - Add compile-time interface check: `var _ app.UsersRepository = (*sqliteUsersRepository)(nil)`
 - Update `internal/infrastructure/users_repository_test.go`:
   - Import app package
   - Update all test code to use `app.User`
@@ -1079,13 +1225,14 @@ This implementation follows TDD approach as per [tdd-flow.md](../.context/tdd-fl
 - Write summary to `doc/implementation/plan-users-pets-app/summary-task-0.2.md`
 - Success criteria: As per completion protocol: `make test` passes, `make lint` passes
 
-**Task 0.3: Update DI registration for users repository**
+**Task 0.3: Update DI registration for users repository** ✅ COMPLETED (verify)
 - Update `internal/infrastructure/register.go`:
-  - Ensure `NewUsersRepository` is registered and provides `*sqliteUsersRepository`
-  - The DI container should provide it as `app.UsersRepository` interface to consumers
-- Verify schema initialization for user_pets table exists in `database.go`
-  - If not present, add `initUserPetsSchema` function
-  - Add to schema initialization in `newDBProvider`
+  - Update registration to use: `di.ProvideAs[app.UsersRepository](newUsersRepository)`
+  - This wraps the constructor to provide both the concrete type and satisfy the interface
+- Update `internal/infrastructure/database.go`:
+  - Add `initUserPetsSchema` function following pattern of `initUsersSchema`
+  - Use `CREATE TABLE IF NOT EXISTS` with FOREIGN KEY to users(id) ON DELETE CASCADE
+  - Add call to `initUserPetsSchema(ctx, db)` in the `errors.Join` block in `newDBProvider`
 - Run: `go run ./cmd/server start --env local --noop`
   - Verify no errors during startup
   - Verify logs show database initialization
@@ -1132,14 +1279,16 @@ This implementation follows TDD approach as per [tdd-flow.md](../.context/tdd-fl
 **Task 2.2: Create PetsRepository implementation structure**
 - Create `internal/infrastructure/pets_repository.go`
 - Define `sqlitePetsRepository` struct (unexported)
-- Define `PetsRepositoryDeps` struct with DB and Time dependencies
-- Add constructor `NewPetsRepository(deps PetsRepositoryDeps) *sqlitePetsRepository`
+- Add compile-time interface check: `var _ app.PetsRepository = (*sqlitePetsRepository)(nil)`
+- Define `petsRepositoryDeps` struct (unexported) with DB and Time dependencies using `dig.In`
+- Add constructor `newPetsRepository(deps petsRepositoryDeps) *sqlitePetsRepository` (unexported)
+  - Access database via `deps.DB.instance`
 - Add stub implementations for all interface methods (return `errors.New("not implemented")`)
 - Create `internal/infrastructure/pets_repository_test.go` with basic test structure
 - Add `makeMockDeps` function following existing patterns
-- Write test for schema initialization (verify user_pets table exists)
+- Note: Schema initialization is tested via database_test.go, not repository tests
 - Run affected tests: `go test -v ./internal/infrastructure/ --run TestPetsRepository`
-  - Verify schema test passes
+  - Verify code compiles (stub methods will fail when called)
 - Write summary to `doc/implementation/plan-users-pets-app/summary-task-2.2.md`
 - Success criteria: As per completion protocol: `make test` passes, `make lint` passes
 
@@ -1207,8 +1356,8 @@ This implementation follows TDD approach as per [tdd-flow.md](../.context/tdd-fl
 
 **Task 2.7: Register PetsRepository in DI**
 - Update `internal/infrastructure/register.go`:
-  - Add `NewPetsRepository` to providers
-  - Configure DI to provide `*sqlitePetsRepository` as `app.PetsRepository` interface
+  - Add registration: `di.ProvideAs[app.PetsRepository](newPetsRepository)`
+  - This wraps the unexported constructor to provide both concrete type and interface
 - Run: `go run ./cmd/server start --env local --noop`
   - Verify no errors during startup
   - Verify both repositories are initialized
@@ -1310,8 +1459,9 @@ This implementation follows TDD approach as per [tdd-flow.md](../.context/tdd-fl
 
 **Task 4.5: Register UserCommands in DI**
 - Update `internal/app/register.go`:
-  - Add `NewUserCommands` to providers
-  - DI should provide `*UserCommands` (concrete struct) to consumers
+  - Add `NewUserCommands` to providers (exported constructor, direct registration)
+  - DI will provide `*UserCommands` (concrete struct) to consumers
+  - Note: Unlike infrastructure layer, app layer uses exported constructors without `di.ProvideAs`
 - Run: `go run ./cmd/server start --env local --noop`
   - Verify no errors during startup
 - Write summary to `doc/implementation/plan-users-pets-app/summary-task-4.5.md`
@@ -1371,13 +1521,14 @@ This implementation follows TDD approach as per [tdd-flow.md](../.context/tdd-fl
 - Write summary to `doc/implementation/plan-users-pets-app/summary-task-5.3.md`
 - Success criteria: As per completion protocol: `make test` passes, `make lint` passes
 
-**Task 5.4: Register PetsCommands in DI**
+**Task 5.5: Register PetsCommands in DI**
 - Update `internal/app/register.go`:
-  - Add `NewPetsCommands` to providers
-  - DI should provide `*PetsCommands` (concrete struct) to consumers
+  - Add `NewPetsCommands` to providers (exported constructor, direct registration)
+  - DI will provide `*PetsCommands` (concrete struct) to consumers
+  - Note: Unlike infrastructure layer, app layer uses exported constructors without `di.ProvideAs`
 - Run: `go run ./cmd/server start --env local --noop`
   - Verify no errors during startup
-- Write summary to `doc/implementation/plan-users-pets-app/summary-task-5.4.md`
+- Write summary to `doc/implementation/plan-users-pets-app/summary-task-5.5.md`
 - Success criteria: As per completion protocol: `make test` passes, `make lint` passes, server starts successfully
 
 ### Phase 6: Application Layer - User Queries
@@ -1424,13 +1575,13 @@ This implementation follows TDD approach as per [tdd-flow.md](../.context/tdd-fl
 - Write summary to `doc/implementation/plan-users-pets-app/summary-task-6.3.md`
 - Success criteria: As per completion protocol: `make test` passes, `make lint` passes
 
-**Task 6.4: Register UserQueries in DI**
+**Task 6.3: Register UserQueries in DI**
 - Update `internal/app/register.go`:
-  - Add `NewUserQueries` to providers
-  - DI should provide `*UserQueries` (concrete struct) to consumers
+  - Add `NewUserQueries` to providers (exported constructor, direct registration)
+  - DI will provide `*UserQueries` (concrete struct) to consumers
 - Run: `go run ./cmd/server start --env local --noop`
   - Verify no errors during startup
-- Write summary to `doc/implementation/plan-users-pets-app/summary-task-6.4.md`
+- Write summary to `doc/implementation/plan-users-pets-app/summary-task-6.3.md`
 - Success criteria: As per completion protocol: `make test` passes, `make lint` passes, server starts successfully
 
 ### Phase 7: Application Layer - Pets Queries
@@ -1469,8 +1620,8 @@ This implementation follows TDD approach as per [tdd-flow.md](../.context/tdd-fl
 
 **Task 7.3: Register PetsQueries in DI**
 - Update `internal/app/register.go`:
-  - Add `NewPetsQueries` to providers
-  - DI should provide `*PetsQueries` (concrete struct) to consumers
+  - Add `NewPetsQueries` to providers (exported constructor, direct registration)
+  - DI will provide `*PetsQueries` (concrete struct) to consumers
 - Run: `go run ./cmd/server start --env local --noop`
   - Verify no errors during startup
 - Write summary to `doc/implementation/plan-users-pets-app/summary-task-7.3.md`
