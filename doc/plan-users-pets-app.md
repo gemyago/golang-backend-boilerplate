@@ -1575,7 +1575,7 @@ This implementation follows TDD approach as per [tdd-flow.md](../.context/tdd-fl
 - Write summary to `doc/implementation/plan-users-pets-app/summary-task-6.3.md`
 - Success criteria: As per completion protocol: `make test` passes, `make lint` passes
 
-**Task 6.3: Register UserQueries in DI**
+**Task 6.4: Register UserQueries in DI**
 - Update `internal/app/register.go`:
   - Add `NewUserQueries` to providers (exported constructor, direct registration)
   - DI will provide `*UserQueries` (concrete struct) to consumers
