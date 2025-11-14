@@ -111,37 +111,42 @@ func TestDig(t *testing.T) {
 		}
 	})
 
-	t.Run("ProvideAs", func(t *testing.T) {
+	t.Run("ProvideAsV2", func(t *testing.T) {
 		t.Run("should provide one type as another", func(t *testing.T) {
 			container := dig.New()
 			type DepA fmt.Stringer
 			type DepB fmt.Stringer
+			type Deps struct{}
 
 			var dep1Val DepA = time.Now()
 
+			factory := func(Deps) DepA { return dep1Val }
+
 			err := ProvideAll(container,
-				func() DepA { return dep1Val },
-				ProvideAs[DepA, DepB],
+				ProvideValue(Deps{}),
+				ProvideAs[DepB](factory),
 			)
 			require.NoError(t, err)
 
-			if err = container.Invoke(func(b DepB) {
+			err = container.Invoke(func(b DepB) {
 				assert.Equal(t, dep1Val, b)
-			}); !assert.NoError(t, err) {
-				return
-			}
+			})
+			assert.NoError(t, err)
 		})
 
 		t.Run("should fail if types are not compatible", func(t *testing.T) {
 			container := dig.New()
 			type DepA fmt.Stringer
 			type DepB http.Handler
+			type Deps struct{}
 
 			var dep1Val DepA = time.Now()
 
+			factory := func(Deps) DepA { return dep1Val }
+
 			err := ProvideAll(container,
-				func() DepA { return dep1Val },
-				ProvideAs[DepA, DepB],
+				ProvideValue(Deps{}),
+				ProvideAs[DepB](factory),
 			)
 			require.NoError(t, err)
 

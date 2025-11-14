@@ -6,6 +6,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/gofrs/uuid/v5"
+	"go.uber.org/dig"
 	_ "modernc.org/sqlite" // SQLite driver
 )
 
@@ -14,12 +15,17 @@ type sqliteUsersRepository struct {
 	time TimeProvider
 }
 
-type UsersRepositoryDeps struct {
+// Ensure sqliteUsersRepository implements app.UsersRepository.
+var _ app.UsersRepository = (*sqliteUsersRepository)(nil)
+
+type usersRepositoryDeps struct {
+	dig.In
+
 	DB   *Database
 	Time TimeProvider
 }
 
-func NewUsersRepository(deps UsersRepositoryDeps) *sqliteUsersRepository { //nolint:revive // returns unexported type
+func newUsersRepository(deps usersRepositoryDeps) *sqliteUsersRepository {
 	return &sqliteUsersRepository{db: deps.DB.instance, time: deps.Time}
 }
 

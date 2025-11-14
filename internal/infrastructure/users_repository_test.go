@@ -13,7 +13,7 @@ import (
 )
 
 func TestUsersRepository(t *testing.T) {
-	makeMockDeps := func(t *testing.T) UsersRepositoryDeps {
+	makeMockDeps := func(t *testing.T) usersRepositoryDeps {
 		db, err := newDBProvider(t.Context())(DatabaseConfig{
 			DSN: ":memory:",
 		})
@@ -21,7 +21,7 @@ func TestUsersRepository(t *testing.T) {
 		t.Cleanup(func() {
 			db.instance.Close()
 		})
-		return UsersRepositoryDeps{
+		return usersRepositoryDeps{
 			DB:   db,
 			Time: NewMockNow(),
 		}
@@ -35,7 +35,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 			mockNow := MockNowValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -66,7 +66,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 
 			email := fake.Internet().Email()
 			user1 := NewRandomUser(fake, WithUserEmail(email))
@@ -90,7 +90,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 
 			user := NewRandomUser(fake, WithUserID("")) // Empty ID to trigger UUID generation
 
@@ -117,7 +117,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 			mockNow := MockNowValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -156,7 +156,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 
 			user := NewRandomUser(fake)
 
@@ -173,7 +173,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 
 			user1 := NewRandomUser(fake)
 			err := repo.CreateUser(ctx, *user1)
@@ -204,7 +204,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 			mockNow := MockNowValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -234,7 +234,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			db := makeMockDeps(t)
-			repo := NewUsersRepository(db)
+			repo := newUsersRepository(db)
 
 			// When
 			err := repo.DeleteUser(ctx, "non-existent-id")
@@ -253,7 +253,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 			mockNow := MockNowValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -274,7 +274,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 
 			// When
 			retrievedUser, err := repo.GetUserByID(ctx, "non-existent-id")
@@ -294,7 +294,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 			mockNow := MockNowValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -315,7 +315,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 
 			// When
 			retrievedUser, err := repo.GetUserByEmail(ctx, "nonexistent@example.com")
@@ -335,7 +335,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 			mockNow := MockNowValue(deps.Time)
 
 			// Create multiple users
@@ -373,7 +373,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := NewUsersRepository(deps)
+			repo := newUsersRepository(deps)
 
 			// When
 			users, err := repo.ListUsers(ctx)
