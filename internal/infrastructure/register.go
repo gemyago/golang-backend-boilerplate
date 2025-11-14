@@ -18,5 +18,6 @@ func Register(rootCtx context.Context, container *dig.Container) error {
 		httpservices.NewClientFactory,
 		newDBProvider(rootCtx),
 		di.ProvideAs[app.UsersRepository](newUsersRepository),
+		di.ProvideAs[app.PetsRepository](newPetsRepository),
 	)
 }
