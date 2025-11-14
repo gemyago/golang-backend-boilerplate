@@ -47,14 +47,14 @@ The generated Plan may include the following sections when applicable:
   - expected user is written to the database
   - invalid user ID results in error
   - conflicting user email results in error
-- Run affected tests: `swift-test-timeout --filter UserServiceTests`
+- Run affected tests: `go test -v ./<package> --run <test pattern>`
   - Verify failure is expectation (e.g expected not to equal, exists e.t.c).
   - Compilation errors are **not acceptable** - missing stubs should be added, test should be retried.
 - Implement `updateUser(_ update: UserUpdate)` logic
-- Run affected tests: `swift-test-timeout --filter UserServiceTests`
+- Run affected tests: `go test -v ./<package> --run <test pattern>`
   - Verify all tests pass
-- Success criteria: `swift-test-timeout` passes
-- Implementation status: NOT STARTED (update to COMPLETED when done)
+- Write summary to `doc/implementation/plan-<plan-slug>/summary-task-x.x.md`
+- Success criteria: As per completion protocol, at least: `make test` passes, `make lint` passes, summary written
 ```
 
 Important notes:

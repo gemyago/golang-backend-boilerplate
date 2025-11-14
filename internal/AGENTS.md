@@ -6,7 +6,7 @@ Please review project level [AGENTS.md](../AGENTS.md). This file complements it 
 
 ## Architecture Overview
 
-Some key architectural decisions:
+**Key architectural decisions**:
 - All components should follow "accept interface and return struct" principle. Strong justification is required to deviate.
 - Consumer component should define interfaces for dependencies, not the provider.
 
@@ -24,7 +24,7 @@ Additional notes:
 
 Application layer defines data types and behavior of the entire application. External `infrastructure` interactions are performed via `ports` (interfaces). Important rules:
 - Application layer only can define `ports`. Infrastructure can only provide implementations that satisfy ports.
-- Data types (DTOs) should not cross layers boundary. Some exceptions are possible:
+- Data types (DTOs) should generally not cross layers boundary, however AI must be pragmatic and allow exceptions:
   - If the data type is fully identical or nearly identical - it can be defined on infrastructure layer and used on application layer.
   - Data types of incoming adapters must never cross layers boundary.
 
