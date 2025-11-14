@@ -4,6 +4,8 @@
 - Module-specific run/test guidance for `cmd/*`. For global setup/CI/workflows, see [AGENTS.md](AGENTS.md).
 - Living document: update this file in the same PR when flags, commands, or entrypoints change.
 
+Entrypoints: `cmd/server` (HTTP API), `cmd/jobs` (batch), `cmd/mcp` (MCP stdio/HTTP server)
+
 ## Run Commands
 - Server (HTTP API): `go run ./cmd/server start --env local`
   - Flags: `--noop` (dry-run), `--log-level`, `--json-logs`, `--logs-file` (see root AGENTS for common flags)

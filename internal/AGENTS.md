@@ -4,25 +4,55 @@
 
 Please review project level [AGENTS.md](../AGENTS.md). This file complements it with internal/ specific details.
 
-## HTTP Layer (OpenAPI-first)
-- Spec source of truth: [internal/api/http/v1routes.yaml](internal/api/http/v1routes.yaml)
-- Generated HTTP code: [internal/api/http/v1routes/](internal/api/http/v1routes/)
-- Canonical controller example: [internal/api/http/v1controllers/echo.go](internal/api/http/v1controllers/echo.go)
-- Server/router wiring: [internal/api/http/server/register.go](internal/api/http/server/register.go)
+## Architecture Overview
 
-## MCP Tools (dynamic context)
-- Example MCP tool controller: [internal/api/mcp/controllers/math.go](internal/api/mcp/controllers/math.go)
+Some key architectural decisions:
+- All components should follow "accept interface and return struct" principle. Strong justification is required to deviate.
+- Consumer component should define interfaces for dependencies, not the provider.
 
-## DI and Application Layer
+The application applies hexagonal architecture principles with layers mapped as follows:
+- Application layer: `internal/app` (business logic)
+- Incoming adapters (APIs): `internal/api` (HTTP, MCP)
+  - HTTP layer: spec `internal/api/http/v1routes.yaml`; generated routes/controllers under `internal/api/http/v1routes/*`
+- Outgoing adapters: `internal/infrastructure` (DB, external APIs e.t.c)
+
+Additional notes:
+- Config loader: `internal/config` (embedded JSON via viper)
 - Register services and app wiring: [internal/app/register.go](internal/app/register.go)
+
+## Application Layer
+
+Application layer defines data types and behavior of the entire application. External `infrastructure` interactions are performed via `ports` (interfaces). Important rules:
+- Application layer only can define `ports`. Infrastructure can only provide implementations that satisfy ports.
+- Data types (DTOs) should not cross layers boundary. Some exceptions are possible:
+  - If the data type is fully identical or nearly identical - it can be defined on infrastructure layer and used on application layer.
+  - Data types of incoming adapters must never cross layers boundary.
+
+The Application layer is structured to follow CQRS principles:
+- Data mutations are handled by Commands
+- Data read operations are handled by Queries
+
+## Incoming adapters (API Layer)
+
+### HTTP Layer (OpenAPI-first)
+
+- Spec source of truth: [internal/api/http/v1routes.yaml](./api/http/v1routes.yaml)
+- Generated HTTP code: [internal/api/http/v1routes/](./api/http/v1routes/)
+- Canonical controller example: [internal/api/http/v1controllers/echo.go](./api/http/v1controllers/echo.go)
+- Server/router wiring: [internal/api/http/server/register.go](./api/http/server/register.go)
+
+### MCP Tools (dynamic context)
+- Example MCP tool controller: [internal/api/mcp/controllers/math.go](./api/mcp/controllers/math.go)
+
+## Outgoing adapters (infrastructure)
+
+- Example repository
+  - [internal/infrastructure/users_repository.go](./infrastructure/users_repository.go)
+  - [internal/infrastructure/users_repository_test.go](./infrastructure/users_repository_test.go)
 
 ## Logging and Diagnostics
 - Use log/slog via DI; no globals. See [internal/diag/slog.go](internal/diag/slog.go) and [internal/diag/testing.go](internal/diag/testing.go)
 - Follow `.golangci.yml` slog rules; prefer context-aware logging.
-
-## Code Style
-- Lint: `make lint` (strict). Use `//nolint:<rule>` only with justification.
-- Formatting via goimports (included in lint set).
 
 ## Task completion protocol
 
