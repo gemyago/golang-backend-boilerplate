@@ -20,13 +20,16 @@ The implementation should follow [TDD principles](.context/tdd-flow.md).
 
 Tests should follow [doc/testing-best-practices.md](../doc/testing-best-practices.md)
 
+**Always** write a short summary of what was done to the results summary file: `doc/implementation/plan-<plan-slug>/summary-task-<task-number>.md`
+
 ## Success Criteria
 
 Successful implementation of the work means the following:
 - The logic implemented fully satisfies the task requirements.
 - New code is covered by tests as per TDD principles.
 - Both `make lint` and `make test` passes with no lint issues and all tests green after your changes.
+- The results summary file is created and includes a summary of changes
 
-On successful completion: write a short summary of what was done and final status to the file: `doc/implementation/plan-<plan-slug>/summary-task-<task-number>.md` and report back success exactly as below and nothing else:
+Report back success exactly as below and nothing else:
 
-Task XX: <task description> from <plan reference> has been successfully implemented. Results are written to `doc/implementation/plan-<plan-slug>/summary-task-<task-number>.md` file.
+Task XX: <task description> from <plan reference> has been successfully implemented. Results summary file can be found here: `doc/implementation/plan-<plan-slug>/summary-task-<task-number>.md` file.
