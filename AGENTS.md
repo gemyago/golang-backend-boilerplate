@@ -60,7 +60,7 @@ Codebase is split on multiple parts:
 
 ## Code Style & Patterns
 - Lint strictly: `make lint` (see `.golangci.yml`). Use `//nolint:<rule>` only with justification.
-- Formatting via `goimports` (included in lint set).
+- Many linting issues are auto fixable with `bin/golangci-lint run --fix`, try running it to apply fixes prior to direct updates
 
 ### Testing Style and Patterns
 

@@ -147,8 +147,21 @@ func (c *UserCommands) UpdateUser(ctx context.Context, req UpdateUserRequest) er
 	return c.usersRepo.UpdateUser(ctx, updatedUser)
 }
 
-func (c *UserCommands) DeleteUser(_ context.Context, _ string) error {
-	// Check user exists
-	// Delete user (cascade will delete relationships)
-	return errors.New("not implemented")
+func (c *UserCommands) DeleteUser(ctx context.Context, userID string) error {
+	// Verify user exists
+	_, err := c.usersRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrUserNotFound
+		}
+		return err
+	}
+
+	// Delete user; schema uses ON DELETE CASCADE for user_pets relationships
+	err = c.usersRepo.DeleteUser(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

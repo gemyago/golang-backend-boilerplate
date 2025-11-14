@@ -7,10 +7,11 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 )
 
 func TestUserCommands(t *testing.T) {
@@ -281,19 +282,131 @@ func TestUserCommands(t *testing.T) {
 	})
 
 	t.Run("DeleteUser", func(t *testing.T) {
-		t.Run("should return not implemented error", func(t *testing.T) {
+		t.Run("should delete user successfully", func(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
+			mockRepo := deps.UsersRepo.(*MockUsersRepository)
 			commands := NewUserCommands(deps)
 			ctx := context.Background()
 			userID := fake.UUID().V4()
+
+			// Expect repository will be queried for user and found
+			mockRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(&User{ID: userID}, nil)
+			// Expect repository will be asked to delete user
+			mockRepo.EXPECT().DeleteUser(mock.Anything, userID).Return(nil)
+
+			// When
+			err := commands.DeleteUser(ctx, userID)
+
+			// Then
+			require.NoError(t, err)
+		})
+
+		t.Run("should return ErrUserNotFound when user doesn't exist", func(t *testing.T) {
+			// Given
+			deps := makeMockDeps(t)
+			mockRepo := deps.UsersRepo.(*MockUsersRepository)
+			commands := NewUserCommands(deps)
+			ctx := context.Background()
+			userID := fake.UUID().V4()
+
+			// Expect repository will be queried for user and not found
+			mockRepo.EXPECT().GetUserByID(mock.Anything, userID).Return((*User)(nil), sql.ErrNoRows)
 
 			// When
 			err := commands.DeleteUser(ctx, userID)
 
 			// Then
 			require.Error(t, err)
-			require.Equal(t, errors.New("not implemented"), err)
+			require.Equal(t, ErrUserNotFound, err)
+		})
+	})
+
+	// Additional error-propagation tests to increase coverage
+	t.Run("CreateUser error flows", func(t *testing.T) {
+		t.Run("should propagate repo GetUserByEmail unexpected error", func(t *testing.T) {
+			deps := makeMockDeps(t)
+			mockRepo := deps.UsersRepo.(*MockUsersRepository)
+			commands := NewUserCommands(deps)
+			ctx := context.Background()
+			req := NewRandomCreateUserRequest(fake)
+
+			mockErr := errors.New("repo failure")
+			mockRepo.EXPECT().GetUserByEmail(mock.Anything, req.Email).Return((*User)(nil), mockErr)
+
+			resp, err := commands.CreateUser(ctx, *req)
+			require.Error(t, err)
+			require.Equal(t, mockErr, err)
+			require.Nil(t, resp)
+		})
+
+		t.Run("should propagate repo CreateUser error", func(t *testing.T) {
+			deps := makeMockDeps(t)
+			mockRepo := deps.UsersRepo.(*MockUsersRepository)
+			commands := NewUserCommands(deps)
+			ctx := context.Background()
+			req := NewRandomCreateUserRequest(fake)
+
+			mockRepo.EXPECT().GetUserByEmail(mock.Anything, req.Email).Return((*User)(nil), sql.ErrNoRows)
+			mockErr := errors.New("create failed")
+			mockRepo.EXPECT().CreateUser(mock.Anything, mock.Anything).Return(mockErr)
+
+			resp, err := commands.CreateUser(ctx, *req)
+			require.Error(t, err)
+			require.Equal(t, mockErr, err)
+			require.Nil(t, resp)
+		})
+	})
+
+	t.Run("UpdateUser error flows", func(t *testing.T) {
+		t.Run("should propagate repo GetUserByID unexpected error", func(t *testing.T) {
+			deps := makeMockDeps(t)
+			mockRepo := deps.UsersRepo.(*MockUsersRepository)
+			commands := NewUserCommands(deps)
+			ctx := context.Background()
+			req := NewRandomUpdateUserRequest(fake)
+
+			mockErr := errors.New("db fail")
+			mockRepo.EXPECT().GetUserByID(mock.Anything, req.UserID).Return((*User)(nil), mockErr)
+
+			err := commands.UpdateUser(ctx, *req)
+			require.Error(t, err)
+			require.Equal(t, mockErr, err)
+		})
+
+		t.Run("should propagate repo GetUserByEmail unexpected error", func(t *testing.T) {
+			deps := makeMockDeps(t)
+			mockRepo := deps.UsersRepo.(*MockUsersRepository)
+			commands := NewUserCommands(deps)
+			ctx := context.Background()
+			req := NewRandomUpdateUserRequest(fake)
+
+			existingUser := NewRandomUser(fake, WithUserID(req.UserID))
+			mockRepo.EXPECT().GetUserByID(mock.Anything, req.UserID).Return(existingUser, nil)
+			mockErr := errors.New("email check fail")
+			mockRepo.EXPECT().GetUserByEmail(mock.Anything, req.Email).Return((*User)(nil), mockErr)
+
+			err := commands.UpdateUser(ctx, *req)
+			require.Error(t, err)
+			require.Equal(t, mockErr, err)
+		})
+	})
+
+	t.Run("DeleteUser error flows", func(t *testing.T) {
+		t.Run("should propagate repo DeleteUser error", func(t *testing.T) {
+			deps := makeMockDeps(t)
+			mockRepo := deps.UsersRepo.(*MockUsersRepository)
+			commands := NewUserCommands(deps)
+			ctx := context.Background()
+			userID := fake.UUID().V4()
+
+			mockRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(&User{ID: userID}, nil)
+			mockErr := errors.New("delete failed")
+			mockRepo.EXPECT().DeleteUser(mock.Anything, userID).Return(mockErr)
+
+			err := commands.DeleteUser(ctx, userID)
+			require.Error(t, err)
+			require.Equal(t, mockErr, err)
 		})
 	})
 }
