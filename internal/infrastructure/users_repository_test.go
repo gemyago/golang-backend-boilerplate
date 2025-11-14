@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,7 +48,7 @@ func TestUsersRepository(t *testing.T) {
 			assert.NotEmpty(t, user.ID)
 
 			// Verify user was created in database
-			var gotUser User
+			var gotUser app.User
 			query := "SELECT id, name, email, created_at, updated_at FROM users WHERE id = ?"
 			err = deps.DB.instance.QueryRowContext(ctx, query, user.ID).Scan(
 				&gotUser.ID,
@@ -137,7 +138,7 @@ func TestUsersRepository(t *testing.T) {
 			require.NoError(t, err)
 
 			// Verify user was updated in database
-			var updatedUser User
+			var updatedUser app.User
 			query := "SELECT id, name, email, created_at, updated_at FROM users WHERE id = ?"
 			err = deps.DB.instance.QueryRowContext(ctx, query, user.ID).Scan(
 				&updatedUser.ID,
@@ -357,7 +358,7 @@ func TestUsersRepository(t *testing.T) {
 			require.Len(t, users, 3)
 
 			// Verify all users are returned (order may vary, so check by content)
-			userMap := make(map[string]*User)
+			userMap := make(map[string]*app.User)
 			for _, u := range users {
 				userMap[u.ID] = u
 			}

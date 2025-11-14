@@ -3,21 +3,13 @@ package services
 import (
 	"context"
 	"database/sql"
-	"time"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/gofrs/uuid/v5"
 	_ "modernc.org/sqlite" // SQLite driver
 )
 
-type User struct {
-	ID        string
-	Name      string
-	Email     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-type UsersRepository struct {
+type sqliteUsersRepository struct {
 	db   *sql.DB
 	time TimeProvider
 }
@@ -27,11 +19,11 @@ type UsersRepositoryDeps struct {
 	Time TimeProvider
 }
 
-func NewUsersRepository(deps UsersRepositoryDeps) *UsersRepository {
-	return &UsersRepository{db: deps.DB.instance, time: deps.Time}
+func NewUsersRepository(deps UsersRepositoryDeps) *sqliteUsersRepository { //nolint:revive // returns unexported type
+	return &sqliteUsersRepository{db: deps.DB.instance, time: deps.Time}
 }
 
-func (r *UsersRepository) ensureRowsUpdated(result sql.Result) error {
+func (r *sqliteUsersRepository) ensureRowsUpdated(result sql.Result) error {
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
@@ -42,7 +34,7 @@ func (r *UsersRepository) ensureRowsUpdated(result sql.Result) error {
 	return nil
 }
 
-func (r *UsersRepository) CreateUser(ctx context.Context, user User) error {
+func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user app.User) error {
 	// Generate UUID if not provided
 	if user.ID == "" {
 		user.ID = uuid.Must(uuid.NewV4()).String()
@@ -62,7 +54,7 @@ func (r *UsersRepository) CreateUser(ctx context.Context, user User) error {
 	return err
 }
 
-func (r *UsersRepository) UpdateUser(ctx context.Context, user User) error {
+func (r *sqliteUsersRepository) UpdateUser(ctx context.Context, user app.User) error {
 	// Update updated_at timestamp to current time
 	user.UpdatedAt = r.time.Now()
 
@@ -81,7 +73,7 @@ func (r *UsersRepository) UpdateUser(ctx context.Context, user User) error {
 	return r.ensureRowsUpdated(result)
 }
 
-func (r *UsersRepository) DeleteUser(ctx context.Context, userID string) error {
+func (r *sqliteUsersRepository) DeleteUser(ctx context.Context, userID string) error {
 	query := `
 		DELETE FROM users
 		WHERE id = ?
@@ -94,13 +86,13 @@ func (r *UsersRepository) DeleteUser(ctx context.Context, userID string) error {
 	return r.ensureRowsUpdated(result)
 }
 
-func (r *UsersRepository) GetUserByID(ctx context.Context, userID string) (*User, error) {
+func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) (*app.User, error) {
 	query := `
 		SELECT id, name, email, created_at, updated_at
 		FROM users
 		WHERE id = ?
 	`
-	user := &User{}
+	user := &app.User{}
 	err := r.db.QueryRowContext(ctx, query, userID).Scan(
 		&user.ID,
 		&user.Name,
@@ -114,13 +106,13 @@ func (r *UsersRepository) GetUserByID(ctx context.Context, userID string) (*User
 	return user, nil
 }
 
-func (r *UsersRepository) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+func (r *sqliteUsersRepository) GetUserByEmail(ctx context.Context, email string) (*app.User, error) {
 	query := `
 		SELECT id, name, email, created_at, updated_at
 		FROM users
 		WHERE email = ?
 	`
-	user := &User{}
+	user := &app.User{}
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Name,
@@ -134,7 +126,7 @@ func (r *UsersRepository) GetUserByEmail(ctx context.Context, email string) (*Us
 	return user, nil
 }
 
-func (r *UsersRepository) ListUsers(ctx context.Context) ([]*User, error) {
+func (r *sqliteUsersRepository) ListUsers(ctx context.Context) ([]*app.User, error) {
 	query := `
 		SELECT id, name, email, created_at, updated_at
 		FROM users
@@ -146,9 +138,9 @@ func (r *UsersRepository) ListUsers(ctx context.Context) ([]*User, error) {
 	}
 	defer rows.Close()
 
-	var users []*User
+	var users []*app.User
 	for rows.Next() {
-		user := &User{}
+		user := &app.User{}
 		scanErr := rows.Scan(
 			&user.ID,
 			&user.Name,
