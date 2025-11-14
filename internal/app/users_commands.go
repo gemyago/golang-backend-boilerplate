@@ -100,12 +100,51 @@ func (c *UserCommands) CreateUser(ctx context.Context, req CreateUserRequest) (*
 	return &CreateUserResponse{UserID: id}, nil
 }
 
-func (c *UserCommands) UpdateUser(_ context.Context, _ UpdateUserRequest) error {
-	// Validate input
+func (c *UserCommands) UpdateUser(ctx context.Context, req UpdateUserRequest) error {
+	// Normalize input
+	req.Name = strings.TrimSpace(req.Name)
+	req.Email = strings.TrimSpace(req.Email)
+
+	// Basic validation
+	if req.Name == "" || req.Email == "" {
+		return ErrInvalidInput
+	}
+	emailRe := regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+	if !emailRe.MatchString(req.Email) {
+		return ErrInvalidInput
+	}
+
 	// Check user exists
-	// Check email uniqueness (if changed)
-	// Update user
-	return errors.New("not implemented")
+	existing, err := c.usersRepo.GetUserByID(ctx, req.UserID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrUserNotFound
+		}
+		return err
+	}
+
+	// Check email uniqueness if email changed
+	if existing.Email != req.Email {
+		emailCheck, emailErr := c.usersRepo.GetUserByEmail(ctx, req.Email)
+		if emailErr != nil && !errors.Is(emailErr, sql.ErrNoRows) {
+			return emailErr
+		}
+		if emailCheck != nil {
+			return ErrUserEmailConflict
+		}
+	}
+
+	// Create updated user entity
+	updatedUser := User{
+		ID:        req.UserID,
+		Name:      req.Name,
+		Email:     req.Email,
+		CreatedAt: existing.CreatedAt, // Preserve original creation time
+		UpdatedAt: time.Now().UTC(),   // Update timestamp
+	}
+
+	// Update user in repository
+	return c.usersRepo.UpdateUser(ctx, updatedUser)
 }
 
 func (c *UserCommands) DeleteUser(_ context.Context, _ string) error {
