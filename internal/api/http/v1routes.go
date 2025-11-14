@@ -20,6 +20,7 @@ type V1RoutesDeps struct {
 
 	*v1controllers.HealthController
 	*v1controllers.EchoController
+	*v1controllers.UsersController
 
 	RootLogger *slog.Logger
 }
@@ -33,6 +34,7 @@ func NewRootHandler(deps V1RoutesDeps) http.Handler { // coverage-ignore // Litt
 	)
 	rootHandler.RegisterHealthRoutes(deps.HealthController)
 	rootHandler.RegisterEchoRoutes(deps.EchoController)
+	rootHandler.RegisterUsersRoutes(deps.UsersController)
 
 	return rootHandler
 }
