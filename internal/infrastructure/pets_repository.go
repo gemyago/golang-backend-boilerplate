@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"database/sql"
-	"errors"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"go.uber.org/dig"
@@ -38,8 +37,12 @@ func (r *sqlitePetsRepository) AddUserPet(ctx context.Context, userPet app.UserP
 	return err
 }
 
-func (r *sqlitePetsRepository) RemoveUserPet(_ context.Context, _ string, _ int64) error {
-	return errors.New("not implemented")
+func (r *sqlitePetsRepository) RemoveUserPet(ctx context.Context, userID string, petID int64) error {
+	_, err := r.db.ExecContext(ctx, `
+		DELETE FROM user_pets
+		WHERE user_id = ? AND pet_id = ?
+	`, userID, petID)
+	return err
 }
 
 func (r *sqlitePetsRepository) GetUserPetIDs(ctx context.Context, userID string) ([]int64, error) {

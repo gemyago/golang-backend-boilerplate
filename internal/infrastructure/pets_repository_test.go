@@ -59,19 +59,49 @@ func TestPetsRepository(t *testing.T) {
 	})
 
 	t.Run("RemoveUserPet", func(t *testing.T) {
-		t.Run("should return not implemented error", func(t *testing.T) {
+		t.Run("should remove relationship successfully", func(t *testing.T) {
 			ctx := t.Context()
 
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
+			fake := faker.New()
+			userPet := NewRandomUserPet(fake)
+			err := repo.AddUserPet(ctx, *userPet)
+			require.NoError(t, err)
+
+			// Verify relationship exists
+			petIDsBefore, err := repo.GetUserPetIDs(ctx, userPet.UserID)
+			require.NoError(t, err)
+			require.Contains(t, petIDsBefore, userPet.PetID)
 
 			// When
-			err := repo.RemoveUserPet(ctx, "user-id", 123)
+			err = repo.RemoveUserPet(ctx, userPet.UserID, userPet.PetID)
 
 			// Then
-			require.Error(t, err)
-			require.Contains(t, err.Error(), "not implemented")
+			require.NoError(t, err)
+
+			// Verify relationship is removed
+			petIDsAfter, err := repo.GetUserPetIDs(ctx, userPet.UserID)
+			require.NoError(t, err)
+			require.NotContains(t, petIDsAfter, userPet.PetID)
+		})
+
+		t.Run("should be idempotent when removing non-existent relationship", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newPetsRepository(deps)
+			fake := faker.New()
+			userID := fake.RandomStringWithLength(10)
+			petID := fake.Int64Between(1, 10000)
+
+			// When - Remove non-existent relationship
+			err := repo.RemoveUserPet(ctx, userID, petID)
+
+			// Then - Should succeed (idempotent)
+			require.NoError(t, err)
 		})
 	})
 
