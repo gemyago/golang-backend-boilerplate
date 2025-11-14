@@ -96,7 +96,26 @@ func (c *PetsCommands) AddPet(ctx context.Context, req AddPetRequest) (*AddPetRe
 	return &AddPetResponse{PetID: pet.ID}, nil
 }
 
-func (c *PetsCommands) RemovePet(_ context.Context, _ string, _ int64) error {
-	// TODO: Implement RemovePet command
-	return errors.New("not implemented")
+func (c *PetsCommands) RemovePet(ctx context.Context, userID string, petID int64) error {
+	_, getUserErr := c.usersRepo.GetUserByID(ctx, userID)
+	if getUserErr != nil {
+		if errors.Is(getUserErr, sql.ErrNoRows) {
+			return ErrUserNotFound
+		}
+		return fmt.Errorf("failed to get user: %w", getUserErr)
+	}
+
+	has, hasErr := c.petsRepo.HasUserPet(ctx, userID, petID)
+	if hasErr != nil {
+		return fmt.Errorf("failed to check user pet relationship: %w", hasErr)
+	}
+	if !has {
+		return ErrUserPetNotFound
+	}
+
+	if removeErr := c.petsRepo.RemoveUserPet(ctx, userID, petID); removeErr != nil {
+		return fmt.Errorf("failed to remove user pet relationship: %w", removeErr)
+	}
+
+	return nil
 }

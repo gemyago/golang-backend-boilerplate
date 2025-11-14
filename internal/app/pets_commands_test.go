@@ -165,20 +165,111 @@ func TestPetsCommands(t *testing.T) {
 	})
 
 	t.Run("RemovePet", func(t *testing.T) {
-		t.Run("should return not implemented error", func(t *testing.T) {
+		t.Run("should remove user-pet relationship", func(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
+			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
+			mockPetsRepo := deps.PetsRepo.(*MockPetsRepository)
 			commands := NewPetsCommands(deps)
 			ctx := context.Background()
 			userID := fake.UUID().V4()
 			petID := fake.Int64Between(1, 1000)
+
+			user := &User{ID: userID}
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(user, nil)
+			mockPetsRepo.EXPECT().HasUserPet(mock.Anything, userID, petID).Return(true, nil)
+			mockPetsRepo.EXPECT().RemoveUserPet(mock.Anything, userID, petID).Return(nil)
+
+			// When
+			err := commands.RemovePet(ctx, userID, petID)
+
+			// Then
+			require.NoError(t, err)
+		})
+
+		t.Run("should return ErrUserNotFound when user doesn't exist", func(t *testing.T) {
+			// Given
+			deps := makeMockDeps(t)
+			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
+			commands := NewPetsCommands(deps)
+			ctx := context.Background()
+			userID := fake.UUID().V4()
+			petID := fake.Int64Between(1, 1000)
+
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return((*User)(nil), sql.ErrNoRows)
 
 			// When
 			err := commands.RemovePet(ctx, userID, petID)
 
 			// Then
 			require.Error(t, err)
-			require.Equal(t, "not implemented", err.Error())
+			require.Equal(t, ErrUserNotFound, err)
+		})
+
+		t.Run("should return ErrUserPetNotFound when relationship doesn't exist", func(t *testing.T) {
+			// Given
+			deps := makeMockDeps(t)
+			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
+			mockPetsRepo := deps.PetsRepo.(*MockPetsRepository)
+			commands := NewPetsCommands(deps)
+			ctx := context.Background()
+			userID := fake.UUID().V4()
+			petID := fake.Int64Between(1, 1000)
+
+			user := &User{ID: userID}
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(user, nil)
+			mockPetsRepo.EXPECT().HasUserPet(mock.Anything, userID, petID).Return(false, nil)
+
+			// When
+			err := commands.RemovePet(ctx, userID, petID)
+
+			// Then
+			require.Error(t, err)
+			require.Equal(t, ErrUserPetNotFound, err)
+		})
+
+		t.Run("should propagate unexpected user repo error", func(t *testing.T) {
+			// Given
+			deps := makeMockDeps(t)
+			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
+			commands := NewPetsCommands(deps)
+			ctx := context.Background()
+			userID := fake.UUID().V4()
+			petID := fake.Int64Between(1, 1000)
+
+			mockErr := errors.New("unexpected db error")
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return((*User)(nil), mockErr)
+
+			// When
+			err := commands.RemovePet(ctx, userID, petID)
+
+			// Then
+			require.Error(t, err)
+			require.ErrorIs(t, err, mockErr)
+		})
+
+		t.Run("should propagate unexpected pets repo error", func(t *testing.T) {
+			// Given
+			deps := makeMockDeps(t)
+			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
+			mockPetsRepo := deps.PetsRepo.(*MockPetsRepository)
+			commands := NewPetsCommands(deps)
+			ctx := context.Background()
+			userID := fake.UUID().V4()
+			petID := fake.Int64Between(1, 1000)
+
+			user := &User{ID: userID}
+			mockErr := errors.New("unexpected db error")
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(user, nil)
+			mockPetsRepo.EXPECT().HasUserPet(mock.Anything, userID, petID).Return(true, nil)
+			mockPetsRepo.EXPECT().RemoveUserPet(mock.Anything, userID, petID).Return(mockErr)
+
+			// When
+			err := commands.RemovePet(ctx, userID, petID)
+
+			// Then
+			require.Error(t, err)
+			require.ErrorIs(t, err, mockErr)
 		})
 	})
 }
