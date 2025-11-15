@@ -3,7 +3,6 @@ package v1controllers
 import (
 	"bytes"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,26 +14,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewUsersController(t *testing.T) {
+func TestUsers(t *testing.T) {
 	fake := faker.New()
-	type mockDeps struct {
-		RootLogger      *slog.Logger
-		UsersController handlers.UsersController
-	}
-	makeDeps := func() mockDeps {
-		deps := mockDeps{
-			UsersController: NewUsersController(UsersControllerDeps{}),
-			RootLogger:      diag.RootTestLogger(),
+
+	makeMockDeps := func(t *testing.T) UsersControllerDeps {
+		deps := UsersControllerDeps{
+			RootLogger: diag.RootTestLogger(),
 		}
 		return deps
 	}
-	newHandler := func(deps mockDeps) http.Handler {
+	newHandler := func(deps UsersControllerDeps) http.Handler {
 		return handlers.
 			NewRootHandler(
 				(*server.HTTPRouter)(http.NewServeMux()),
 				handlers.WithLogger(deps.RootLogger),
 			).
-			RegisterUsersRoutes(deps.UsersController)
+			RegisterUsersRoutes(NewUsersController(deps))
 	}
 
 	t.Run("POST /users", func(t *testing.T) {
@@ -47,7 +42,7 @@ func TestNewUsersController(t *testing.T) {
 				bytes.NewBuffer(reqBody),
 			)
 			w := httptest.NewRecorder()
-			deps := makeDeps()
+			deps := makeMockDeps(t)
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -63,7 +58,7 @@ func TestNewUsersController(t *testing.T) {
 				nil,
 			)
 			w := httptest.NewRecorder()
-			deps := makeDeps()
+			deps := makeMockDeps(t)
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -79,7 +74,7 @@ func TestNewUsersController(t *testing.T) {
 				nil,
 			)
 			w := httptest.NewRecorder()
-			deps := makeDeps()
+			deps := makeMockDeps(t)
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -94,7 +89,7 @@ func TestNewUsersController(t *testing.T) {
 				nil,
 			)
 			w := httptest.NewRecorder()
-			deps := makeDeps()
+			deps := makeMockDeps(t)
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -112,7 +107,7 @@ func TestNewUsersController(t *testing.T) {
 				bytes.NewBuffer(reqBody),
 			)
 			w := httptest.NewRecorder()
-			deps := makeDeps()
+			deps := makeMockDeps(t)
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusInternalServerError, w.Code)

@@ -3,6 +3,7 @@ package v1controllers
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
@@ -21,6 +22,8 @@ type UsersControllerDeps struct {
 
 	*app.UserCommands
 	*app.UserQueries
+
+	RootLogger *slog.Logger
 }
 
 func NewUsersController(deps UsersControllerDeps) *UsersController {
