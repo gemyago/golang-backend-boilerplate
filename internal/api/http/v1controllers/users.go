@@ -8,6 +8,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
+	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"go.uber.org/dig"
 )
 
@@ -39,8 +40,16 @@ func (c *UsersController) CreateUser(
 	builder handlers.HandlerBuilder[*models.CreateUserParams, *models.CreateUserResponse],
 ) http.Handler {
 	return builder.HandleWith(
-		func(_ context.Context, _ *models.CreateUserParams) (*models.CreateUserResponse, error) {
-			return nil, errors.New("not implemented")
+		func(ctx context.Context, params *models.CreateUserParams) (*models.CreateUserResponse, error) {
+			appReq := app.CreateUserRequest{
+				Name:  params.Payload.Name,
+				Email: params.Payload.Email,
+			}
+			res, err := c.commands.CreateUser(ctx, appReq)
+			if err != nil {
+				return nil, err
+			}
+			return &models.CreateUserResponse{UserID: res.UserID}, nil
 		},
 	)
 }
