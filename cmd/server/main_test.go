@@ -13,14 +13,16 @@ func TestMain(t *testing.T) {
 	t.Run("start", func(t *testing.T) {
 		t.Run("should initialize app", func(t *testing.T) {
 			rootCmd := setupCommands()
-			rootCmd.SetArgs([]string{"start", "--noop", "--logs-file", "../../test.log"})
+			rootCmd.SetArgs([]string{"start", "-e", "test", "--noop", "--logs-file", "../../test.log"})
 			require.NoError(t, rootCmd.Execute())
 		})
 		t.Run("should fail if bad log level", func(t *testing.T) {
 			rootCmd := setupCommands()
 			rootCmd.SilenceErrors = true
 			rootCmd.SilenceUsage = true
-			rootCmd.SetArgs([]string{"start", "--noop", "-l", fake.Lorem().Word(), "--logs-file", "../../test.log"})
+			rootCmd.SetArgs(
+				[]string{"start", "-e", "test", "--noop", "-l", fake.Lorem().Word(), "--logs-file", "../../test.log"},
+			)
 			assert.Error(t, rootCmd.Execute())
 		})
 		t.Run("should fail if unexpected env", func(t *testing.T) {

@@ -13,14 +13,16 @@ func TestMain(t *testing.T) {
 	t.Run("http", func(t *testing.T) {
 		t.Run("should initialize app", func(t *testing.T) {
 			rootCmd := setupCommands()
-			rootCmd.SetArgs([]string{"http", "--noop", "--logs-file", "../../test.log"})
+			rootCmd.SetArgs([]string{"http", "-e", "test", "--noop", "--logs-file", "../../test.log"})
 			require.NoError(t, rootCmd.Execute())
 		})
 		t.Run("should fail if bad log level", func(t *testing.T) {
 			rootCmd := setupCommands()
 			rootCmd.SilenceErrors = true
 			rootCmd.SilenceUsage = true
-			rootCmd.SetArgs([]string{"http", "--noop", "-l", fake.Lorem().Word(), "--logs-file", "../../test.log"})
+			rootCmd.SetArgs(
+				[]string{"http", "-e", "test", "--noop", "-l", fake.Lorem().Word(), "--logs-file", "../../test.log"},
+			)
 			assert.Error(t, rootCmd.Execute())
 		})
 		t.Run("should fail if unexpected env", func(t *testing.T) {
@@ -35,14 +37,16 @@ func TestMain(t *testing.T) {
 	t.Run("stdio", func(t *testing.T) {
 		t.Run("should initialize app", func(t *testing.T) {
 			rootCmd := setupCommands()
-			rootCmd.SetArgs([]string{"stdio", "--noop", "--logs-file", "../../test.log"})
+			rootCmd.SetArgs([]string{"stdio", "-e", "test", "--noop", "--logs-file", "../../test.log"})
 			require.NoError(t, rootCmd.Execute())
 		})
 		t.Run("should fail if bad log level", func(t *testing.T) {
 			rootCmd := setupCommands()
 			rootCmd.SilenceErrors = true
 			rootCmd.SilenceUsage = true
-			rootCmd.SetArgs([]string{"stdio", "--noop", "-l", fake.Lorem().Word(), "--logs-file", "../../test.log"})
+			rootCmd.SetArgs(
+				[]string{"stdio", "-e", "test", "--noop", "-l", fake.Lorem().Word(), "--logs-file", "../../test.log"},
+			)
 			assert.Error(t, rootCmd.Execute())
 		})
 		t.Run("should fail if unexpected env", func(t *testing.T) {

@@ -17,7 +17,7 @@ import (
 func TestUsers(t *testing.T) {
 	fake := faker.New()
 
-	makeMockDeps := func(t *testing.T) UsersControllerDeps {
+	makeMockDeps := func(_ *testing.T) UsersControllerDeps {
 		deps := UsersControllerDeps{
 			RootLogger: diag.RootTestLogger(),
 		}
