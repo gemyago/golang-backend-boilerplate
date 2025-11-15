@@ -8,20 +8,19 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
-	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"go.uber.org/dig"
 )
 
 type UsersController struct {
-	commands *app.UserCommands
-	queries  *app.UserQueries
+	commands UserCommands
+	queries  UserQueries
 }
 
 type UsersControllerDeps struct {
 	dig.In
 
-	*app.UserCommands
-	*app.UserQueries
+	UserCommands
+	UserQueries
 
 	RootLogger *slog.Logger
 }

@@ -35,19 +35,30 @@ Example components:
 - Users commands: [internal/app/users_commands.go](./app/users_commands.go)
 - Users commands tests: [internal/app/users_commands_test.go](./app/users_commands_test.go)
 
-## Incoming adapters (API Layer)
+## Incoming adapters ("Driver adapters", API Layer)
+
+Incoming adapters are interacting with application layer via "ports" that are interfaces defining required application layer contract. Mocks for all ports are generated with mockery and should be used in unit tests.
+
+Example ports: [api/http/v1controllers/ports.go](api/http/v1controllers/ports.go)
+
+Each API "sub layer" should define it's own set of ports. A DI hint is required to allow resolving implementations of the interfaces using `di.ProvideAs` approach (see [internal/api/http/v1controllers/register.go](./api/http/v1controllers/register.go) as example)
 
 ### HTTP Layer (OpenAPI-first)
 
 - Spec source of truth: [internal/api/http/v1routes.yaml](./api/http/v1routes.yaml)
 - Generated HTTP code: [internal/api/http/v1routes/](./api/http/v1routes/)
-- Canonical controller example: [internal/api/http/v1controllers/echo.go](./api/http/v1controllers/echo.go)
-- Server/router wiring: [internal/api/http/server/register.go](./api/http/server/register.go)
+- Canonical controller example: 
+  - [internal/api/http/v1controllers/users.go](./api/http/v1controllers/users.go)
+  - [internal/api/http/v1controllers/users_test.go](./api/http/v1controllers/users_test.go)
+- Controllers wiring: [internal/api/http/server/register.go](./api/http/server/register.go)
+- Controllers wiring: 
+  - Injected into DI [internal/api/http/server/register.go](./api/http/server/register.go)
+  - Registered into router: [internal/api/http/v1routes.go](./api/http/v1routes.go)
 
 ### MCP Tools (dynamic context)
 - Example MCP tool controller: [internal/api/mcp/controllers/math.go](./api/mcp/controllers/math.go)
 
-## Outgoing adapters (infrastructure)
+## Outgoing adapters ("Driven adapters", infrastructure)
 
 - Example repository
   - [internal/infrastructure/users_repository.go](./infrastructure/users_repository.go)

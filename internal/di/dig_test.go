@@ -111,7 +111,48 @@ func TestDig(t *testing.T) {
 		}
 	})
 
-	t.Run("ProvideAsV2", func(t *testing.T) {
+	t.Run("ProvideImplementation", func(t *testing.T) {
+		t.Run("should provide one type as another", func(t *testing.T) {
+			container := dig.New()
+			type DepA fmt.Stringer
+			type DepB fmt.Stringer
+
+			var dep1Val DepA = time.Now()
+
+			err := ProvideAll(container,
+				func() DepA { return dep1Val },
+				ProvideImplementation[DepA, DepB],
+			)
+			require.NoError(t, err)
+
+			if err = container.Invoke(func(b DepB) {
+				assert.Equal(t, dep1Val, b)
+			}); !assert.NoError(t, err) {
+				return
+			}
+		})
+
+		t.Run("should fail if types are not compatible", func(t *testing.T) {
+			container := dig.New()
+			type DepA fmt.Stringer
+			type DepB http.Handler
+
+			var dep1Val DepA = time.Now()
+
+			err := ProvideAll(container,
+				func() DepA { return dep1Val },
+				ProvideImplementation[DepA, DepB],
+			)
+			require.NoError(t, err)
+
+			err = container.Invoke(func(_ DepB) {
+				assert.Fail(t, "should not be called")
+			})
+			require.Error(t, err)
+		})
+	})
+
+	t.Run("ProvideFactoryAs", func(t *testing.T) {
 		t.Run("should provide one type as another", func(t *testing.T) {
 			container := dig.New()
 			type DepA fmt.Stringer
@@ -124,7 +165,7 @@ func TestDig(t *testing.T) {
 
 			err := ProvideAll(container,
 				ProvideValue(Deps{}),
-				ProvideAs[DepB](factory),
+				ProvideFactoryAs[DepB](factory),
 			)
 			require.NoError(t, err)
 
@@ -146,7 +187,7 @@ func TestDig(t *testing.T) {
 
 			err := ProvideAll(container,
 				ProvideValue(Deps{}),
-				ProvideAs[DepB](factory),
+				ProvideFactoryAs[DepB](factory),
 			)
 			require.NoError(t, err)
 

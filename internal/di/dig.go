@@ -69,8 +69,22 @@ func ProvideWithArgErr[
 	}
 }
 
-// ProvideAs allows injecting implementation of a particular interface.
-func ProvideAs[
+// ProvideImplementation is used to define implementation of some particular
+// interface so DI container could resolve the implementation of the interface properly.
+// Usually you may want to use this method if implementation was injected on a different layer.
+func ProvideImplementation[TSource any, TTarget any](source TSource) (TTarget, error) {
+	target, ok := any(source).(TTarget)
+	if !ok {
+		var src TSource
+		var tgt TTarget
+		return target, fmt.Errorf("failed to cast %s to %s", reflect.TypeOf(src), reflect.TypeOf(tgt))
+	}
+	return target, nil
+}
+
+// ProvideFactoryAs allows injecting implementation of a particular interface.
+// Functionally equivalent to injecting the factory first and then use ProvideAs.
+func ProvideFactoryAs[
 	TTarget any,
 	TSource any,
 	TTSourceDeps any,

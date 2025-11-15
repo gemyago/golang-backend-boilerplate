@@ -1,3 +1,6 @@
+// This file defines application layer logic contracts or "ports" that
+// are required to implement API layer
+
 package v1controllers
 
 import (
