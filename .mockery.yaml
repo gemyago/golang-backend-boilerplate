@@ -3,28 +3,26 @@ template: testify
 template-data:
   mock-build-tags: '!release'
   unroll-variadic: true
+
+# By default all mocks are written to same file
+# We don't want that. AI may have hard time to read large file.
+filename: "mock_{{snakecase .InterfaceName}}_test.go"
+
 packages:
   log/slog:
     interfaces:
       Handler:
         config:
-          dir: internal/diag
-          structname: MockSlogHandler
           pkgname: diag
+          structname: '{{.Mock}}Slog{{.InterfaceName}}'
+          filename: "mock_slog_{{snakecase .InterfaceName}}_test.go"
+          dir: 'internal/diag'
+  github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1controllers:
+    interfaces:
+      UserCommands:
+      UserQueries:
   github.com/gemyago/golang-backend-boilerplate/internal/app:
     interfaces:
       UsersRepository:
-        config:
-          dir: internal/app
-          structname: MockUsersRepository
-          pkgname: app
       PetsRepository:
-        config:
-          dir: internal/app
-          structname: MockPetsRepository
-          pkgname: app
       PetstoreClient:
-        config:
-          dir: internal/app
-          structname: MockPetstoreClient
-          pkgname: app
