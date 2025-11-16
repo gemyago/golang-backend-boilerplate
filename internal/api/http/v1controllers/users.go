@@ -77,7 +77,14 @@ func (c *UsersController) ListUsers(builder handlers.NoParamsHandlerBuilder[*mod
 }
 
 func (c *UsersController) UpdateUser(builder handlers.NoResponseHandlerBuilder[*models.UpdateUserParams]) http.Handler {
-	return builder.HandleWith(func(_ context.Context, _ *models.UpdateUserParams) error {
-		return errors.New("not implemented")
-	})
+	return builder.HandleWith(
+		func(ctx context.Context, params *models.UpdateUserParams) error {
+			appReq := app.UpdateUserRequest{
+				UserID: params.UserID,
+				Name:   params.Payload.Name,
+				Email:  params.Payload.Email,
+			}
+			return c.commands.UpdateUser(ctx, appReq)
+		},
+	)
 }

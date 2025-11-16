@@ -43,6 +43,8 @@ func TestUsers(t *testing.T) {
 						w.WriteHeader(http.StatusBadRequest)
 					case errors.Is(err, app.ErrUserEmailConflict):
 						w.WriteHeader(http.StatusConflict)
+					case errors.Is(err, app.ErrUserNotFound):
+						w.WriteHeader(http.StatusNotFound)
 					default:
 						w.WriteHeader(http.StatusInternalServerError)
 					}
@@ -166,7 +168,7 @@ func TestUsers(t *testing.T) {
 	})
 
 	t.Run("PUT /users/{userId}", func(t *testing.T) {
-		t.Run("should be stub", func(t *testing.T) {
+		t.Run("happy path: returns 204", func(t *testing.T) {
 			userID := fake.UUID().V4()
 			payload := newRandomUpdateUserRequest(fake)
 			reqBody, _ := json.Marshal(payload)
@@ -177,9 +179,81 @@ func TestUsers(t *testing.T) {
 			)
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
+			mockCmd := deps.UserCommands.(*MockUserCommands)
+			mockCmd.EXPECT().UpdateUser(mock.Anything, app.UpdateUserRequest{
+				UserID: userID,
+				Name:   payload.Name,
+				Email:  payload.Email,
+			}).Return(nil)
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusInternalServerError, w.Code)
+			assert.Equal(t, http.StatusNoContent, w.Code)
+		})
+
+		t.Run("validation error: returns 400", func(t *testing.T) {
+			userID := fake.UUID().V4()
+			payload := newRandomUpdateUserRequest(fake)
+			reqBody, _ := json.Marshal(payload)
+			req := httptest.NewRequest(
+				http.MethodPut,
+				"/users/"+userID,
+				bytes.NewBuffer(reqBody),
+			)
+			w := httptest.NewRecorder()
+			deps := makeMockDeps(t)
+			mockCmd := deps.UserCommands.(*MockUserCommands)
+			mockCmd.EXPECT().UpdateUser(mock.Anything, app.UpdateUserRequest{
+				UserID: userID,
+				Name:   payload.Name,
+				Email:  payload.Email,
+			}).Return(app.ErrInvalidInput)
+			newHandler(deps).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+
+		t.Run("not found: returns 404", func(t *testing.T) {
+			userID := fake.UUID().V4()
+			payload := newRandomUpdateUserRequest(fake)
+			reqBody, _ := json.Marshal(payload)
+			req := httptest.NewRequest(
+				http.MethodPut,
+				"/users/"+userID,
+				bytes.NewBuffer(reqBody),
+			)
+			w := httptest.NewRecorder()
+			deps := makeMockDeps(t)
+			mockCmd := deps.UserCommands.(*MockUserCommands)
+			mockCmd.EXPECT().UpdateUser(mock.Anything, app.UpdateUserRequest{
+				UserID: userID,
+				Name:   payload.Name,
+				Email:  payload.Email,
+			}).Return(app.ErrUserNotFound)
+			newHandler(deps).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusNotFound, w.Code)
+		})
+
+		t.Run("conflict: returns 409", func(t *testing.T) {
+			userID := fake.UUID().V4()
+			payload := newRandomUpdateUserRequest(fake)
+			reqBody, _ := json.Marshal(payload)
+			req := httptest.NewRequest(
+				http.MethodPut,
+				"/users/"+userID,
+				bytes.NewBuffer(reqBody),
+			)
+			w := httptest.NewRecorder()
+			deps := makeMockDeps(t)
+			mockCmd := deps.UserCommands.(*MockUserCommands)
+			mockCmd.EXPECT().UpdateUser(mock.Anything, app.UpdateUserRequest{
+				UserID: userID,
+				Name:   payload.Name,
+				Email:  payload.Email,
+			}).Return(app.ErrUserEmailConflict)
+			newHandler(deps).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusConflict, w.Code)
 		})
 	})
 }
