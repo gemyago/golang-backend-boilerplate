@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"regexp"
 	"testing"
@@ -49,7 +48,9 @@ func TestUserCommands(t *testing.T) {
 			idRe := regexp.MustCompile(`^[0-9a-fA-F-]{36,36}$`)
 
 			// Expect repository will be queried for email and not found
-			mockRepo.EXPECT().GetUserByEmail(mock.Anything, req.Email).Return((*User)(nil), sql.ErrNoRows)
+			mockRepo.EXPECT().
+				GetUserByEmail(mock.Anything, req.Email).
+				Return((*User)(nil), NewErrNotFound("user", req.Email))
 			// Expect repository will be asked to create user
 			mockRepo.EXPECT().CreateUser(mock.Anything, mock.MatchedBy(func(u User) bool {
 				if u.Email != req.Email {
@@ -165,7 +166,9 @@ func TestUserCommands(t *testing.T) {
 			ctx := context.Background()
 			req := NewRandomCreateUserRequest(fake)
 
-			mockRepo.EXPECT().GetUserByEmail(mock.Anything, req.Email).Return((*User)(nil), sql.ErrNoRows)
+			mockRepo.EXPECT().
+				GetUserByEmail(mock.Anything, req.Email).
+				Return((*User)(nil), NewErrNotFound("user", req.Email))
 			mockErr := errors.New("create failed")
 			mockRepo.EXPECT().CreateUser(mock.Anything, mock.Anything).Return(mockErr)
 
@@ -190,7 +193,9 @@ func TestUserCommands(t *testing.T) {
 			// Expect repository will be queried for user and found
 			mockRepo.EXPECT().GetUserByID(mock.Anything, req.UserID).Return(existingUser, nil)
 			// Expect repository will be queried for email uniqueness (different email) and not found
-			mockRepo.EXPECT().GetUserByEmail(mock.Anything, req.Email).Return((*User)(nil), sql.ErrNoRows)
+			mockRepo.EXPECT().
+				GetUserByEmail(mock.Anything, req.Email).
+				Return((*User)(nil), NewErrNotFound("user", req.Email))
 			// Expect repository will be asked to update user
 			mockRepo.EXPECT().UpdateUser(mock.Anything, mock.MatchedBy(func(u User) bool {
 				if u.ID != req.UserID {
@@ -265,7 +270,9 @@ func TestUserCommands(t *testing.T) {
 			req := NewRandomUpdateUserRequest(fake)
 
 			// Expect repository will be queried for user and not found
-			mockRepo.EXPECT().GetUserByID(mock.Anything, req.UserID).Return((*User)(nil), sql.ErrNoRows)
+			mockRepo.EXPECT().
+				GetUserByID(mock.Anything, req.UserID).
+				Return((*User)(nil), NewErrNotFound("user", req.UserID))
 
 			err := commands.UpdateUser(ctx, *req)
 
@@ -395,7 +402,7 @@ func TestUserCommands(t *testing.T) {
 			userID := fake.UUID().V4()
 
 			// Expect repository will be queried for user and not found
-			mockRepo.EXPECT().GetUserByID(mock.Anything, userID).Return((*User)(nil), sql.ErrNoRows)
+			mockRepo.EXPECT().GetUserByID(mock.Anything, userID).Return((*User)(nil), NewErrNotFound("user", userID))
 
 			// When
 			err := commands.DeleteUser(ctx, userID)

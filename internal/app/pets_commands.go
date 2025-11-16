@@ -2,8 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -60,10 +58,7 @@ func (c *PetsCommands) AddPet(ctx context.Context, req AddPetRequest) (*AddPetRe
 
 	_, getUserErr := c.usersRepo.GetUserByID(ctx, req.UserID)
 	if getUserErr != nil {
-		if errors.Is(getUserErr, sql.ErrNoRows) {
-			return nil, NewErrNotFound("user", req.UserID)
-		}
-		return nil, fmt.Errorf("failed to get user: %w", getUserErr)
+		return nil, getUserErr
 	}
 
 	petReq := &petstore.Pet{
@@ -93,10 +88,7 @@ func (c *PetsCommands) AddPet(ctx context.Context, req AddPetRequest) (*AddPetRe
 func (c *PetsCommands) RemovePet(ctx context.Context, userID string, petID int64) error {
 	_, getUserErr := c.usersRepo.GetUserByID(ctx, userID)
 	if getUserErr != nil {
-		if errors.Is(getUserErr, sql.ErrNoRows) {
-			return NewErrNotFound("user", userID)
-		}
-		return fmt.Errorf("failed to get user: %w", getUserErr)
+		return getUserErr
 	}
 
 	has, hasErr := c.petsRepo.HasUserPet(ctx, userID, petID)

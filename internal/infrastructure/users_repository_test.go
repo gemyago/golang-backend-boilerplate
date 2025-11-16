@@ -1,7 +1,6 @@
 package services
 
 import (
-	"database/sql"
 	"errors"
 	"testing"
 	"time"
@@ -165,7 +164,10 @@ func TestUsersRepository(t *testing.T) {
 
 			// Then
 			require.Error(t, err)
-			assert.Equal(t, sql.ErrNoRows, err)
+			var notFoundErr *app.NotFoundError
+			require.ErrorAs(t, err, &notFoundErr)
+			assert.Equal(t, "user", notFoundErr.Resource)
+			assert.Equal(t, user.ID, notFoundErr.ID)
 		})
 
 		t.Run("should return error for email conflict with another user", func(t *testing.T) {
@@ -233,15 +235,113 @@ func TestUsersRepository(t *testing.T) {
 			ctx := t.Context()
 
 			// Given
-			db := makeMockDeps(t)
-			repo := newUsersRepository(db)
+			deps := makeMockDeps(t)
+			repo := newUsersRepository(deps)
 
 			// When
 			err := repo.DeleteUser(ctx, "non-existent-id")
 
 			// Then
 			require.Error(t, err)
-			assert.Equal(t, sql.ErrNoRows, err)
+			var notFoundErr *app.NotFoundError
+			require.ErrorAs(t, err, &notFoundErr)
+			assert.Equal(t, "user", notFoundErr.Resource)
+			assert.Equal(t, "non-existent-id", notFoundErr.ID)
+		})
+
+		t.Run("should return error for database failure", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newUsersRepository(deps)
+
+			// Close DB
+			deps.DB.instance.Close()
+
+			// When
+			err := repo.DeleteUser(ctx, "any-id")
+
+			// Then
+			require.Error(t, err)
+		})
+	})
+
+	t.Run("UpdateUser", func(t *testing.T) {
+		fake := faker.New()
+
+		t.Run("should update user successfully", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newUsersRepository(deps)
+			mockNow := MockNowValue(deps.Time)
+
+			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
+			err := repo.CreateUser(ctx, *user)
+			require.NoError(t, err)
+
+			// Update user
+			user.Name = fake.Person().Name()
+			user.Email = fake.Internet().Email()
+			user.UpdatedAt = mockNow.Add(time.Hour)
+
+			// When
+			err = repo.UpdateUser(ctx, *user)
+
+			// Then
+			require.NoError(t, err)
+
+			// Verify update
+			updatedUser, err := repo.GetUserByID(ctx, user.ID)
+			require.NoError(t, err)
+			assert.Equal(t, user.Name, updatedUser.Name)
+			assert.Equal(t, user.Email, updatedUser.Email)
+			assert.Equal(t, mockNow, updatedUser.UpdatedAt)
+		})
+
+		t.Run("should return error for non-existent user", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newUsersRepository(deps)
+			mockNow := MockNowValue(deps.Time)
+
+			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
+
+			// When
+			err := repo.UpdateUser(ctx, *user)
+
+			// Then
+			require.Error(t, err)
+			var notFoundErr *app.NotFoundError
+			require.ErrorAs(t, err, &notFoundErr)
+			assert.Equal(t, "user", notFoundErr.Resource)
+			assert.Equal(t, user.ID, notFoundErr.ID)
+		})
+
+		t.Run("should return error for database failure", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newUsersRepository(deps)
+			mockNow := MockNowValue(deps.Time)
+
+			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
+			err := repo.CreateUser(ctx, *user)
+			require.NoError(t, err)
+
+			// Close DB
+			deps.DB.instance.Close()
+
+			// When
+			err = repo.UpdateUser(ctx, *user)
+
+			// Then
+			require.Error(t, err)
 		})
 	})
 
@@ -281,7 +381,27 @@ func TestUsersRepository(t *testing.T) {
 
 			// Then
 			require.Error(t, err)
-			assert.Equal(t, sql.ErrNoRows, err)
+			var notFoundErr *app.NotFoundError
+			require.ErrorAs(t, err, &notFoundErr)
+			assert.Equal(t, "user", notFoundErr.Resource)
+			assert.Equal(t, "non-existent-id", notFoundErr.ID)
+			assert.Nil(t, retrievedUser)
+		})
+
+		t.Run("should return error for database failure", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newUsersRepository(deps)
+			// Close the DB to simulate failure
+			deps.DB.instance.Close()
+
+			// When
+			retrievedUser, err := repo.GetUserByID(ctx, "any-id")
+
+			// Then
+			require.Error(t, err)
 			assert.Nil(t, retrievedUser)
 		})
 	})
@@ -322,7 +442,27 @@ func TestUsersRepository(t *testing.T) {
 
 			// Then
 			require.Error(t, err)
-			assert.Equal(t, sql.ErrNoRows, err)
+			var notFoundErr *app.NotFoundError
+			require.ErrorAs(t, err, &notFoundErr)
+			assert.Equal(t, "user", notFoundErr.Resource)
+			assert.Equal(t, "nonexistent@example.com", notFoundErr.ID)
+			assert.Nil(t, retrievedUser)
+		})
+
+		t.Run("should return error for database failure", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newUsersRepository(deps)
+			// Close the DB to simulate failure
+			deps.DB.instance.Close()
+
+			// When
+			retrievedUser, err := repo.GetUserByEmail(ctx, "any@example.com")
+
+			// Then
+			require.Error(t, err)
 			assert.Nil(t, retrievedUser)
 		})
 	})
@@ -381,6 +521,24 @@ func TestUsersRepository(t *testing.T) {
 			// Then
 			require.NoError(t, err)
 			assert.Empty(t, users)
+		})
+
+		t.Run("should return error for database failure", func(t *testing.T) {
+			ctx := t.Context()
+
+			// Given
+			deps := makeMockDeps(t)
+			repo := newUsersRepository(deps)
+
+			// Close DB
+			deps.DB.instance.Close()
+
+			// When
+			users, err := repo.ListUsers(ctx)
+
+			// Then
+			require.Error(t, err)
+			assert.Nil(t, users)
 		})
 	})
 }

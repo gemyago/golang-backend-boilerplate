@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/gofrs/uuid/v5"
@@ -76,7 +77,14 @@ func (r *sqliteUsersRepository) UpdateUser(ctx context.Context, user app.User) e
 	}
 
 	// Verify user exists (check affected rows)
-	return r.ensureRowsUpdated(result)
+	err = r.ensureRowsUpdated(result)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return app.NewErrNotFound("user", user.ID)
+		}
+		return err
+	}
+	return nil
 }
 
 func (r *sqliteUsersRepository) DeleteUser(ctx context.Context, userID string) error {
@@ -89,7 +97,14 @@ func (r *sqliteUsersRepository) DeleteUser(ctx context.Context, userID string) e
 		return err
 	}
 
-	return r.ensureRowsUpdated(result)
+	err = r.ensureRowsUpdated(result)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return app.NewErrNotFound("user", userID)
+		}
+		return err
+	}
+	return nil
 }
 
 func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) (*app.User, error) {
@@ -107,6 +122,9 @@ func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) 
 		&user.UpdatedAt,
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, app.NewErrNotFound("user", userID)
+		}
 		return nil, err
 	}
 	return user, nil
@@ -127,6 +145,9 @@ func (r *sqliteUsersRepository) GetUserByEmail(ctx context.Context, email string
 		&user.UpdatedAt,
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, app.NewErrNotFound("user", email)
+		}
 		return nil, err
 	}
 	return user, nil

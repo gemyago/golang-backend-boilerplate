@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log/slog"
 	"regexp"
@@ -73,9 +72,13 @@ func (c *UserCommands) CreateUser(ctx context.Context, req CreateUserRequest) (*
 
 	// Check email uniqueness
 	existing, err := c.usersRepo.GetUserByEmail(ctx, req.Email)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		// unexpected repository error
-		return nil, err
+	if err != nil {
+		var notFound *NotFoundError
+		if !errors.As(err, &notFound) {
+			// unexpected repository error
+			return nil, err
+		}
+		// not found, which is expected
 	}
 	if existing != nil {
 		return nil, NewErrConflict("user email", "already exists")
@@ -118,17 +121,17 @@ func (c *UserCommands) UpdateUser(ctx context.Context, req UpdateUserRequest) er
 	// Check user exists
 	existing, err := c.usersRepo.GetUserByID(ctx, req.UserID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return NewErrNotFound("user", req.UserID)
-		}
 		return err
 	}
 
 	// Check email uniqueness if email changed
 	if existing.Email != req.Email {
 		emailCheck, emailErr := c.usersRepo.GetUserByEmail(ctx, req.Email)
-		if emailErr != nil && !errors.Is(emailErr, sql.ErrNoRows) {
-			return emailErr
+		if emailErr != nil {
+			var notFound *NotFoundError
+			if !errors.As(emailErr, &notFound) {
+				return emailErr
+			}
 		}
 		if emailCheck != nil {
 			return NewErrConflict("user email", "already exists")
@@ -152,9 +155,6 @@ func (c *UserCommands) DeleteUser(ctx context.Context, userID string) error {
 	// Verify user exists
 	_, err := c.usersRepo.GetUserByID(ctx, userID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return NewErrNotFound("user", userID)
-		}
 		return err
 	}
 

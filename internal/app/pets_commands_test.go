@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"testing"
 
@@ -110,7 +109,9 @@ func TestPetsCommands(t *testing.T) {
 			ctx := context.Background()
 			req := NewRandomAddPetRequest(fake)
 
-			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, req.UserID).Return((*User)(nil), sql.ErrNoRows)
+			mockUsersRepo.EXPECT().
+				GetUserByID(mock.Anything, req.UserID).
+				Return((*User)(nil), NewErrNotFound("user", req.UserID))
 
 			// When
 			resp, err := commands.AddPet(ctx, *req)
@@ -203,7 +204,9 @@ func TestPetsCommands(t *testing.T) {
 			userID := fake.UUID().V4()
 			petID := fake.Int64Between(1, 1000)
 
-			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return((*User)(nil), sql.ErrNoRows)
+			mockUsersRepo.EXPECT().
+				GetUserByID(mock.Anything, userID).
+				Return((*User)(nil), NewErrNotFound("user", userID))
 
 			// When
 			err := commands.RemovePet(ctx, userID, petID)

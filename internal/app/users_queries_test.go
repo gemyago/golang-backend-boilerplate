@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"testing"
 	"time"
@@ -38,7 +37,7 @@ func (m *flexibleMockUsersRepository) GetUserByID(ctx context.Context, userID st
 }
 
 func (m *flexibleMockUsersRepository) GetUserByEmail(_ context.Context, _ string) (*User, error) {
-	return nil, sql.ErrNoRows
+	return nil, errors.New("not found")
 }
 
 func (m *flexibleMockUsersRepository) ListUsers(ctx context.Context) ([]*User, error) {
@@ -101,7 +100,7 @@ func TestUserQueries(t *testing.T) {
 			mock := &flexibleMockUsersRepository{
 				getUserByIDFn: func(_ context.Context, id string) (*User, error) {
 					require.Equal(t, "nonexistent", id)
-					return nil, sql.ErrNoRows
+					return nil, NewErrNotFound("user", id)
 				},
 			}
 

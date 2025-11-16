@@ -2,8 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"log/slog"
 
 	"go.uber.org/dig"
@@ -36,9 +34,6 @@ func NewUserQueries(deps UserQueriesDeps) *UserQueries {
 func (q *UserQueries) GetUserByID(ctx context.Context, userID string) (*User, error) {
 	user, err := q.usersRepo.GetUserByID(ctx, userID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, NewErrNotFound("user", userID)
-		}
 		return nil, err
 	}
 	return user, nil

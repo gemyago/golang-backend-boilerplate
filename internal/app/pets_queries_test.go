@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"testing"
 
@@ -161,7 +160,7 @@ func TestPetsQueries(t *testing.T) {
 			userID := "non-existent"
 
 			mockUsersRepo.getUserByIDFn = func(_ context.Context, _ string) (*User, error) {
-				return nil, sql.ErrNoRows
+				return nil, NewErrNotFound("user", userID)
 			}
 
 			// When

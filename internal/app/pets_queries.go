@@ -2,8 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -46,10 +44,7 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
 	// Verify user exists
 	_, err := q.usersRepo.GetUserByID(ctx, userID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, NewErrNotFound("user", userID)
-		}
-		return nil, fmt.Errorf("failed to get user: %w", err)
+		return nil, err
 	}
 
 	// Get pet IDs for the user
