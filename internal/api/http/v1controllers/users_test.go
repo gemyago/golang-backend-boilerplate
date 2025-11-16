@@ -155,7 +155,33 @@ func TestUsers(t *testing.T) {
 	})
 
 	t.Run("GET /users/{userId}", func(t *testing.T) {
-		t.Run("should be stub", func(t *testing.T) {
+		t.Run("happy path: returns 200 with user data", func(t *testing.T) {
+			userID := fake.UUID().V4()
+			user := app.User{
+				ID:    userID,
+				Name:  fake.Person().Name(),
+				Email: fake.Internet().Email(),
+			}
+			req := httptest.NewRequest(
+				http.MethodGet,
+				"/users/"+userID,
+				nil,
+			)
+			w := httptest.NewRecorder()
+			deps := makeMockDeps(t)
+			mockQueries := deps.UserQueries.(*MockUserQueries)
+			mockQueries.EXPECT().GetUserByID(mock.Anything, userID).Return(&user, nil)
+			newHandler(deps).ServeHTTP(w, req)
+
+			require.Equal(t, http.StatusOK, w.Code)
+			var resp models.UserResponse
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+			assert.Equal(t, user.ID, resp.ID)
+			assert.Equal(t, user.Name, resp.Name)
+			assert.Equal(t, user.Email, resp.Email)
+		})
+
+		t.Run("not found: returns 404", func(t *testing.T) {
 			userID := fake.UUID().V4()
 			req := httptest.NewRequest(
 				http.MethodGet,
@@ -164,9 +190,11 @@ func TestUsers(t *testing.T) {
 			)
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
+			mockQueries := deps.UserQueries.(*MockUserQueries)
+			mockQueries.EXPECT().GetUserByID(mock.Anything, userID).Return(nil, app.ErrUserNotFound)
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusInternalServerError, w.Code)
+			assert.Equal(t, http.StatusNotFound, w.Code)
 		})
 	})
 

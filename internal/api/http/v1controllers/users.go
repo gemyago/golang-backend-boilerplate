@@ -64,8 +64,16 @@ func (c *UsersController) GetUserByID(
 	builder handlers.HandlerBuilder[*models.GetUserByIDParams, *models.UserResponse],
 ) http.Handler {
 	return builder.HandleWith(
-		func(_ context.Context, _ *models.GetUserByIDParams) (*models.UserResponse, error) {
-			return nil, errors.New("not implemented")
+		func(ctx context.Context, params *models.GetUserByIDParams) (*models.UserResponse, error) {
+			user, err := c.queries.GetUserByID(ctx, params.UserID)
+			if err != nil {
+				return nil, err
+			}
+			return &models.UserResponse{
+				ID:    user.ID,
+				Name:  user.Name,
+				Email: user.Email,
+			}, nil
 		},
 	)
 }
