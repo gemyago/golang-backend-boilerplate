@@ -55,8 +55,8 @@ func (c *UsersController) CreateUser(
 }
 
 func (c *UsersController) DeleteUser(builder handlers.NoResponseHandlerBuilder[*models.DeleteUserParams]) http.Handler {
-	return builder.HandleWith(func(_ context.Context, _ *models.DeleteUserParams) error {
-		return errors.New("not implemented")
+	return builder.HandleWith(func(ctx context.Context, params *models.DeleteUserParams) error {
+		return c.commands.DeleteUser(ctx, params.UserID)
 	})
 }
 

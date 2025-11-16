@@ -121,7 +121,7 @@ func TestUsers(t *testing.T) {
 	})
 
 	t.Run("DELETE /users/{userId}", func(t *testing.T) {
-		t.Run("should be stub", func(t *testing.T) {
+		t.Run("happy path: returns 204", func(t *testing.T) {
 			userID := fake.UUID().V4()
 			req := httptest.NewRequest(
 				http.MethodDelete,
@@ -130,9 +130,27 @@ func TestUsers(t *testing.T) {
 			)
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
+			mockCmd := deps.UserCommands.(*MockUserCommands)
+			mockCmd.EXPECT().DeleteUser(mock.Anything, userID).Return(nil)
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusInternalServerError, w.Code)
+			assert.Equal(t, http.StatusNoContent, w.Code)
+		})
+
+		t.Run("not found: returns 404", func(t *testing.T) {
+			userID := fake.UUID().V4()
+			req := httptest.NewRequest(
+				http.MethodDelete,
+				"/users/"+userID,
+				nil,
+			)
+			w := httptest.NewRecorder()
+			deps := makeMockDeps(t)
+			mockCmd := deps.UserCommands.(*MockUserCommands)
+			mockCmd.EXPECT().DeleteUser(mock.Anything, userID).Return(app.ErrUserNotFound)
+			newHandler(deps).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusNotFound, w.Code)
 		})
 	})
 
