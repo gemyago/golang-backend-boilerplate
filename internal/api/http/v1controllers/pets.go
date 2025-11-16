@@ -12,16 +12,17 @@ import (
 )
 
 type PetsController struct {
-	commands *app.PetsCommands
-	queries  *app.PetsQueries
+	commands PetsCommands
+	queries  PetsQueries
 }
 
 type PetsControllerDeps struct {
 	dig.In
 
-	PetsCommands *app.PetsCommands
-	PetsQueries  *app.PetsQueries
-	RootLogger   *slog.Logger
+	PetsCommands
+	PetsQueries
+
+	RootLogger *slog.Logger
 }
 
 func newPetsController(deps PetsControllerDeps) *PetsController {

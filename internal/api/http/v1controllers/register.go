@@ -16,5 +16,7 @@ func Register(container *dig.Container) error {
 		// Application layer ports
 		di.ProvideImplementation[*app.UserCommands, UserCommands],
 		di.ProvideImplementation[*app.UserQueries, UserQueries],
+		di.ProvideImplementation[*app.PetsCommands, PetsCommands],
+		di.ProvideImplementation[*app.PetsQueries, PetsQueries],
 	)
 }

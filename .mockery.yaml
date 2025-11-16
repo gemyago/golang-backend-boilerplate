@@ -21,6 +21,8 @@ packages:
     interfaces:
       UserCommands:
       UserQueries:
+      PetsCommands:
+      PetsQueries:
   github.com/gemyago/golang-backend-boilerplate/internal/app:
     interfaces:
       UsersRepository:
