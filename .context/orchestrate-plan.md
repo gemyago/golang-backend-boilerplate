@@ -25,6 +25,8 @@ For each task start a sub-agent with the exact instruction enclosed in `<sub-age
   </sub-agent-instruction>
 4. Repeat step 2 to finalize the task again.
 
+Note: user may intervene (and cancel) any sub-agent flow if got stuck or otherwise got the wrong way. If you identify that user intervention took place, ask the user what to do next, don't proceed.
+
 Once verification succeeded, report the progress to the user as follows:
 - Step 1: succeeded
 - Step 2: succeeded
