@@ -25,7 +25,7 @@ type UsersControllerDeps struct {
 	RootLogger *slog.Logger
 }
 
-func NewUsersController(deps UsersControllerDeps) *UsersController {
+func newUsersController(deps UsersControllerDeps) *UsersController {
 	return &UsersController{
 		commands: deps.UserCommands,
 		queries:  deps.UserQueries,

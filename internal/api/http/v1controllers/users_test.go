@@ -51,7 +51,7 @@ func TestUsers(t *testing.T) {
 					// Log the error if needed, but for test, just set status
 				}),
 			).
-			RegisterUsersRoutes(NewUsersController(deps))
+			RegisterUsersRoutes(newUsersController(deps))
 	}
 
 	t.Run("POST /users", func(t *testing.T) {

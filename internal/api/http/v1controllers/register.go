@@ -9,7 +9,7 @@ import (
 func Register(container *dig.Container) error {
 	return di.ProvideAll(container,
 		newEchoController,
-		NewUsersController,
+		newUsersController,
 		di.ProvideValue(&HealthController{}),
 
 		// Application layer ports
