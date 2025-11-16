@@ -2,6 +2,7 @@ package v1controllers
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
@@ -11,8 +12,8 @@ import (
 )
 
 type PetsController struct {
-	commands *app.PetsCommands //nolint:unused // stub implementation
-	queries  *app.PetsQueries  //nolint:unused // stub implementation
+	commands *app.PetsCommands
+	queries  *app.PetsQueries
 }
 
 type PetsControllerDeps struct {
@@ -20,9 +21,9 @@ type PetsControllerDeps struct {
 
 	PetsCommands *app.PetsCommands
 	PetsQueries  *app.PetsQueries
+	RootLogger   *slog.Logger
 }
 
-//nolint:unused // stub implementation
 func newPetsController(deps PetsControllerDeps) *PetsController {
 	return &PetsController{
 		commands: deps.PetsCommands,
@@ -37,9 +38,18 @@ func (c *PetsController) AddUserPet(
 	builder handlers.HandlerBuilder[*models.AddUserPetParams, *models.AddPetResponse],
 ) http.Handler {
 	return builder.HandleWith(
-		func(_ context.Context, _ *models.AddUserPetParams) (*models.AddPetResponse, error) {
-			// TODO: implement
-			return nil, nil
+		func(ctx context.Context, params *models.AddUserPetParams) (*models.AddPetResponse, error) {
+			appReq := app.AddPetRequest{
+				UserID:    params.UserID,
+				Name:      params.Payload.Name,
+				Status:    string(params.Payload.Status),
+				PhotoUrls: params.Payload.PhotoUrls,
+			}
+			res, err := c.commands.AddPet(ctx, appReq)
+			if err != nil {
+				return nil, err
+			}
+			return &models.AddPetResponse{PetID: res.PetID}, nil
 		},
 	)
 }
