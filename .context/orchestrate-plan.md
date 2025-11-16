@@ -1,6 +1,6 @@
 # Instruction to orchestrate plan implementation
 
-**Pre Condition**: This instruction is for AI agents with mode switching capabilities only. If you don't have access to mode switching, please report the limitation and do not proceed.
+**Pre Condition**: This instruction is for AI agents with mode switching/running sub-agents capabilities only. If you don't have access to mode switching/running sub-agents, please report the limitation and do not proceed.
 
 ## Input
 
@@ -10,7 +10,7 @@ You will be given a plan usually in form of a document as an input. The plan wil
 
 As a first step please identify `atomic` tasks and build a TODO for for yourself to orchestrate implementation.
 
-For each task start a sub-agent with the exact instruction enclosed in `<sub-agent-instruction>` tags. Do not include any additional text or context:
+For each task start a sub-agent with the exact instruction enclosed in `<sub-agent-instruction>` tags. Note: do not include tags themselves, just what's inside. Do not include any additional text or context:
 1. Start a coding agent with implementation instruction as follows:
   <sub-agent-instruction>
   Follow [.context/implement-plan-task.md](.context/implement-plan-task.md) to implement the following task: Task XX: <task description> from <plan reference>
