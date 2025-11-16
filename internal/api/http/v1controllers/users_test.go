@@ -199,7 +199,19 @@ func TestUsers(t *testing.T) {
 	})
 
 	t.Run("GET /users", func(t *testing.T) {
-		t.Run("should be stub", func(t *testing.T) {
+		t.Run("happy path: returns 200 with list of users", func(t *testing.T) {
+			users := []*app.User{
+				{
+					ID:    fake.UUID().V4(),
+					Name:  fake.Person().Name(),
+					Email: fake.Internet().Email(),
+				},
+				{
+					ID:    fake.UUID().V4(),
+					Name:  fake.Person().Name(),
+					Email: fake.Internet().Email(),
+				},
+			}
 			req := httptest.NewRequest(
 				http.MethodGet,
 				"/users",
@@ -207,9 +219,38 @@ func TestUsers(t *testing.T) {
 			)
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
+			mockQueries := deps.UserQueries.(*MockUserQueries)
+			mockQueries.EXPECT().ListUsers(mock.Anything).Return(users, nil)
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusInternalServerError, w.Code)
+			require.Equal(t, http.StatusOK, w.Code)
+			var resp models.ListUsersResponse
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+			require.Len(t, resp.Users, 2)
+			assert.Equal(t, users[0].ID, resp.Users[0].ID)
+			assert.Equal(t, users[0].Name, resp.Users[0].Name)
+			assert.Equal(t, users[0].Email, resp.Users[0].Email)
+			assert.Equal(t, users[1].ID, resp.Users[1].ID)
+			assert.Equal(t, users[1].Name, resp.Users[1].Name)
+			assert.Equal(t, users[1].Email, resp.Users[1].Email)
+		})
+
+		t.Run("empty: returns 200 with empty array", func(t *testing.T) {
+			req := httptest.NewRequest(
+				http.MethodGet,
+				"/users",
+				nil,
+			)
+			w := httptest.NewRecorder()
+			deps := makeMockDeps(t)
+			mockQueries := deps.UserQueries.(*MockUserQueries)
+			mockQueries.EXPECT().ListUsers(mock.Anything).Return([]*app.User{}, nil)
+			newHandler(deps).ServeHTTP(w, req)
+
+			require.Equal(t, http.StatusOK, w.Code)
+			var resp models.ListUsersResponse
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+			assert.Empty(t, resp.Users)
 		})
 	})
 

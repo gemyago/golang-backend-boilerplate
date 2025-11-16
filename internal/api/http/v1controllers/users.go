@@ -2,7 +2,6 @@ package v1controllers
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"net/http"
 
@@ -79,8 +78,20 @@ func (c *UsersController) GetUserByID(
 }
 
 func (c *UsersController) ListUsers(builder handlers.NoParamsHandlerBuilder[*models.ListUsersResponse]) http.Handler {
-	return builder.HandleWith(func(_ context.Context) (*models.ListUsersResponse, error) {
-		return nil, errors.New("not implemented")
+	return builder.HandleWith(func(ctx context.Context) (*models.ListUsersResponse, error) {
+		users, err := c.queries.ListUsers(ctx)
+		if err != nil {
+			return nil, err
+		}
+		userResponses := make([]*models.UserResponse, len(users))
+		for i, user := range users {
+			userResponses[i] = &models.UserResponse{
+				ID:    user.ID,
+				Name:  user.Name,
+				Email: user.Email,
+			}
+		}
+		return &models.ListUsersResponse{Users: userResponses}, nil
 	})
 }
 
