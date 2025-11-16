@@ -66,9 +66,21 @@ func (c *PetsController) ListUserPets(
 	builder handlers.HandlerBuilder[*models.ListUserPetsParams, *models.ListUserPetsResponse],
 ) http.Handler {
 	return builder.HandleWith(
-		func(_ context.Context, _ *models.ListUserPetsParams) (*models.ListUserPetsResponse, error) {
-			// TODO: implement
-			return nil, nil
+		func(ctx context.Context, params *models.ListUserPetsParams) (*models.ListUserPetsResponse, error) {
+			pets, err := c.queries.ListUserPets(ctx, params.UserID)
+			if err != nil {
+				return nil, err
+			}
+			respPets := make([]*models.PetResponse, len(pets))
+			for i, pet := range pets {
+				respPets[i] = &models.PetResponse{
+					ID:        pet.ID,
+					Name:      pet.Name,
+					Status:    string(pet.Status),
+					PhotoUrls: pet.PhotoUrls,
+				}
+			}
+			return &models.ListUserPetsResponse{Pets: respPets}, nil
 		},
 	)
 }
