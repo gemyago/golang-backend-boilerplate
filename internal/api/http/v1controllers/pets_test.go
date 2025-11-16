@@ -3,14 +3,12 @@ package v1controllers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
-	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
@@ -35,23 +33,7 @@ func TestPets(t *testing.T) {
 		return deps
 	}
 	newHandler := func(deps PetsControllerDeps) http.Handler {
-		return handlers.
-			NewRootHandler(
-				(*server.HTTPRouter)(http.NewServeMux()),
-				handlers.WithLogger(deps.RootLogger),
-				handlers.WithActionErrorHandler(func(w http.ResponseWriter, _ *http.Request, err error) {
-					var errNotFound *app.NotFoundError
-					var errInvalidInput *app.InvalidInputError
-					switch {
-					case errors.As(err, &errInvalidInput):
-						w.WriteHeader(http.StatusBadRequest)
-					case errors.As(err, &errNotFound):
-						w.WriteHeader(http.StatusNotFound)
-					default:
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-				}),
-			).
+		return server.NewRootHandler(deps.RootLogger).
 			RegisterPetsRoutes(newPetsController(deps))
 	}
 

@@ -7,9 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
-	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
@@ -33,12 +31,7 @@ func TestUsers(t *testing.T) {
 		return deps
 	}
 	newHandler := func(deps UsersControllerDeps) http.Handler {
-		return handlers.
-			NewRootHandler(
-				(*server.HTTPRouter)(http.NewServeMux()),
-				handlers.WithLogger(deps.RootLogger),
-				handlers.WithActionErrorHandler(middleware.NewAppErrorHandler(deps.RootLogger)),
-			).
+		return server.NewRootHandler(deps.RootLogger).
 			RegisterUsersRoutes(newUsersController(deps))
 	}
 

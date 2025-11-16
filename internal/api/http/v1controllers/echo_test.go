@@ -2,6 +2,7 @@ package v1controllers
 
 import (
 	"bytes"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,13 +19,17 @@ func TestEcho(t *testing.T) {
 	fake := faker.New()
 	type mockDeps struct {
 		EchoController handlers.EchoController
+		RootLogger     *slog.Logger
 	}
 	makeDeps := func() mockDeps {
+		rootLogger := diag.RootTestLogger()
+
 		// In real world example a mock of EchoService would be used
 		echoService := app.NewEchoService(app.EchoServiceDeps{
-			RootLogger: diag.RootTestLogger(),
+			RootLogger: rootLogger,
 		})
 		deps := mockDeps{
+			RootLogger:     rootLogger,
 			EchoController: EchoController{EchoService: echoService},
 		}
 		return deps
@@ -40,8 +45,7 @@ func TestEcho(t *testing.T) {
 			)
 			w := httptest.NewRecorder()
 			deps := makeDeps()
-			rootHandler := handlers.
-				NewRootHandler((*server.HTTPRouter)(http.NewServeMux())).
+			rootHandler := server.NewRootHandler(deps.RootLogger).
 				RegisterEchoRoutes(deps.EchoController)
 			rootHandler.ServeHTTP(w, req)
 

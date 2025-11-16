@@ -2,13 +2,9 @@ package http
 
 import (
 	"errors"
-	"log/slog"
-	"net/http"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1controllers"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
-	"github.com/gemyago/golang-backend-boilerplate/internal/di"
 	"go.uber.org/dig"
 )
 
@@ -23,29 +19,20 @@ type V1RoutesDeps struct {
 	*v1controllers.UsersController
 	*v1controllers.PetsController
 
-	RootLogger *slog.Logger
+	RootHandler *handlers.RootHandler
 }
 
-func NewRootHandler(deps V1RoutesDeps) http.Handler { // coverage-ignore // Little value in testing wireup code.
-	logger := deps.RootLogger.WithGroup("http")
-
-	rootHandler := handlers.NewRootHandler(
-		(*server.HTTPRouter)(http.NewServeMux()),
-		handlers.WithLogger(logger),
-	)
+func SetupV1Routes(deps V1RoutesDeps) { // coverage-ignore // Little value in testing wireup code.
+	rootHandler := deps.RootHandler
 	rootHandler.RegisterHealthRoutes(deps.HealthController)
 	rootHandler.RegisterEchoRoutes(deps.EchoController)
 	rootHandler.RegisterUsersRoutes(deps.UsersController)
 	rootHandler.RegisterPetsRoutes(deps.PetsController)
-
-	return rootHandler
 }
 
 func Register(container *dig.Container) error {
 	return errors.Join(
 		v1controllers.Register(container),
-		di.ProvideAll(container,
-			NewRootHandler,
-		),
+		container.Invoke(SetupV1Routes),
 	)
 }

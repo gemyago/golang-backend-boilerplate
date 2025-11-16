@@ -52,8 +52,8 @@ Each API "sub layer" should define it's own set of ports. A DI hint is required 
   - [internal/api/http/v1controllers/users_test.go](./api/http/v1controllers/users_test.go)
 - Controllers wiring: [internal/api/http/server/register.go](./api/http/server/register.go)
 - Controllers wiring: 
-  - Injected into DI [internal/api/http/server/register.go](./api/http/server/register.go)
-  - Registered into router: [internal/api/http/v1routes.go](./api/http/v1routes.go)
+  - Injected server [internal/api/http/server/register.go](./api/http/server/register.go)
+  - Registered routes: [internal/api/http/register.go](./api/http/register.go)
 
 ### MCP Tools (dynamic context)
 - Example MCP tool controller: [internal/api/mcp/controllers/math.go](./api/mcp/controllers/math.go)
