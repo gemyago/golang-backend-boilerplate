@@ -10,6 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"fmt"
+
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
@@ -192,6 +194,81 @@ func TestPetsController(t *testing.T) {
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusBadGateway, w.Code)
+		})
+	})
+
+	t.Run("DELETE /users/{userId}/pets/{petId}", func(t *testing.T) {
+		t.Run("happy path: returns 204", func(t *testing.T) {
+			userID := fake.UUID().V4()
+			petID := fake.Int64()
+			req := httptest.NewRequest(
+				http.MethodDelete,
+				fmt.Sprintf("/users/%s/pets/%d", userID, petID),
+				nil,
+			)
+			w := httptest.NewRecorder()
+
+			user := &app.User{ID: userID}
+
+			deps := makeMockDeps(
+				t,
+				func(mockUsersRepo *MockUsersRepository, mockPetsRepo *MockPetsRepository, _ *MockPetstoreClient) {
+					mockUsersRepo.On("GetUserByID", mock.Anything, userID).Return(user, nil)
+					mockPetsRepo.On("HasUserPet", mock.Anything, userID, petID).Return(true, nil)
+					mockPetsRepo.On("RemoveUserPet", mock.Anything, userID, petID).Return(nil)
+				},
+			)
+
+			newHandler(deps).ServeHTTP(w, req)
+
+			require.Equal(t, http.StatusNoContent, w.Code)
+		})
+
+		t.Run("user not found: returns 404", func(t *testing.T) {
+			userID := fake.UUID().V4()
+			petID := fake.Int64()
+			req := httptest.NewRequest(
+				http.MethodDelete,
+				fmt.Sprintf("/users/%s/pets/%d", userID, petID),
+				nil,
+			)
+			w := httptest.NewRecorder()
+
+			deps := makeMockDeps(
+				t,
+				func(mockUsersRepo *MockUsersRepository, _ *MockPetsRepository, _ *MockPetstoreClient) {
+					mockUsersRepo.On("GetUserByID", mock.Anything, userID).Return((*app.User)(nil), sql.ErrNoRows)
+				},
+			)
+
+			newHandler(deps).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusNotFound, w.Code)
+		})
+
+		t.Run("relationship not found: returns 404", func(t *testing.T) {
+			userID := fake.UUID().V4()
+			petID := fake.Int64()
+			req := httptest.NewRequest(
+				http.MethodDelete,
+				fmt.Sprintf("/users/%s/pets/%d", userID, petID),
+				nil,
+			)
+			w := httptest.NewRecorder()
+
+			user := &app.User{ID: userID}
+
+			deps := makeMockDeps(
+				t,
+				func(mockUsersRepo *MockUsersRepository, mockPetsRepo *MockPetsRepository, _ *MockPetstoreClient) {
+					mockUsersRepo.On("GetUserByID", mock.Anything, userID).Return(user, nil)
+					mockPetsRepo.On("HasUserPet", mock.Anything, userID, petID).Return(false, nil)
+				},
+			)
+
+			newHandler(deps).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusNotFound, w.Code)
 		})
 	})
 }

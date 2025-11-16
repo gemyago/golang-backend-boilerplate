@@ -57,9 +57,8 @@ func (c *PetsController) AddUserPet(
 func (c *PetsController) RemoveUserPet(
 	builder handlers.NoResponseHandlerBuilder[*models.RemoveUserPetParams],
 ) http.Handler {
-	return builder.HandleWith(func(_ context.Context, _ *models.RemoveUserPetParams) error {
-		// TODO: implement
-		return nil
+	return builder.HandleWith(func(ctx context.Context, params *models.RemoveUserPetParams) error {
+		return c.commands.RemovePet(ctx, params.UserID, params.PetID)
 	})
 }
 
