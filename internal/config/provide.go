@@ -45,6 +45,9 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 	return di.ProvideAll(container,
 		provideConfigValue(cfg, "gracefulShutdownTimeout").asDuration(),
 
+		// petstore config
+		provideConfigValue(cfg, "petstore.baseURL").asString(),
+
 		// http server config
 		provideConfigValue(cfg, "httpServer.host").asString(),
 		provideConfigValue(cfg, "httpServer.port").asInt(),

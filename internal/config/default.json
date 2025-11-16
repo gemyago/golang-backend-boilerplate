@@ -2,6 +2,9 @@
   "database": {
     "dsn": "./data/app.db"
   },
+  "petstore": {
+    "baseURL": "https://petstore3.swagger.io/api/v3"
+  },
   "defaultLogLevel": "INFO",
   "gracefulShutdownTimeout": "10s",
   "httpServer": {

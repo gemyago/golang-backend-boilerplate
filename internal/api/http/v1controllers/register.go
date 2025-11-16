@@ -10,6 +10,7 @@ func Register(container *dig.Container) error {
 	return di.ProvideAll(container,
 		newEchoController,
 		newUsersController,
+		newPetsController,
 		di.ProvideValue(&HealthController{}),
 
 		// Application layer ports
