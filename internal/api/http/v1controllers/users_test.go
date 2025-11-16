@@ -3,11 +3,11 @@ package v1controllers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
@@ -37,22 +37,7 @@ func TestUsers(t *testing.T) {
 			NewRootHandler(
 				(*server.HTTPRouter)(http.NewServeMux()),
 				handlers.WithLogger(deps.RootLogger),
-				handlers.WithActionErrorHandler(func(w http.ResponseWriter, _ *http.Request, err error) {
-					var errNotFound *app.NotFoundError
-					var errInvalidInput *app.InvalidInputError
-					var errConflict *app.ConflictError
-					switch {
-					case errors.As(err, &errInvalidInput):
-						w.WriteHeader(http.StatusBadRequest)
-					case errors.As(err, &errConflict):
-						w.WriteHeader(http.StatusConflict)
-					case errors.As(err, &errNotFound):
-						w.WriteHeader(http.StatusNotFound)
-					default:
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-					// Log the error if needed, but for test, just set status
-				}),
+				handlers.WithActionErrorHandler(middleware.NewAppErrorHandler(deps.RootLogger)),
 			).
 			RegisterUsersRoutes(newUsersController(deps))
 	}
