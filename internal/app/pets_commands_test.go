@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jaswdr/faker"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
@@ -95,7 +96,9 @@ func TestPetsCommands(t *testing.T) {
 
 			// Then
 			require.Error(t, err)
-			require.Equal(t, ErrInvalidInput, err)
+			var errInvalidInput *InvalidInputError
+			require.ErrorAs(t, err, &errInvalidInput)
+			assert.Equal(t, "name", errInvalidInput.Field)
 			require.Nil(t, resp)
 		})
 
@@ -114,7 +117,9 @@ func TestPetsCommands(t *testing.T) {
 
 			// Then
 			require.Error(t, err)
-			require.Equal(t, ErrUserNotFound, err)
+			var errNotFound *NotFoundError
+			require.ErrorAs(t, err, &errNotFound)
+			assert.Equal(t, "user", errNotFound.Resource)
 			require.Nil(t, resp)
 		})
 
@@ -138,7 +143,9 @@ func TestPetsCommands(t *testing.T) {
 
 			// Then
 			require.Error(t, err)
-			require.ErrorIs(t, err, ErrPetCreationFailed)
+			// Pet creation failures are now wrapped, check the error message
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "failed to create pet in petstore")
 			require.Nil(t, resp)
 		})
 
@@ -203,7 +210,9 @@ func TestPetsCommands(t *testing.T) {
 
 			// Then
 			require.Error(t, err)
-			require.Equal(t, ErrUserNotFound, err)
+			var errNotFound *NotFoundError
+			require.ErrorAs(t, err, &errNotFound)
+			assert.Equal(t, "user", errNotFound.Resource)
 		})
 
 		t.Run("should return ErrUserPetNotFound when relationship doesn't exist", func(t *testing.T) {
@@ -225,7 +234,9 @@ func TestPetsCommands(t *testing.T) {
 
 			// Then
 			require.Error(t, err)
-			require.Equal(t, ErrUserPetNotFound, err)
+			var errNotFound *NotFoundError
+			require.ErrorAs(t, err, &errNotFound)
+			assert.Equal(t, "user-pet relationship", errNotFound.Resource)
 		})
 
 		t.Run("should propagate unexpected user repo error", func(t *testing.T) {

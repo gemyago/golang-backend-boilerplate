@@ -40,14 +40,12 @@ func TestPets(t *testing.T) {
 				(*server.HTTPRouter)(http.NewServeMux()),
 				handlers.WithLogger(deps.RootLogger),
 				handlers.WithActionErrorHandler(func(w http.ResponseWriter, _ *http.Request, err error) {
+					var errNotFound *app.NotFoundError
+					var errInvalidInput *app.InvalidInputError
 					switch {
-					case errors.Is(err, app.ErrInvalidInput):
+					case errors.As(err, &errInvalidInput):
 						w.WriteHeader(http.StatusBadRequest)
-					case errors.Is(err, app.ErrUserNotFound):
-						w.WriteHeader(http.StatusNotFound)
-					case errors.Is(err, app.ErrPetCreationFailed):
-						w.WriteHeader(http.StatusBadGateway)
-					case errors.Is(err, app.ErrUserPetNotFound):
+					case errors.As(err, &errNotFound):
 						w.WriteHeader(http.StatusNotFound)
 					default:
 						w.WriteHeader(http.StatusInternalServerError)
@@ -104,7 +102,7 @@ func TestPets(t *testing.T) {
 				Name:      payload.Name,
 				Status:    string(payload.Status),
 				PhotoUrls: payload.PhotoUrls,
-			}).Return(nil, app.ErrInvalidInput)
+			}).Return(nil, app.NewErrInvalidInput("name", "cannot be empty"))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -128,34 +126,10 @@ func TestPets(t *testing.T) {
 				Name:      payload.Name,
 				Status:    string(payload.Status),
 				PhotoUrls: payload.PhotoUrls,
-			}).Return(nil, app.ErrUserNotFound)
+			}).Return(nil, app.NewErrNotFound("user", userID))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusNotFound, w.Code)
-		})
-
-		t.Run("petstore failure: returns 502", func(t *testing.T) {
-			userID := fake.UUID().V4()
-			payload := newRandomAddPetRequest(fake)
-			reqBody, _ := json.Marshal(payload)
-			req := httptest.NewRequest(
-				http.MethodPost,
-				"/users/"+userID+"/pets",
-				bytes.NewBuffer(reqBody),
-			)
-			req.Header.Set("Content-Type", "application/json")
-			w := httptest.NewRecorder()
-			deps := makeMockDeps(t)
-			mockCmd := deps.PetsCommands.(*MockPetsCommands)
-			mockCmd.EXPECT().AddPet(mock.Anything, app.AddPetRequest{
-				UserID:    userID,
-				Name:      payload.Name,
-				Status:    string(payload.Status),
-				PhotoUrls: payload.PhotoUrls,
-			}).Return(nil, app.ErrPetCreationFailed)
-			newHandler(deps).ServeHTTP(w, req)
-
-			assert.Equal(t, http.StatusBadGateway, w.Code)
 		})
 	})
 
@@ -188,7 +162,7 @@ func TestPets(t *testing.T) {
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
 			mockCmd := deps.PetsCommands.(*MockPetsCommands)
-			mockCmd.EXPECT().RemovePet(mock.Anything, userID, petID).Return(app.ErrUserNotFound)
+			mockCmd.EXPECT().RemovePet(mock.Anything, userID, petID).Return(app.NewErrNotFound("user", userID))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusNotFound, w.Code)
@@ -205,7 +179,9 @@ func TestPets(t *testing.T) {
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
 			mockCmd := deps.PetsCommands.(*MockPetsCommands)
-			mockCmd.EXPECT().RemovePet(mock.Anything, userID, petID).Return(app.ErrUserPetNotFound)
+			mockCmd.EXPECT().
+				RemovePet(mock.Anything, userID, petID).
+				Return(app.NewErrNotFound("user-pet relationship", "user:"+userID))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusNotFound, w.Code)
@@ -258,7 +234,7 @@ func TestPets(t *testing.T) {
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
 			mockQueries := deps.PetsQueries.(*MockPetsQueries)
-			mockQueries.EXPECT().ListUserPets(mock.Anything, userID).Return(nil, app.ErrUserNotFound)
+			mockQueries.EXPECT().ListUserPets(mock.Anything, userID).Return(nil, app.NewErrNotFound("user", userID))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusNotFound, w.Code)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -167,7 +168,9 @@ func TestPetsQueries(t *testing.T) {
 			pets, err := queries.ListUserPets(ctx, userID)
 
 			// Then
-			require.ErrorIs(t, err, ErrUserNotFound)
+			var errNotFound *NotFoundError
+			require.ErrorAs(t, err, &errNotFound)
+			assert.Equal(t, "user", errNotFound.Resource)
 			require.Nil(t, pets)
 		})
 

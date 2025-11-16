@@ -37,7 +37,7 @@ func (q *UserQueries) GetUserByID(ctx context.Context, userID string) (*User, er
 	user, err := q.usersRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrUserNotFound
+			return nil, NewErrNotFound("user", userID)
 		}
 		return nil, err
 	}

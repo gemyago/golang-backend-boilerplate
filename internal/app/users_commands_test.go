@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jaswdr/faker"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
@@ -79,7 +80,9 @@ func TestUserCommands(t *testing.T) {
 			resp, err := commands.CreateUser(ctx, *req)
 
 			require.Error(t, err)
-			require.Equal(t, ErrInvalidInput, err)
+			var errInvalidInput *InvalidInputError
+			require.ErrorAs(t, err, &errInvalidInput)
+			assert.Equal(t, "name", errInvalidInput.Field)
 			require.Nil(t, resp)
 		})
 
@@ -93,7 +96,9 @@ func TestUserCommands(t *testing.T) {
 			resp, err := commands.CreateUser(ctx, *req)
 
 			require.Error(t, err)
-			require.Equal(t, ErrInvalidInput, err)
+			var errInvalidInput *InvalidInputError
+			require.ErrorAs(t, err, &errInvalidInput)
+			assert.Equal(t, "email", errInvalidInput.Field)
 			require.Nil(t, resp)
 		})
 
@@ -107,7 +112,9 @@ func TestUserCommands(t *testing.T) {
 			resp, err := commands.CreateUser(ctx, *req)
 
 			require.Error(t, err)
-			require.Equal(t, ErrInvalidInput, err)
+			var errInvalidInput *InvalidInputError
+			require.ErrorAs(t, err, &errInvalidInput)
+			assert.Equal(t, "email", errInvalidInput.Field)
 			require.Nil(t, resp)
 		})
 
@@ -129,7 +136,9 @@ func TestUserCommands(t *testing.T) {
 			resp, err := commands.CreateUser(ctx, *req)
 
 			require.Error(t, err)
-			require.Equal(t, ErrUserEmailConflict, err)
+			var errConflict *ConflictError
+			require.ErrorAs(t, err, &errConflict)
+			assert.Equal(t, "user email", errConflict.Resource)
 			require.Nil(t, resp)
 		})
 
@@ -213,7 +222,9 @@ func TestUserCommands(t *testing.T) {
 			err := commands.UpdateUser(ctx, *req)
 
 			require.Error(t, err)
-			require.Equal(t, ErrInvalidInput, err)
+			var errInvalidInput *InvalidInputError
+			require.ErrorAs(t, err, &errInvalidInput)
+			assert.Equal(t, "name", errInvalidInput.Field)
 		})
 
 		t.Run("should return ErrInvalidInput for empty email", func(t *testing.T) {
@@ -226,7 +237,9 @@ func TestUserCommands(t *testing.T) {
 			err := commands.UpdateUser(ctx, *req)
 
 			require.Error(t, err)
-			require.Equal(t, ErrInvalidInput, err)
+			var errInvalidInput *InvalidInputError
+			require.ErrorAs(t, err, &errInvalidInput)
+			assert.Equal(t, "email", errInvalidInput.Field)
 		})
 
 		t.Run("should return ErrInvalidInput for invalid email", func(t *testing.T) {
@@ -239,7 +252,9 @@ func TestUserCommands(t *testing.T) {
 			err := commands.UpdateUser(ctx, *req)
 
 			require.Error(t, err)
-			require.Equal(t, ErrInvalidInput, err)
+			var errInvalidInput *InvalidInputError
+			require.ErrorAs(t, err, &errInvalidInput)
+			assert.Equal(t, "email", errInvalidInput.Field)
 		})
 
 		t.Run("should return ErrUserNotFound when user doesn't exist", func(t *testing.T) {
@@ -255,7 +270,9 @@ func TestUserCommands(t *testing.T) {
 			err := commands.UpdateUser(ctx, *req)
 
 			require.Error(t, err)
-			require.Equal(t, ErrUserNotFound, err)
+			var errNotFound *NotFoundError
+			require.ErrorAs(t, err, &errNotFound)
+			assert.Equal(t, "user", errNotFound.Resource)
 		})
 
 		t.Run("should return ErrUserEmailConflict when email already exists", func(t *testing.T) {
@@ -278,7 +295,9 @@ func TestUserCommands(t *testing.T) {
 			err := commands.UpdateUser(ctx, *req)
 
 			require.Error(t, err)
-			require.Equal(t, ErrUserEmailConflict, err)
+			var errConflict *ConflictError
+			require.ErrorAs(t, err, &errConflict)
+			assert.Equal(t, "user email", errConflict.Resource)
 		})
 
 		t.Run("should allow updating user with their own email", func(t *testing.T) {
@@ -383,7 +402,9 @@ func TestUserCommands(t *testing.T) {
 
 			// Then
 			require.Error(t, err)
-			require.Equal(t, ErrUserNotFound, err)
+			var errNotFound *NotFoundError
+			require.ErrorAs(t, err, &errNotFound)
+			assert.Equal(t, "user", errNotFound.Resource)
 		})
 
 		t.Run("should propagate repo DeleteUser error", func(t *testing.T) {

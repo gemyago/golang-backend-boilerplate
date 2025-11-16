@@ -60,12 +60,15 @@ func (c *UserCommands) CreateUser(ctx context.Context, req CreateUserRequest) (*
 	req.Email = strings.TrimSpace(req.Email)
 
 	// Basic validation
-	if req.Name == "" || req.Email == "" {
-		return nil, ErrInvalidInput
+	if req.Name == "" {
+		return nil, NewErrInvalidInput("name", "cannot be empty")
+	}
+	if req.Email == "" {
+		return nil, NewErrInvalidInput("email", "cannot be empty")
 	}
 	emailRe := regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 	if !emailRe.MatchString(req.Email) {
-		return nil, ErrInvalidInput
+		return nil, NewErrInvalidInput("email", "invalid format")
 	}
 
 	// Check email uniqueness
@@ -75,7 +78,7 @@ func (c *UserCommands) CreateUser(ctx context.Context, req CreateUserRequest) (*
 		return nil, err
 	}
 	if existing != nil {
-		return nil, ErrUserEmailConflict
+		return nil, NewErrConflict("user email", "already exists")
 	}
 
 	// Generate UUID and create user
@@ -101,19 +104,22 @@ func (c *UserCommands) UpdateUser(ctx context.Context, req UpdateUserRequest) er
 	req.Email = strings.TrimSpace(req.Email)
 
 	// Basic validation
-	if req.Name == "" || req.Email == "" {
-		return ErrInvalidInput
+	if req.Name == "" {
+		return NewErrInvalidInput("name", "cannot be empty")
+	}
+	if req.Email == "" {
+		return NewErrInvalidInput("email", "cannot be empty")
 	}
 	emailRe := regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 	if !emailRe.MatchString(req.Email) {
-		return ErrInvalidInput
+		return NewErrInvalidInput("email", "invalid format")
 	}
 
 	// Check user exists
 	existing, err := c.usersRepo.GetUserByID(ctx, req.UserID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrUserNotFound
+			return NewErrNotFound("user", req.UserID)
 		}
 		return err
 	}
@@ -125,7 +131,7 @@ func (c *UserCommands) UpdateUser(ctx context.Context, req UpdateUserRequest) er
 			return emailErr
 		}
 		if emailCheck != nil {
-			return ErrUserEmailConflict
+			return NewErrConflict("user email", "already exists")
 		}
 	}
 
@@ -147,7 +153,7 @@ func (c *UserCommands) DeleteUser(ctx context.Context, userID string) error {
 	_, err := c.usersRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrUserNotFound
+			return NewErrNotFound("user", userID)
 		}
 		return err
 	}

@@ -9,6 +9,7 @@ import (
 
 	"log/slog"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -111,7 +112,9 @@ func TestUserQueries(t *testing.T) {
 			queries := NewUserQueries(deps)
 
 			_, err := queries.GetUserByID(context.Background(), "nonexistent")
-			require.ErrorIs(t, err, ErrUserNotFound)
+			var errNotFound *NotFoundError
+			require.ErrorAs(t, err, &errNotFound)
+			assert.Equal(t, "user", errNotFound.Resource)
 		})
 		t.Run("repository error", func(t *testing.T) {
 			t.Parallel()

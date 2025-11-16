@@ -38,12 +38,15 @@ func TestUsers(t *testing.T) {
 				(*server.HTTPRouter)(http.NewServeMux()),
 				handlers.WithLogger(deps.RootLogger),
 				handlers.WithActionErrorHandler(func(w http.ResponseWriter, _ *http.Request, err error) {
+					var errNotFound *app.NotFoundError
+					var errInvalidInput *app.InvalidInputError
+					var errConflict *app.ConflictError
 					switch {
-					case errors.Is(err, app.ErrInvalidInput):
+					case errors.As(err, &errInvalidInput):
 						w.WriteHeader(http.StatusBadRequest)
-					case errors.Is(err, app.ErrUserEmailConflict):
+					case errors.As(err, &errConflict):
 						w.WriteHeader(http.StatusConflict)
-					case errors.Is(err, app.ErrUserNotFound):
+					case errors.As(err, &errNotFound):
 						w.WriteHeader(http.StatusNotFound)
 					default:
 						w.WriteHeader(http.StatusInternalServerError)
@@ -93,7 +96,7 @@ func TestUsers(t *testing.T) {
 			mockCmd.EXPECT().CreateUser(mock.Anything, app.CreateUserRequest{
 				Name:  payload.Name,
 				Email: payload.Email,
-			}).Return(nil, app.ErrInvalidInput)
+			}).Return(nil, app.NewErrInvalidInput("email", "invalid format"))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -113,7 +116,7 @@ func TestUsers(t *testing.T) {
 			mockCmd.EXPECT().CreateUser(mock.Anything, app.CreateUserRequest{
 				Name:  payload.Name,
 				Email: payload.Email,
-			}).Return(nil, app.ErrUserEmailConflict)
+			}).Return(nil, app.NewErrConflict("user email", "already exists"))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusConflict, w.Code)
@@ -147,7 +150,7 @@ func TestUsers(t *testing.T) {
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
 			mockCmd := deps.UserCommands.(*MockUserCommands)
-			mockCmd.EXPECT().DeleteUser(mock.Anything, userID).Return(app.ErrUserNotFound)
+			mockCmd.EXPECT().DeleteUser(mock.Anything, userID).Return(app.NewErrNotFound("user", userID))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusNotFound, w.Code)
@@ -191,7 +194,7 @@ func TestUsers(t *testing.T) {
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
 			mockQueries := deps.UserQueries.(*MockUserQueries)
-			mockQueries.EXPECT().GetUserByID(mock.Anything, userID).Return(nil, app.ErrUserNotFound)
+			mockQueries.EXPECT().GetUserByID(mock.Anything, userID).Return(nil, app.NewErrNotFound("user", userID))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusNotFound, w.Code)
@@ -293,7 +296,7 @@ func TestUsers(t *testing.T) {
 				UserID: userID,
 				Name:   payload.Name,
 				Email:  payload.Email,
-			}).Return(app.ErrInvalidInput)
+			}).Return(app.NewErrInvalidInput("email", "invalid format"))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -315,7 +318,7 @@ func TestUsers(t *testing.T) {
 				UserID: userID,
 				Name:   payload.Name,
 				Email:  payload.Email,
-			}).Return(app.ErrUserNotFound)
+			}).Return(app.NewErrNotFound("user", userID))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusNotFound, w.Code)
@@ -337,7 +340,7 @@ func TestUsers(t *testing.T) {
 				UserID: userID,
 				Name:   payload.Name,
 				Email:  payload.Email,
-			}).Return(app.ErrUserEmailConflict)
+			}).Return(app.NewErrConflict("user email", "already exists"))
 			newHandler(deps).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusConflict, w.Code)

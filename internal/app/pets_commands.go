@@ -24,12 +24,6 @@ type AddPetResponse struct {
 	PetID int64
 }
 
-// Domain errors.
-var (
-	ErrPetCreationFailed = errors.New("failed to create pet in petstore")
-	ErrUserPetNotFound   = errors.New("user-pet relationship not found")
-)
-
 // PetsCommands is a concrete struct (not an interface).
 // Controllers use this directly.
 type PetsCommands struct {
@@ -61,13 +55,13 @@ func NewPetsCommands(deps PetsCommandsDeps) *PetsCommands {
 
 func (c *PetsCommands) AddPet(ctx context.Context, req AddPetRequest) (*AddPetResponse, error) {
 	if req.Name == "" {
-		return nil, ErrInvalidInput
+		return nil, NewErrInvalidInput("name", "cannot be empty")
 	}
 
 	_, getUserErr := c.usersRepo.GetUserByID(ctx, req.UserID)
 	if getUserErr != nil {
 		if errors.Is(getUserErr, sql.ErrNoRows) {
-			return nil, ErrUserNotFound
+			return nil, NewErrNotFound("user", req.UserID)
 		}
 		return nil, fmt.Errorf("failed to get user: %w", getUserErr)
 	}
@@ -80,7 +74,7 @@ func (c *PetsCommands) AddPet(ctx context.Context, req AddPetRequest) (*AddPetRe
 
 	pet, addPetErr := c.petstoreClient.AddPet(ctx, petstore.AddPetParams{Request: petReq})
 	if addPetErr != nil {
-		return nil, fmt.Errorf("%w: %w", ErrPetCreationFailed, addPetErr)
+		return nil, fmt.Errorf("failed to create pet in petstore: %w", addPetErr)
 	}
 
 	userPet := UserPet{
@@ -100,7 +94,7 @@ func (c *PetsCommands) RemovePet(ctx context.Context, userID string, petID int64
 	_, getUserErr := c.usersRepo.GetUserByID(ctx, userID)
 	if getUserErr != nil {
 		if errors.Is(getUserErr, sql.ErrNoRows) {
-			return ErrUserNotFound
+			return NewErrNotFound("user", userID)
 		}
 		return fmt.Errorf("failed to get user: %w", getUserErr)
 	}
@@ -110,7 +104,7 @@ func (c *PetsCommands) RemovePet(ctx context.Context, userID string, petID int64
 		return fmt.Errorf("failed to check user pet relationship: %w", hasErr)
 	}
 	if !has {
-		return ErrUserPetNotFound
+		return NewErrNotFound("user-pet relationship", fmt.Sprintf("user:%s, pet:%d", userID, petID))
 	}
 
 	if removeErr := c.petsRepo.RemoveUserPet(ctx, userID, petID); removeErr != nil {
