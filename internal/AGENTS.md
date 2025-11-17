@@ -43,6 +43,11 @@ Example ports: [api/http/v1controllers/ports.go](api/http/v1controllers/ports.go
 
 Each API "sub layer" should define it's own set of ports. A DI hint is required to allow resolving implementations of the interfaces using `di.ProvideAs` approach (see [internal/api/http/v1controllers/register.go](./api/http/v1controllers/register.go) as example)
 
+### Data types compatibility
+
+Mapping from adapter specific data types to application layer data types may need to be performed. One off mapping can be done in-place. Data types that are used in few places can be mapped by a shared "mapper" component. Example mapper:
+- [internal/api/http/v1controllers/users_mapper.go](./api/http/v1controllers/users_mapper.go) and it's tests [internal/api/http/v1controllers/users_mapper_test.go](./api/http/v1controllers/users_mapper_test.go)
+
 ### HTTP Layer (OpenAPI-first)
 
 - Spec source of truth: [internal/api/http/v1routes.yaml](./api/http/v1routes.yaml)
