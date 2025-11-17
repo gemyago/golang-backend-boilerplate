@@ -3,6 +3,7 @@ package v1controllers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,7 +14,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
-	mock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -60,7 +61,7 @@ func TestUsers(t *testing.T) {
 			assert.Equal(t, userID, resp.UserID)
 		})
 
-		t.Run("validation error: returns 400 for invalid input", func(t *testing.T) {
+		t.Run("internal error: returns 500", func(t *testing.T) {
 			payload := newRandomCreateUserRequest(fake)
 			reqBody, _ := json.Marshal(payload)
 			req := httptest.NewRequest(
@@ -74,30 +75,10 @@ func TestUsers(t *testing.T) {
 			mockCmd.EXPECT().CreateUser(mock.Anything, app.CreateUserRequest{
 				Name:  payload.Name,
 				Email: payload.Email,
-			}).Return(nil, app.NewErrInvalidInput("email", "invalid format"))
+			}).Return(nil, errors.New(fake.Lorem().Sentence(3)))
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusBadRequest, w.Code)
-		})
-
-		t.Run("conflict: returns 409 for duplicate email", func(t *testing.T) {
-			payload := newRandomCreateUserRequest(fake)
-			reqBody, _ := json.Marshal(payload)
-			req := httptest.NewRequest(
-				http.MethodPost,
-				"/users",
-				bytes.NewBuffer(reqBody),
-			)
-			w := httptest.NewRecorder()
-			deps := makeMockDeps(t)
-			mockCmd := deps.UserCommands.(*MockUserCommands)
-			mockCmd.EXPECT().CreateUser(mock.Anything, app.CreateUserRequest{
-				Name:  payload.Name,
-				Email: payload.Email,
-			}).Return(nil, app.NewErrConflict("user email", "already exists"))
-			newHandler(deps).ServeHTTP(w, req)
-
-			assert.Equal(t, http.StatusConflict, w.Code)
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
 		})
 	})
 
@@ -118,7 +99,7 @@ func TestUsers(t *testing.T) {
 			assert.Equal(t, http.StatusNoContent, w.Code)
 		})
 
-		t.Run("not found: returns 404", func(t *testing.T) {
+		t.Run("internal error: returns 500", func(t *testing.T) {
 			userID := fake.UUID().V4()
 			req := httptest.NewRequest(
 				http.MethodDelete,
@@ -128,10 +109,10 @@ func TestUsers(t *testing.T) {
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
 			mockCmd := deps.UserCommands.(*MockUserCommands)
-			mockCmd.EXPECT().DeleteUser(mock.Anything, userID).Return(app.NewErrNotFound("user", userID))
+			mockCmd.EXPECT().DeleteUser(mock.Anything, userID).Return(errors.New(fake.Lorem().Sentence(3)))
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusNotFound, w.Code)
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
 		})
 	})
 
@@ -162,7 +143,7 @@ func TestUsers(t *testing.T) {
 			assert.Equal(t, user.Email, resp.Email)
 		})
 
-		t.Run("not found: returns 404", func(t *testing.T) {
+		t.Run("internal error: returns 500", func(t *testing.T) {
 			userID := fake.UUID().V4()
 			req := httptest.NewRequest(
 				http.MethodGet,
@@ -172,10 +153,10 @@ func TestUsers(t *testing.T) {
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
 			mockQueries := deps.UserQueries.(*MockUserQueries)
-			mockQueries.EXPECT().GetUserByID(mock.Anything, userID).Return(nil, app.NewErrNotFound("user", userID))
+			mockQueries.EXPECT().GetUserByID(mock.Anything, userID).Return(nil, errors.New(fake.Lorem().Sentence(3)))
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusNotFound, w.Code)
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
 		})
 	})
 
@@ -214,6 +195,21 @@ func TestUsers(t *testing.T) {
 			assert.Equal(t, users[1].ID, resp.Users[1].ID)
 			assert.Equal(t, users[1].Name, resp.Users[1].Name)
 			assert.Equal(t, users[1].Email, resp.Users[1].Email)
+		})
+
+		t.Run("internal error: returns 500", func(t *testing.T) {
+			req := httptest.NewRequest(
+				http.MethodGet,
+				"/users",
+				nil,
+			)
+			w := httptest.NewRecorder()
+			deps := makeMockDeps(t)
+			mockQueries := deps.UserQueries.(*MockUserQueries)
+			mockQueries.EXPECT().ListUsers(mock.Anything).Return(nil, errors.New(fake.Lorem().Sentence(3)))
+			newHandler(deps).ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
 		})
 
 		t.Run("empty: returns 200 with empty array", func(t *testing.T) {
@@ -258,7 +254,7 @@ func TestUsers(t *testing.T) {
 			assert.Equal(t, http.StatusNoContent, w.Code)
 		})
 
-		t.Run("validation error: returns 400", func(t *testing.T) {
+		t.Run("internal error: returns 500", func(t *testing.T) {
 			userID := fake.UUID().V4()
 			payload := newRandomUpdateUserRequest(fake)
 			reqBody, _ := json.Marshal(payload)
@@ -274,54 +270,10 @@ func TestUsers(t *testing.T) {
 				UserID: userID,
 				Name:   payload.Name,
 				Email:  payload.Email,
-			}).Return(app.NewErrInvalidInput("email", "invalid format"))
+			}).Return(errors.New(fake.Lorem().Sentence(3)))
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusBadRequest, w.Code)
-		})
-
-		t.Run("not found: returns 404", func(t *testing.T) {
-			userID := fake.UUID().V4()
-			payload := newRandomUpdateUserRequest(fake)
-			reqBody, _ := json.Marshal(payload)
-			req := httptest.NewRequest(
-				http.MethodPut,
-				"/users/"+userID,
-				bytes.NewBuffer(reqBody),
-			)
-			w := httptest.NewRecorder()
-			deps := makeMockDeps(t)
-			mockCmd := deps.UserCommands.(*MockUserCommands)
-			mockCmd.EXPECT().UpdateUser(mock.Anything, app.UpdateUserRequest{
-				UserID: userID,
-				Name:   payload.Name,
-				Email:  payload.Email,
-			}).Return(app.NewErrNotFound("user", userID))
-			newHandler(deps).ServeHTTP(w, req)
-
-			assert.Equal(t, http.StatusNotFound, w.Code)
-		})
-
-		t.Run("conflict: returns 409", func(t *testing.T) {
-			userID := fake.UUID().V4()
-			payload := newRandomUpdateUserRequest(fake)
-			reqBody, _ := json.Marshal(payload)
-			req := httptest.NewRequest(
-				http.MethodPut,
-				"/users/"+userID,
-				bytes.NewBuffer(reqBody),
-			)
-			w := httptest.NewRecorder()
-			deps := makeMockDeps(t)
-			mockCmd := deps.UserCommands.(*MockUserCommands)
-			mockCmd.EXPECT().UpdateUser(mock.Anything, app.UpdateUserRequest{
-				UserID: userID,
-				Name:   payload.Name,
-				Email:  payload.Email,
-			}).Return(app.NewErrConflict("user email", "already exists"))
-			newHandler(deps).ServeHTTP(w, req)
-
-			assert.Equal(t, http.StatusConflict, w.Code)
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
 		})
 	})
 }

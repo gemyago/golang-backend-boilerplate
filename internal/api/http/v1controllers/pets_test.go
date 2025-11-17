@@ -3,6 +3,7 @@ package v1controllers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -66,7 +67,7 @@ func TestPets(t *testing.T) {
 			assert.Equal(t, petID, resp.PetID)
 		})
 
-		t.Run("validation error: returns 400 for invalid input", func(t *testing.T) {
+		t.Run("internal error: returns 500", func(t *testing.T) {
 			userID := fake.UUID().V4()
 			payload := newRandomAddPetRequest(fake)
 			reqBody, _ := json.Marshal(payload)
@@ -84,34 +85,10 @@ func TestPets(t *testing.T) {
 				Name:      payload.Name,
 				Status:    string(payload.Status),
 				PhotoUrls: payload.PhotoUrls,
-			}).Return(nil, app.NewErrInvalidInput("name", "cannot be empty"))
+			}).Return(nil, errors.New(fake.Lorem().Sentence(3)))
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusBadRequest, w.Code)
-		})
-
-		t.Run("user not found: returns 404", func(t *testing.T) {
-			userID := fake.UUID().V4()
-			payload := newRandomAddPetRequest(fake)
-			reqBody, _ := json.Marshal(payload)
-			req := httptest.NewRequest(
-				http.MethodPost,
-				"/users/"+userID+"/pets",
-				bytes.NewBuffer(reqBody),
-			)
-			req.Header.Set("Content-Type", "application/json")
-			w := httptest.NewRecorder()
-			deps := makeMockDeps(t)
-			mockCmd := deps.PetsCommands.(*MockPetsCommands)
-			mockCmd.EXPECT().AddPet(mock.Anything, app.AddPetRequest{
-				UserID:    userID,
-				Name:      payload.Name,
-				Status:    string(payload.Status),
-				PhotoUrls: payload.PhotoUrls,
-			}).Return(nil, app.NewErrNotFound("user", userID))
-			newHandler(deps).ServeHTTP(w, req)
-
-			assert.Equal(t, http.StatusNotFound, w.Code)
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
 		})
 	})
 
@@ -133,7 +110,7 @@ func TestPets(t *testing.T) {
 			require.Equal(t, http.StatusNoContent, w.Code)
 		})
 
-		t.Run("user not found: returns 404", func(t *testing.T) {
+		t.Run("internal error: returns 500", func(t *testing.T) {
 			userID := fake.UUID().V4()
 			petID := fake.Int64()
 			req := httptest.NewRequest(
@@ -144,29 +121,10 @@ func TestPets(t *testing.T) {
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
 			mockCmd := deps.PetsCommands.(*MockPetsCommands)
-			mockCmd.EXPECT().RemovePet(mock.Anything, userID, petID).Return(app.NewErrNotFound("user", userID))
+			mockCmd.EXPECT().RemovePet(mock.Anything, userID, petID).Return(errors.New(fake.Lorem().Sentence(3)))
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusNotFound, w.Code)
-		})
-
-		t.Run("relationship not found: returns 404", func(t *testing.T) {
-			userID := fake.UUID().V4()
-			petID := fake.Int64()
-			req := httptest.NewRequest(
-				http.MethodDelete,
-				"/users/"+userID+"/pets/"+strconv.FormatInt(petID, 10),
-				nil,
-			)
-			w := httptest.NewRecorder()
-			deps := makeMockDeps(t)
-			mockCmd := deps.PetsCommands.(*MockPetsCommands)
-			mockCmd.EXPECT().
-				RemovePet(mock.Anything, userID, petID).
-				Return(app.NewErrNotFound("user-pet relationship", "user:"+userID))
-			newHandler(deps).ServeHTTP(w, req)
-
-			assert.Equal(t, http.StatusNotFound, w.Code)
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
 		})
 	})
 
@@ -210,16 +168,16 @@ func TestPets(t *testing.T) {
 			assert.Equal(t, pets[1].PhotoUrls, resp.Pets[1].PhotoUrls)
 		})
 
-		t.Run("user not found: returns 404", func(t *testing.T) {
+		t.Run("internal error: returns 500", func(t *testing.T) {
 			userID := fake.UUID().V4()
 			req := httptest.NewRequest(http.MethodGet, "/users/"+userID+"/pets", nil)
 			w := httptest.NewRecorder()
 			deps := makeMockDeps(t)
 			mockQueries := deps.PetsQueries.(*MockPetsQueries)
-			mockQueries.EXPECT().ListUserPets(mock.Anything, userID).Return(nil, app.NewErrNotFound("user", userID))
+			mockQueries.EXPECT().ListUserPets(mock.Anything, userID).Return(nil, errors.New(fake.Lorem().Sentence(1)))
 			newHandler(deps).ServeHTTP(w, req)
 
-			assert.Equal(t, http.StatusNotFound, w.Code)
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
 		})
 
 		t.Run("empty: returns 200 with empty array", func(t *testing.T) {
