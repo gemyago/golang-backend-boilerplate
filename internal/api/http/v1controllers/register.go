@@ -12,6 +12,7 @@ func Register(container *dig.Container) error {
 		newUsersController,
 		newPetsController,
 		di.ProvideValue(&HealthController{}),
+		di.ProvideValue(&UsersMapper{}),
 
 		// Application layer ports
 		di.ProvideImplementation[*app.UserCommands, UserCommands],

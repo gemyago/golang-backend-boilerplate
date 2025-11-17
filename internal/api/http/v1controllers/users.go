@@ -14,6 +14,7 @@ import (
 type UsersController struct {
 	commands UserCommands
 	queries  UserQueries
+	mapper   *UsersMapper
 }
 
 type UsersControllerDeps struct {
@@ -21,6 +22,7 @@ type UsersControllerDeps struct {
 
 	UserCommands
 	UserQueries
+	*UsersMapper
 
 	RootLogger *slog.Logger
 }
@@ -29,6 +31,7 @@ func newUsersController(deps UsersControllerDeps) *UsersController {
 	return &UsersController{
 		commands: deps.UserCommands,
 		queries:  deps.UserQueries,
+		mapper:   deps.UsersMapper,
 	}
 }
 
@@ -68,11 +71,7 @@ func (c *UsersController) GetUserByID(
 			if err != nil {
 				return nil, err
 			}
-			return &models.UserResponse{
-				ID:    user.ID,
-				Name:  user.Name,
-				Email: user.Email,
-			}, nil
+			return c.mapper.MapUserToResponse(user), nil
 		},
 	)
 }
@@ -85,11 +84,7 @@ func (c *UsersController) ListUsers(builder handlers.NoParamsHandlerBuilder[*mod
 		}
 		userResponses := make([]*models.UserResponse, len(users))
 		for i, user := range users {
-			userResponses[i] = &models.UserResponse{
-				ID:    user.ID,
-				Name:  user.Name,
-				Email: user.Email,
-			}
+			userResponses[i] = c.mapper.MapUserToResponse(user)
 		}
 		return &models.ListUsersResponse{Users: userResponses}, nil
 	})
