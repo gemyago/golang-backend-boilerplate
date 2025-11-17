@@ -21,12 +21,12 @@ This is a golang backend project. Go version is defined in [go.mod](./go.mod) fi
 
 - Run all tests: `make test`
 - Lint entire codebase: `make lint`
-- Run a specific test: `go test -v ./internal/... --run "^TestName$"`
+- Run a specific test: `go test -v ./internal/... -run "^TestName$"`
 - Attempt auto fixing linting issues: `bin/golangci-lint run --fix`
 
 ## Run (local)
 
-AI must almost **always** use `--noop` to dry-run startup checks without external deps. Otherwise the process will start in foreground and block the AI.
+AI must **always** use `--noop` flag to dry-run startup checks without external deps. Without this flag, processes will start in foreground and block.
 
 - API server: `go run ./cmd/server start --env local --noop`
 - Jobs (echo): `go run ./cmd/jobs echo --env local --noop`
@@ -91,32 +91,27 @@ More detailed testing best practices are in [doc/testing-best-practices.md](./do
 
 ## Task Completion Protocol
 
-AI should always follow task completion protocol  when reporting results to the user. The protocol is different for different task type, the AI should identify applicable protocol as per sub-sections and follow it strictly.
-
-### Non coding task completion protocol
-
-Examples of non coding tasks are:
-- Investigation of a problem
-- Documentation updates
-- Script updates
-- Committing code
-
-Generally anything that is not related to code changes.
-
-The completion protocol for non coding task is established by the user.
+AI must always follow this protocol when completing tasks. The protocol varies by task type.
 
 ### Coding Task Completion Protocol
 
-This protocol is used to complete a coding task (e.g the one that resulted in changing any code files). For non coding tasks, use the non coding task completion protocol.
+Apply this when any code files were changed (Go, YAML, config files, etc.).
 
-If you changed any code then **always** perform the completion protocol below:
-1. Lint status: Run `make lint` and confirm no errors
-2. Test status: Run `make test` and confirm no failures; coverage: XX.XX% (meets threshold)
-3. Make sure AGENTS.md are in sync if updated commands, workflows, or architecture.
+**Always** perform these steps before reporting completion:
+1. Run `make lint` and confirm no errors
+2. Run `make test` and confirm all tests pass
+3. Verify AGENTS.md is updated if commands, workflows, or architecture changed
 
-Report the result to the user. The **only** acceptable result is "All tests pass and no lint errors". Failing tests or linting errors means the task **is not complete**. Any failure in the above steps MUST be resolved prior to task completion.
+Report task completion status:
+- Lint: ✓ no errors
+- Tests: ✓ all passing, coverage XX.XX%
+- AGENTS.md: ✓ updated / no changes needed
 
-Report task completion:
-- Lint: no errors / fixed all errors
-- Tests: all passing, coverage XX.XX%
-- AGENTS.md: updated to reflect changes (if any) / no changes needed
+**Note:** Failing tests or lint errors mean the task is NOT complete. All failures must be resolved before completion.
+
+### Non-Coding Task Completion Protocol
+
+For tasks not involving code changes (investigation, documentation review, committing, etc.):
+- Summarize findings or actions taken
+- Confirm any deliverables were produced
+- No lint/test protocol required
