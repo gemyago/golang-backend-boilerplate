@@ -8,7 +8,7 @@ import (
 
 	httpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services"
+	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/gofrs/uuid/v5"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
@@ -37,6 +37,8 @@ func (f ToolsFactoryFunc) NewTools() []mcpserver.ServerTool {
 type MCPServerDeps struct {
 	dig.In
 
+	*services.ShutdownHooks
+
 	RootLogger *slog.Logger
 
 	// config
@@ -44,9 +46,6 @@ type MCPServerDeps struct {
 	Version  string `name:"config.mcpServer.version"`
 	HTTPHost string `name:"config.mcpServer.httpHost"`
 	HTTPPort int    `name:"config.mcpServer.httpPort"`
-
-	// services
-	*services.ShutdownHooks
 
 	// controllers
 	Controllers []ToolsFactory `group:"mcp-controllers"`

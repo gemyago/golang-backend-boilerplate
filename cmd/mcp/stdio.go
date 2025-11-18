@@ -10,7 +10,7 @@ import (
 
 	mcpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/mcp/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services"
+	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
 	"golang.org/x/sys/unix"
@@ -19,13 +19,13 @@ import (
 type stdioServerParams struct {
 	dig.In `ignore-unexported:"true"`
 
-	noop bool
+	*services.ShutdownHooks
 
 	RootLogger *slog.Logger
 
 	MCPServer *mcpserver.MCPServer
 
-	*services.ShutdownHooks
+	noop bool
 }
 
 func startStdioServer(rootCtx context.Context, params stdioServerParams) error {

@@ -78,13 +78,17 @@ func (mc *MathController) newCalculateServerTool() mcpserver.ServerTool {
 	}
 }
 
-// newAddServerTool returns a server tool for addition.
-func (mc *MathController) newAddServerTool() mcpserver.ServerTool {
+func (mc *MathController) newBinaryOpServerTool(
+	name string,
+	description string,
+	opFunc func(ctx context.Context, a, b float64) (*app.MathResponse, error),
+	resultFmt string,
+) mcpserver.ServerTool {
 	tool := mcp.NewTool(
-		"add",
-		mcp.WithDescription("Add two numbers together"),
-		mcp.WithNumber("a", mcp.Description("First number to add")),
-		mcp.WithNumber("b", mcp.Description("Second number to add")),
+		name,
+		mcp.WithDescription(description),
+		mcp.WithNumber("a", mcp.Description("First number")),
+		mcp.WithNumber("b", mcp.Description("Second number")),
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -93,13 +97,12 @@ func (mc *MathController) newAddServerTool() mcpserver.ServerTool {
 			return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
 		}
 
-		response, err := mc.mathService.Add(ctx, a, b)
+		response, err := opFunc(ctx, a, b)
 		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Addition failed: %v", err)), nil
+			return mcp.NewToolResultError(fmt.Sprintf("%s failed: %v", name, err)), nil
 		}
 
-		resultText := fmt.Sprintf("Result: %g + %g = %g", response.A, response.B, response.Result)
-
+		resultText := fmt.Sprintf(resultFmt, response.A, response.B, response.Result)
 		return mcp.NewToolResultText(resultText), nil
 	}
 
@@ -107,99 +110,46 @@ func (mc *MathController) newAddServerTool() mcpserver.ServerTool {
 		Tool:    tool,
 		Handler: handler,
 	}
+}
+
+// newAddServerTool returns a server tool for addition.
+func (mc *MathController) newAddServerTool() mcpserver.ServerTool {
+	return mc.newBinaryOpServerTool(
+		"add",
+		"Add two numbers together",
+		mc.mathService.Add,
+		"Result: %g + %g = %g",
+	)
 }
 
 // newSubtractServerTool returns a server tool for subtraction.
 func (mc *MathController) newSubtractServerTool() mcpserver.ServerTool {
-	tool := mcp.NewTool(
+	return mc.newBinaryOpServerTool(
 		"subtract",
-		mcp.WithDescription("Subtract second number from first number"),
-		mcp.WithNumber("a", mcp.Description("Number to subtract from")),
-		mcp.WithNumber("b", mcp.Description("Number to subtract")),
+		"Subtract second number from first number",
+		mc.mathService.Subtract,
+		"Result: %g - %g = %g",
 	)
-
-	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		a, b, err := mc.extractNumberParams(request.Params.Arguments)
-		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
-		}
-
-		response, err := mc.mathService.Subtract(ctx, a, b)
-		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Subtraction failed: %v", err)), nil
-		}
-
-		resultText := fmt.Sprintf("Result: %g - %g = %g", response.A, response.B, response.Result)
-
-		return mcp.NewToolResultText(resultText), nil
-	}
-
-	return mcpserver.ServerTool{
-		Tool:    tool,
-		Handler: handler,
-	}
 }
 
 // newMultiplyServerTool returns a server tool for multiplication.
 func (mc *MathController) newMultiplyServerTool() mcpserver.ServerTool {
-	tool := mcp.NewTool(
+	return mc.newBinaryOpServerTool(
 		"multiply",
-		mcp.WithDescription("Multiply two numbers together"),
-		mcp.WithNumber("a", mcp.Description("First number to multiply")),
-		mcp.WithNumber("b", mcp.Description("Second number to multiply")),
+		"Multiply two numbers together",
+		mc.mathService.Multiply,
+		"Result: %g × %g = %g",
 	)
-
-	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		a, b, err := mc.extractNumberParams(request.Params.Arguments)
-		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
-		}
-
-		response, err := mc.mathService.Multiply(ctx, a, b)
-		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Multiplication failed: %v", err)), nil
-		}
-
-		resultText := fmt.Sprintf("Result: %g × %g = %g", response.A, response.B, response.Result)
-
-		return mcp.NewToolResultText(resultText), nil
-	}
-
-	return mcpserver.ServerTool{
-		Tool:    tool,
-		Handler: handler,
-	}
 }
 
 // newDivideServerTool returns a server tool for division.
 func (mc *MathController) newDivideServerTool() mcpserver.ServerTool {
-	tool := mcp.NewTool(
+	return mc.newBinaryOpServerTool(
 		"divide",
-		mcp.WithDescription("Divide first number by second number"),
-		mcp.WithNumber("a", mcp.Description("Dividend (number to be divided)")),
-		mcp.WithNumber("b", mcp.Description("Divisor (number to divide by)")),
+		"Divide first number by second number",
+		mc.mathService.Divide,
+		"Result: %g ÷ %g = %g",
 	)
-
-	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		a, b, err := mc.extractNumberParams(request.Params.Arguments)
-		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Invalid parameters: %v", err)), nil
-		}
-
-		response, err := mc.mathService.Divide(ctx, a, b)
-		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Division failed: %v", err)), nil
-		}
-
-		resultText := fmt.Sprintf("Result: %g ÷ %g = %g", response.A, response.B, response.Result)
-
-		return mcp.NewToolResultText(resultText), nil
-	}
-
-	return mcpserver.ServerTool{
-		Tool:    tool,
-		Handler: handler,
-	}
 }
 
 // extractCalculateParams extracts operation, a, and b parameters from arguments.

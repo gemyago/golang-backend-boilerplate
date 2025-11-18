@@ -47,6 +47,13 @@ type MathService struct {
 	logger *slog.Logger
 }
 
+// NewMathService creates a new math service instance.
+func NewMathService(deps MathServiceDeps) *MathService {
+	return &MathService{
+		logger: deps.RootLogger.WithGroup("app.math-service"),
+	}
+}
+
 // Add performs addition operation.
 func (svc *MathService) Add(ctx context.Context, a, b float64) (*MathResponse, error) {
 	svc.logger.InfoContext(ctx, "Performing addition operation",
@@ -158,12 +165,5 @@ func (svc *MathService) Calculate(ctx context.Context, req *MathRequest) (*MathR
 		svc.logger.ErrorContext(ctx, "Unsupported math operation",
 			slog.String("operation", string(req.Operation)))
 		return nil, fmt.Errorf("unsupported operation: %s", req.Operation)
-	}
-}
-
-// NewMathService creates a new math service instance.
-func NewMathService(deps MathServiceDeps) *MathService {
-	return &MathService{
-		logger: deps.RootLogger.WithGroup("app.math-service"),
 	}
 }

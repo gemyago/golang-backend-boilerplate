@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -190,6 +190,7 @@ func TestTimeController_HandleGetCurrentTime_DefaultFormat(t *testing.T) {
 
 func TestTimeController_HandleGetCurrentTime_InvalidFormat(t *testing.T) {
 	t.Run("should default to ISO format for invalid format", func(t *testing.T) {
+		fake := faker.New()
 		deps := makeTimeControllerDeps()
 		controller := NewTimeController(deps)
 		ctx := t.Context()
@@ -201,7 +202,7 @@ func TestTimeController_HandleGetCurrentTime_InvalidFormat(t *testing.T) {
 			Params: mcp.CallToolParams{
 				Name: "get_current_time",
 				Arguments: map[string]interface{}{
-					"format": faker.Word(), // Random invalid format
+					"format": fake.Lorem().Word(), // Random invalid format
 				},
 			},
 		}

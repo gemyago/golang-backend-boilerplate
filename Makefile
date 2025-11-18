@@ -8,6 +8,8 @@ cover_html=$(cover_dir)/coverage.html
 
 all: test
 
+# Installing from sources is not recommended, binary is a preferred approach.
+# More info is here https://golangci-lint.run/docs/welcome/install/#install-from-sources
 bin/golangci-lint: .golangci-version
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s $(shell cat .golangci-version)
 

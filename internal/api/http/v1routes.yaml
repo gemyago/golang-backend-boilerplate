@@ -1,12 +1,8 @@
-openapi: "3.0.0"
+openapi: 3.0.3
 info:
+  title: Users & Pets API
   version: 1.0.0
-  title: Minimalistic openapi starter
-  description: |
-    This is a minimalistic openapi starter template. Add your API definition as needed.
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
 servers:
   - url: http://localhost:8080
 paths:
@@ -18,11 +14,11 @@ paths:
         - health
       responses:
         '200':
-          description: Request succeeded
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HealthResponsePayload"
+            description: Request succeeded
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/HealthResponsePayload"
         default:
           description: unexpected error
           content:
@@ -43,17 +39,155 @@ paths:
         required: true
       responses:
         '200':
-          description: Request succeeded
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EchoResponsePayload"
+            description: Request succeeded
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/EchoResponsePayload"
         default:
           description: unexpected error
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /users:
+    post:
+      summary: Create a new user
+      operationId: createUser
+      tags: [users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUserResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    get:
+      summary: List all users
+      operationId: listUsers
+      tags: [users]
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListUsersResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get user by ID
+      operationId: getUserById
+      tags: [users]
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    put:
+      summary: Update user
+      operationId: updateUser
+      tags: [users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '204':
+          description: User updated
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      summary: Delete user
+      operationId: deleteUser
+      tags: [users]
+      responses:
+        '204':
+          description: User deleted
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /users/{userId}/pets:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: List user's pets
+      operationId: listUserPets
+      tags: [pets]
+      responses:
+        '200':
+          description: List of user's pets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListUserPetsResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      summary: Add a pet to user
+      operationId: addUserPet
+      tags: [pets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPetRequest'
+      responses:
+        '201':
+          description: Pet added to user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddPetResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /users/{userId}/pets/{petId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    delete:
+      summary: Remove a pet from user
+      operationId: removeUserPet
+      tags: [pets]
+      responses:
+        '204':
+          description: Pet removed from user
+        default:
+          $ref: '#/components/responses/ErrorResponse'
 components:
   schemas:
     HealthResponsePayload:
@@ -88,3 +222,98 @@ components:
           format: string
         message:
           type: string
+    CreateUserRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+    CreateUserResponse:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+    UpdateUserRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+    UserResponse:
+      type: object
+      required: [id, name, email]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+    AddPetRequest:
+      type: object
+      required: [name, status]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum: [available, pending, sold]
+        photoUrls:
+          type: array
+          items:
+            type: string
+    AddPetResponse:
+      type: object
+      required: [petId]
+      properties:
+        petId:
+          type: integer
+          format: int64
+    PetResponse:
+      type: object
+      required: [id, name, status]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        status:
+          type: string
+        photoUrls:
+          type: array
+          items:
+            type: string
+    ListUsersResponse:
+      type: object
+      required: [users]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+    ListUserPetsResponse:
+      type: object
+      required: [pets]
+      properties:
+        pets:
+          type: array
+          items:
+            $ref: '#/components/schemas/PetResponse'
+  responses:
+    ErrorResponse:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

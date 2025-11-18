@@ -1,15 +1,30 @@
-dir: "{{.InterfaceDirRelative}}"
-inpackage: true
-filename: "mock_{{.InterfaceNameSnake}}.go"
-mock-build-tags: "!release"
-disable-version-string: true
+dir: '{{.InterfaceDirRelative}}'
+template: testify
+template-data:
+  mock-build-tags: '!release'
+  unroll-variadic: true
+
+# By default all mocks are written to same file
+# We don't want that. AI may have hard time to read large file.
+filename: "mock_{{snakecase .InterfaceName}}_test.go"
+
 packages:
   log/slog:
     interfaces:
       Handler:
         config:
-          inpackage: false
-          outpkg: 'diag'
+          pkgname: diag
+          structname: '{{.Mock}}Slog{{.InterfaceName}}'
+          filename: "mock_slog_{{snakecase .InterfaceName}}_test.go"
           dir: 'internal/diag'
-          filename: "mock_slog_handler.go"
-          mockname: MockSlogHandler
+  github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1controllers:
+    interfaces:
+      UserCommands:
+      UserQueries:
+      PetsCommands:
+      PetsQueries:
+  github.com/gemyago/golang-backend-boilerplate/internal/app:
+    interfaces:
+      UsersRepository:
+      PetsRepository:
+      PetstoreClient:

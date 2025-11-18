@@ -11,7 +11,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/config"
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services"
+	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
@@ -46,7 +46,9 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 	)
 	cfg := config.New()
 	lo.Must0(cfg.BindPFlags(cmd.PersistentFlags()))
-	cmd.PersistentPreRunE = func(_ *cobra.Command, _ []string) error {
+	cmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
+		rootCtx := cmd.Context()
+
 		err := config.Load(cfg, config.NewLoadOpts().WithEnv(cfg.GetString("env")))
 		if err != nil {
 			return err
@@ -71,7 +73,7 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 			app.Register(container),
 
 			// services
-			services.Register(container),
+			services.Register(rootCtx, container),
 
 			// mcp components
 			controllers.Register(container),

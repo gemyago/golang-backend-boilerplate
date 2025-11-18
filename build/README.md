@@ -2,6 +2,30 @@
 
 This folder contains the build tools for the project.
 
+## Setup
+
+This step is required if you plan to work on the build tooling. In this case please make sure to install:
+* [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation).
+
+```sh
+# Install required python version
+pyenv install -s
+
+# Setup python environment
+python -m venv .venv
+
+# Reload env
+direnv reload
+
+# Install python dependencies
+pip install -r requirements.txt
+```
+
+If updating python dependencies, please lock them:
+```sh
+pip freeze > requirements.txt
+```
+
 ## Build Binaries
 
 Golang binaries are build for platforms defined in [build.cfg](build.cfg) file (see `platforms` section).

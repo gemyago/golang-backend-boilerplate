@@ -6,13 +6,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMuxRouterAdapter(t *testing.T) {
+	fake := faker.New()
 	t.Run("should handle routes and read path values", func(t *testing.T) {
-		wantPathParam := faker.Word()
+		wantPathParam := fake.Lorem().Word()
 		req := httptest.NewRequest(
 			http.MethodGet,
 			fmt.Sprintf("/resources/%s/value", wantPathParam),

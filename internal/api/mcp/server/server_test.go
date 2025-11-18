@@ -6,9 +6,11 @@ import (
 	"log/slog"
 	"testing"
 
+	"net/http"
+
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/gemyago/golang-backend-boilerplate/internal/services"
-	"github.com/go-faker/faker/v4"
+	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
+	"github.com/jaswdr/faker"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +18,7 @@ import (
 )
 
 func TestMCPServer(t *testing.T) {
+	fake := faker.New()
 	makeMockDeps := func() MCPServerDeps {
 		return MCPServerDeps{
 			RootLogger:    diag.RootTestLogger(),
@@ -29,8 +32,9 @@ func TestMCPServer(t *testing.T) {
 			Request: mcp.Request{
 				Method: "tools/call",
 			},
+			Header: http.Header{},
 			Params: mcp.CallToolParams{
-				Name: "tool-1-" + faker.Word(),
+				Name: "tool-1-" + fake.Lorem().Word(),
 			},
 		}
 	}
@@ -38,7 +42,7 @@ func TestMCPServer(t *testing.T) {
 	newToolCallResult := func() *mcp.CallToolResult {
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
-				mcp.NewTextContent(faker.Sentence()),
+				mcp.NewTextContent(fake.Lorem().Sentence(10)),
 			},
 		}
 	}
@@ -116,7 +120,7 @@ func TestMCPServer(t *testing.T) {
 		t.Run("should reuse correlation id from context", func(t *testing.T) {
 			deps := makeMockDeps()
 
-			wantCorrelationID := faker.UUIDHyphenated()
+			wantCorrelationID := fake.UUID().V4()
 			wantCall := makeToolCallRequest()
 
 			callCtx := diag.SetLogAttributesToContext(t.Context(), diag.LogAttributes{
@@ -148,7 +152,7 @@ func TestMCPServer(t *testing.T) {
 			deps := makeMockDeps()
 
 			wantCall := makeToolCallRequest()
-			wantError := errors.New(faker.Sentence())
+			wantError := errors.New(fake.Lorem().Sentence(10))
 
 			deps.Controllers = newToolsFactories(
 				wantCall.Params.Name,
@@ -167,7 +171,7 @@ func TestMCPServer(t *testing.T) {
 
 			_, err = client.CallTool(ctx, wantCall)
 			require.Error(t, err)
-			assert.Equal(t, wantError, err)
+			assert.Contains(t, err.Error(), wantError.Error())
 		})
 	})
 }

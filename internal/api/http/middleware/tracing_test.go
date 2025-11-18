@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTracingMiddleware(t *testing.T) {
+	fake := faker.New()
 	t.Run("set new correlation id", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/something", http.NoBody)
 		res := httptest.NewRecorder()
@@ -24,7 +25,7 @@ func TestTracingMiddleware(t *testing.T) {
 		assert.True(t, nextCalled)
 	})
 	t.Run("use existing correlation id", func(t *testing.T) {
-		wantCorrelationID := faker.UUIDHyphenated()
+		wantCorrelationID := fake.UUID().V4()
 		req := httptest.NewRequest(http.MethodGet, "/something", http.NoBody)
 		req.Header.Add("X-Correlation-ID", wantCorrelationID)
 		res := httptest.NewRecorder()

@@ -69,14 +69,34 @@ func ProvideWithArgErr[
 	}
 }
 
-// ProvideAs is used to provide one type as another, typically
-// used to provide implementation struct as particular interface.
-func ProvideAs[TSource any, TTarget any](source TSource) (TTarget, error) {
-	target, ok := any(source).(TTarget)
+// ProvideImplementation is used to define implementation of some particular
+// interface so DI container could resolve the implementation of the interface properly.
+// Usually you may want to use this method if implementation was injected on a different layer.
+func ProvideImplementation[TImplementation any, TInterface any](source TImplementation) (TInterface, error) {
+	target, ok := any(source).(TInterface)
 	if !ok {
-		var src TSource
-		var tgt TTarget
+		var src TImplementation
+		var tgt TInterface
 		return target, fmt.Errorf("failed to cast %s to %s", reflect.TypeOf(src), reflect.TypeOf(tgt))
 	}
 	return target, nil
+}
+
+// ProvideFactoryAs allows injecting implementation of a particular interface.
+// Functionally equivalent to injecting the factory first and then use ProvideAs.
+func ProvideFactoryAs[
+	TTarget any,
+	TSource any,
+	TTSourceDeps any,
+](srcFactory func(TTSourceDeps) TSource) func(deps TTSourceDeps) (TTarget, error) {
+	return func(deps TTSourceDeps) (TTarget, error) {
+		source := srcFactory(deps)
+		target, ok := any(source).(TTarget)
+		if !ok {
+			var src TSource
+			var tgt TTarget
+			return target, fmt.Errorf("failed to cast %s to %s", reflect.TypeOf(src), reflect.TypeOf(tgt))
+		}
+		return target, nil
+	}
 }

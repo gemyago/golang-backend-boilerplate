@@ -9,20 +9,21 @@ import (
 	"testing"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRecover(t *testing.T) {
+	fake := faker.New()
 	rootLogger := diag.RootTestLogger()
 
 	t.Run("should call next", func(t *testing.T) {
 		nextCalled := true
 		wantNextStatus := 200 + rand.Intn(399)
 		wantRes := map[string]interface{}{
-			"key1": faker.UUIDHyphenated(),
-			"key2": faker.UUIDHyphenated(),
+			"key1": fake.UUID().V4(),
+			"key2": fake.UUID().V4(),
 		}
 		next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			nextCalled = true

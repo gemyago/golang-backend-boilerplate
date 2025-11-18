@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -379,12 +379,13 @@ func TestMathService_Calculate(t *testing.T) {
 	})
 
 	t.Run("should handle unsupported operation", func(t *testing.T) {
+		fake := faker.New()
 		deps := makeMathServiceDeps()
 		service := NewMathService(deps)
 		ctx := t.Context()
 
 		request := &MathRequest{
-			Operation: MathOperation(faker.Word()),
+			Operation: MathOperation(fake.Lorem().Word()),
 			A:         5.0,
 			B:         3.0,
 		}

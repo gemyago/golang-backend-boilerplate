@@ -7,7 +7,7 @@ make tools
 
 ## Kubernetes
 
-Interacting with kubernetes directly is usually done in a local environment. Non local scenarios should usually go via CI/CD pipeline. Use commands below to interact with kubernetes cluster:
+Interacting with kubernetes directly is usually done in a local environment. Non local scenarios should usually go via CD pipeline. Use commands below to interact with kubernetes cluster:
 
 ```sh
 # Create a namespace for the application
@@ -36,7 +36,7 @@ kubectl delete secret ghcr-registry --namespace golang-backend-boilerplate
 
 ## Helm 
 
-Interacting with helm directly is usually done in a local environment. Non local scenarios should usually go via CI/CD pipeline.
+Interacting with helm directly is usually done in a local environment. Non local scenarios should usually go via CD pipeline.
 
 Below are the most typical commands you would need to iterate on the charts. Run them from [deploy](.) directory:
 ```sh
@@ -44,7 +44,7 @@ Below are the most typical commands you would need to iterate on the charts. Run
 helm template helm/api-service --debug --name-template api-service -f ./helm/api-service/values.yaml
 
 # Install the chart. Most often you would do it in a local scenario
-# Non local scenario should usually go via CI/CD pipeline
+# Non local scenario should usually go via CD pipeline
 helm upgrade api-service helm/api-service \
   --install \
   --namespace golang-backend-boilerplate \

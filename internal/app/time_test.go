@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/go-faker/faker/v4"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -110,12 +110,13 @@ func TestTimeService_GetCurrentTime_Unix(t *testing.T) {
 
 func TestTimeService_GetCurrentTime_InvalidFormat(t *testing.T) {
 	t.Run("should default to ISO format for invalid format", func(t *testing.T) {
+		fake := faker.New()
 		deps := makeTimeServiceDeps()
 		service := NewTimeService(deps)
 		ctx := t.Context()
 
 		// Use an invalid format
-		request := &TimeRequest{Format: TimeFormat(faker.Word())}
+		request := &TimeRequest{Format: TimeFormat(fake.Lorem().Word())}
 
 		response, err := service.GetCurrentTime(ctx, request)
 

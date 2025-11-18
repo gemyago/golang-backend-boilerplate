@@ -10,5 +10,9 @@ func Register(container *dig.Container) error {
 		NewEchoService,
 		NewTimeService,
 		NewMathService,
+		NewUserCommands,
+		NewPetsCommands,
+		NewUserQueries,
+		NewPetsQueries,
 	)
 }

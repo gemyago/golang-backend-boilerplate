@@ -1,4 +1,7 @@
 {
+  "database": {
+    "dsn": ":memory:"
+  },
   "defaultLogLevel": "DEBUG",
   "httpServer": {
     "host": "localhost"
