@@ -4,6 +4,9 @@ cover_dir=.cover
 cover_profile=$(cover_dir)/profile.out
 cover_html=$(cover_dir)/coverage.html
 
+# Tests should not be taking that long
+DEFAULT_TESTS_TIMEOUT ?= 10s
+
 .DEFAULT_GOAL := all
 
 all: test
@@ -32,7 +35,7 @@ $(go-test-coverage):
 
 .PHONY: $(cover_profile)
 $(cover_profile): $(cover_dir)
-	TZ=US/Alaska go test -timeout=10s -shuffle=on -failfast -coverpkg=./internal/...,./cmd/... -coverprofile=$(cover_profile) -covermode=atomic ./...
+	TZ=US/Alaska go test -timeout=${DEFAULT_TESTS_TIMEOUT} -shuffle=on -failfast -coverpkg=./internal/...,./cmd/... -coverprofile=$(cover_profile) -covermode=atomic ./...
 
 test: $(go-test-coverage) $(cover_profile)
 	go tool cover -html=$(cover_profile) -o $(cover_html)
