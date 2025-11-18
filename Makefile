@@ -19,7 +19,7 @@ lint: bin/golangci-lint
 $(cover_dir):
 	mkdir -p $(cover_dir)
 
-dist/bin: 
+dist/bin:
 	go build \
 		-tags=release \
 		-o dist/bin/ ./cmd/...;
@@ -32,7 +32,7 @@ $(go-test-coverage):
 
 .PHONY: $(cover_profile)
 $(cover_profile): $(cover_dir)
-	TZ=US/Alaska go test -shuffle=on -failfast -coverpkg=./internal/...,./cmd/... -coverprofile=$(cover_profile) -covermode=atomic ./...
+	TZ=US/Alaska go test -timeout=10s -shuffle=on -failfast -coverpkg=./internal/...,./cmd/... -coverprofile=$(cover_profile) -covermode=atomic ./...
 
 test: $(go-test-coverage) $(cover_profile)
 	go tool cover -html=$(cover_profile) -o $(cover_html)
