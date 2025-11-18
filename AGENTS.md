@@ -53,7 +53,7 @@ AI must **always** use `--noop` flag to dry-run startup checks without external 
 
 Codebase is split on multiple parts:
 - Primary application code is in `internal` folder, see [AGENTS.md](./internal/AGENTS.md) for more details
-- Binaries are defined in `cmd` folder, see [AGENTS.md](./cmd/AGENTS.md)
+- Binaries are defined in `cmd` folder
 - Build related stuff (docker) is in `build`, see [AGENTS.md](./build/AGENTS.md)
 - Deployment related stuff is in `deploy`, see [AGENTS.md](./deploy/AGENTS.md)
 - CI/CD `.github`, see [AGENTS.md](./.github/AGENTS.md)
