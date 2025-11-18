@@ -76,6 +76,13 @@ More detailed testing best practices are in [doc/testing-best-practices.md](./do
 - NEVER hardcode secrets. Use env vars/secret stores. Authenticate to GHCR before push/pull when required.
 - Validate/sanitize all external inputs. Do not disable security linters without explicit justification.
 
+## Most common AI instructions
+
+When asked to perform common tasks, AI must follow these instructions:
+- [Create plan](.context/instructions/create-plan.md)
+- [Create pull request](.context/commands/create-pull-request.md)
+- [Commit code](.context/commands/commit.md)
+
 ## Living Doc Policy (update with code)
 - Keep this file short (<150 lines) and actionable. Prefer linking to canonical code over long prose.
 - Update AGENTS.md in the same PR when:
