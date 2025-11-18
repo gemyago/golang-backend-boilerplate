@@ -81,30 +81,6 @@ go install tool
 go get -u ./... && go mod tidy
 ```
 
-### Build dependencies
-
-This step is required if you plan to work on the build tooling. In this case please make sure to install:
-* [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation).
-
-```sh
-# Install required python version
-pyenv install -s
-
-# Setup python environment
-python -m venv .venv
-
-# Reload env
-direnv reload
-
-# Install python dependencies
-pip install -r requirements.txt
-```
-
-If updating python dependencies, please lock them:
-```sh
-pip freeze > requirements.txt
-```
-
 ## Development
 
 ### Lint and Tests
@@ -136,3 +112,8 @@ go run ./cmd/server/ start
 # Watch mode (double ^C to stop)
 gow run ./cmd/server/ start
 ```
+
+## Build and Deployment
+
+- To build binaries and docker images locally see [README](./build/README.md)
+- Deployment related notes can be found in [README](./deploy/README.md)
