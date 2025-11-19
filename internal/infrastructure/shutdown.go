@@ -2,7 +2,7 @@
 // of the application. This may include closing database connections, flushing pending
 // events to the queue, shutting down the http server, etc.
 
-package services
+package infrastructure
 
 import (
 	"context"

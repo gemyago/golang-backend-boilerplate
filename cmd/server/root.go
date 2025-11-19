@@ -9,7 +9,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/config"
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/otel"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
@@ -74,7 +74,7 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 			app.Register(container),
 
 			// services
-			services.Register(rootCtx, container),
+			infrastructure.Register(rootCtx, container),
 
 			di.ProvideAll(container,
 				di.ProvideValue(rootLogger),

@@ -523,7 +523,7 @@ Infrastructure provides concrete implementations of the ports defined in the app
 
 ```go
 // internal/infrastructure/users_repository.go
-package services
+package infrastructure
 
 import (
 	"context"
@@ -577,7 +577,7 @@ func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user app.User) e
 
 ```go
 // internal/infrastructure/pets_repository.go
-package services
+package infrastructure
 
 import (
 	"context"
@@ -1002,7 +1002,7 @@ Configuration in `internal/config/default.json`:
 
 ### 5.12 Package Naming - "services" for Infrastructure
 
-**Decision**: Infrastructure layer uses `package services` (already in codebase).
+**Decision**: Infrastructure layer uses `package infrastructure` (already in codebase).
 
 **Rationale**:
 - Follows existing codebase convention
@@ -1062,7 +1062,7 @@ Configuration in `internal/config/default.json`:
 | **Return Type** | `*sqliteUsersRepository` (concrete) | `*UserCommands` (concrete) |
 | **DI Provides As** | `app.UsersRepository` (interface) | `*UserCommands` (concrete) |
 | **Compile Check** | `var _ app.UsersRepository = (*sqliteUsersRepository)(nil)` | Not needed |
-| **Package** | `package services` | `package app` |
+| **Package** | `package infrastructure` | `package app` |
 | **Location** | `internal/infrastructure/` | `internal/app/` |
 | **Purpose** | Hide implementation details | Expose application services |
 
