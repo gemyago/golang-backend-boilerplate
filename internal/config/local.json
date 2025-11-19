@@ -1,3 +1,7 @@
 {
-  "defaultLogLevel": "DEBUG"
+  "defaultLogLevel": "DEBUG",
+  "openTelemetry": {
+    "enabled": false,
+    "endpoint": ""
+  }
 }

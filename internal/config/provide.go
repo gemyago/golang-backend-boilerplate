@@ -41,6 +41,10 @@ func (p configValueProvider) asDuration() di.ConstructorWithOpts {
 	return di.ProvideValue(p.cfg.GetDuration(p.configPath), dig.Name(p.diPath))
 }
 
+func (p configValueProvider) asFloat64() di.ConstructorWithOpts {
+	return di.ProvideValue(p.cfg.GetFloat64(p.configPath), dig.Name(p.diPath))
+}
+
 func Provide(container *dig.Container, cfg *viper.Viper) error {
 	return di.ProvideAll(container,
 		provideConfigValue(cfg, "gracefulShutdownTimeout").asDuration(),
@@ -65,5 +69,13 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 
 		// database config
 		provideConfigValue(cfg, "database.dsn").asString(),
+
+		// opentelemetry config
+		provideConfigValue(cfg, "openTelemetry.enabled").asBool(),
+		provideConfigValue(cfg, "openTelemetry.endpoint").asString(),
+		provideConfigValue(cfg, "openTelemetry.protocol").asString(),
+		provideConfigValue(cfg, "openTelemetry.samplingRate").asFloat64(),
+		provideConfigValue(cfg, "openTelemetry.enableMetrics").asBool(),
+		provideConfigValue(cfg, "openTelemetry.enableLogs").asBool(),
 	)
 }

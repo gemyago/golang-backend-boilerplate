@@ -1,0 +1,6 @@
+{
+  "openTelemetry": {
+    "enabled": true,
+    "endpoint": "localhost:4318"
+  }
+}

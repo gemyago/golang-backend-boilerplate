@@ -21,5 +21,13 @@
     "version": "1.0.0",
     "httpHost": "localhost",
     "httpPort": 8080
+  },
+  "openTelemetry": {
+    "enabled": false,
+    "endpoint": "",
+    "protocol": "http/protobuf",
+    "samplingRate": 1.0,
+    "enableMetrics": true,
+    "enableLogs": true
   }
 }

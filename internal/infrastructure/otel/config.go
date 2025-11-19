@@ -37,8 +37,8 @@ type ConfigDeps struct {
 }
 
 // NewConfig creates a Config from ConfigDeps.
-func NewConfig(deps ConfigDeps) *Config {
-	return &Config{
+func NewConfig(deps ConfigDeps) (*Config, error) {
+	cfg := &Config{
 		Enabled:       deps.Enabled,
 		Endpoint:      deps.Endpoint,
 		Protocol:      deps.Protocol,
@@ -46,6 +46,10 @@ func NewConfig(deps ConfigDeps) *Config {
 		EnableMetrics: deps.EnableMetrics,
 		EnableLogs:    deps.EnableLogs,
 	}
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
 
 // Validate validates the configuration.
