@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -16,7 +17,7 @@ import (
 type TracerProviderDeps struct {
 	dig.In
 
-	ShutdownHooks
+	*services.ShutdownHooks
 
 	Resource *resource.Resource
 	Config   *Config

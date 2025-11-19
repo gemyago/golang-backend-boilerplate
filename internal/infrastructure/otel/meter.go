@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
@@ -22,7 +23,7 @@ const (
 type MeterProviderDeps struct {
 	dig.In
 
-	ShutdownHooks
+	*services.ShutdownHooks
 
 	Resource *resource.Resource
 	Config   *Config
