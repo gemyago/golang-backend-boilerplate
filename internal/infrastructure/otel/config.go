@@ -1,6 +1,10 @@
 package otel
 
-import "fmt"
+import (
+	"fmt"
+
+	"go.uber.org/dig"
+)
 
 const (
 	// ProtocolGRPC is the gRPC protocol identifier.
@@ -17,6 +21,31 @@ type Config struct {
 	SamplingRate  float64
 	EnableMetrics bool
 	EnableLogs    bool
+}
+
+// ConfigDeps holds the dependencies for creating a Config.
+type ConfigDeps struct {
+	dig.In
+
+	// Config values
+	Enabled       bool    `name:"config.openTelemetry.enabled"`
+	Endpoint      string  `name:"config.openTelemetry.endpoint"`
+	Protocol      string  `name:"config.openTelemetry.protocol"`
+	SamplingRate  float64 `name:"config.openTelemetry.samplingRate"`
+	EnableMetrics bool    `name:"config.openTelemetry.enableMetrics"`
+	EnableLogs    bool    `name:"config.openTelemetry.enableLogs"`
+}
+
+// NewConfig creates a Config from ConfigDeps.
+func NewConfig(deps ConfigDeps) *Config {
+	return &Config{
+		Enabled:       deps.Enabled,
+		Endpoint:      deps.Endpoint,
+		Protocol:      deps.Protocol,
+		SamplingRate:  deps.SamplingRate,
+		EnableMetrics: deps.EnableMetrics,
+		EnableLogs:    deps.EnableLogs,
+	}
 }
 
 // Validate validates the configuration.

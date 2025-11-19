@@ -86,3 +86,27 @@ func TestConfig(t *testing.T) {
 		})
 	})
 }
+
+func TestNewConfig(t *testing.T) {
+	fake := faker.New()
+
+	t.Run("should create Config from ConfigDeps", func(t *testing.T) {
+		deps := ConfigDeps{
+			Enabled:       true,
+			Endpoint:      fake.Internet().Domain() + ":4318",
+			Protocol:      ProtocolGRPC,
+			SamplingRate:  0.75,
+			EnableMetrics: true,
+			EnableLogs:    false,
+		}
+
+		config := NewConfig(deps)
+
+		assert.Equal(t, deps.Enabled, config.Enabled)
+		assert.Equal(t, deps.Endpoint, config.Endpoint)
+		assert.Equal(t, deps.Protocol, config.Protocol)
+		assert.InDelta(t, deps.SamplingRate, config.SamplingRate, 0.001)
+		assert.Equal(t, deps.EnableMetrics, config.EnableMetrics)
+		assert.Equal(t, deps.EnableLogs, config.EnableLogs)
+	})
+}
