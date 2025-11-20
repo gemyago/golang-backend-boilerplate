@@ -4,9 +4,12 @@ import (
 	"net/http"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/otel"
+	"go.uber.org/dig"
 )
 
 type HTTPRouterDeps struct {
+	dig.In
+
 	OTELMiddleware otel.HTTPMiddlewareFactory
 }
 
