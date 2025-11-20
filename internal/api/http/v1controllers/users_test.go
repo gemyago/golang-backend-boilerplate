@@ -32,7 +32,7 @@ func TestUsers(t *testing.T) {
 		return deps
 	}
 	newHandler := func(deps UsersControllerDeps) http.Handler {
-		return server.NewRootHandler(deps.RootLogger).
+		return server.NewTestRootHandler().
 			RegisterUsersRoutes(newUsersController(deps))
 	}
 
