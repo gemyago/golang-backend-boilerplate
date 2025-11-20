@@ -2,6 +2,7 @@ package otel
 
 import (
 	"context"
+	"runtime/debug"
 
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
@@ -12,9 +13,7 @@ type ResourceDeps struct {
 	dig.In
 
 	// Service info
-	ServiceName    string `name:"app.serviceName"`
-	ServiceVersion string `name:"app.serviceVersion"`
-	Environment    string `name:"app.environment"`
+	Environment string `name:"config.env"`
 }
 
 // NewResource creates a new OpenTelemetry Resource with service identification attributes.
@@ -22,11 +21,20 @@ func NewResource(
 	ctx context.Context,
 	deps ResourceDeps,
 ) (*resource.Resource, error) {
+	buildInfo, ok := debug.ReadBuildInfo()
+
+	serviceName := "n/a"
+	serviceVersion := "n/a"
+	if ok {
+		serviceName = buildInfo.Main.Path
+		serviceVersion = buildInfo.Main.Version
+	}
+
 	return resource.New(
 		ctx,
 		resource.WithAttributes(
-			semconv.ServiceName(deps.ServiceName),
-			semconv.ServiceVersion(deps.ServiceVersion),
+			semconv.ServiceName(serviceName),
+			semconv.ServiceVersion(serviceVersion),
 			semconv.DeploymentEnvironmentName(deps.Environment),
 		),
 		resource.WithHost(),

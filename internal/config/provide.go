@@ -47,6 +47,9 @@ func (p configValueProvider) asFloat64() di.ConstructorWithOpts {
 
 func Provide(container *dig.Container, cfg *viper.Viper) error {
 	return di.ProvideAll(container,
+		// env should only be used for tracing/debugging purposes
+		provideConfigValue(cfg, "env").asString(),
+
 		provideConfigValue(cfg, "gracefulShutdownTimeout").asDuration(),
 
 		// petstore config

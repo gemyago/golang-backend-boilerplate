@@ -58,6 +58,9 @@ func New() *viper.Viper {
 }
 
 func Load(cfg *viper.Viper, opts *LoadOpts) error {
+	// env should only be used for tracing/debugging purposes
+	cfg.Set("env", opts.env)
+
 	if err := mergeResourceCfg(cfg, opts.defaultConfigFileName); err != nil {
 		return err
 	}
