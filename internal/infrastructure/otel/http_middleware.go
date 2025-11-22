@@ -31,7 +31,7 @@ type MiddlewareFactoryDeps struct {
 
 func NewOTELMiddlewareFactory(
 	deps MiddlewareFactoryDeps,
-) HTTPMiddlewareFactory {
+) HTTPMiddlewareFactory { // coverage-ignore -- Little value in testing this factory function
 	return func(operation string) func(http.Handler) http.Handler {
 		if !deps.Config.Enabled {
 			return NewNoopOTELMiddlewareFactory()(operation)

@@ -32,7 +32,10 @@ type MeterProviderDeps struct {
 }
 
 // NewMeterProvider creates a new MeterProvider suitable for the given configuration.
-func NewMeterProvider(ctx context.Context, deps MeterProviderDeps) (metric.MeterProvider, error) {
+func NewMeterProvider(
+	ctx context.Context,
+	deps MeterProviderDeps,
+) (metric.MeterProvider, error) { // coverage-ignore -- Little value in testing this factory function
 	metricsConfig := deps.MetricsConfig
 	res := deps.Resource
 

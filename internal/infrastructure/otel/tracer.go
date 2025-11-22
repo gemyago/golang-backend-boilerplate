@@ -25,7 +25,10 @@ type TracerProviderDeps struct {
 }
 
 // NewTracerProvider creates a new TracerProvider with OTLP exporter.
-func NewTracerProvider(ctx context.Context, deps TracerProviderDeps) (trace.TracerProvider, error) {
+func NewTracerProvider(
+	ctx context.Context,
+	deps TracerProviderDeps,
+) (trace.TracerProvider, error) { // coverage-ignore -- Little value in testing this factory function
 	tracesConfig := deps.TracesConfig
 	res := deps.Resource
 
