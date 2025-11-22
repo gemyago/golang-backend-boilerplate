@@ -24,10 +24,10 @@ func TestLoad(t *testing.T) {
 	})
 	t.Run("should load env specific config", func(t *testing.T) {
 		cfg := New()
-		err := Load(cfg, NewLoadOpts().WithEnv("test"))
+		err := Load(cfg, NewLoadOpts().WithEnv("production"))
 		require.NoError(t, err)
 
-		require.Equal(t, "DEBUG", cfg.GetString("defaultLogLevel"))
+		require.Equal(t, "INFO", cfg.GetString("defaultLogLevel"))
 	})
 	t.Run("should return error if config is not found", func(t *testing.T) {
 		cfg := New()

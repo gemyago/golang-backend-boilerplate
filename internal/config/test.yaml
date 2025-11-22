@@ -1,3 +1,4 @@
+defaultLogLevel: DEBUG
 database:
   dsn: ":memory:"
 httpServer:
