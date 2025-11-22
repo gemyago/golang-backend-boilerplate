@@ -56,7 +56,7 @@ func NewMeterProvider(ctx context.Context, deps MeterProviderDeps) (metric.Meter
 			otlpmetrichttp.WithURLPath(metricsConfig.URLPath),
 			otlpmetrichttp.WithInsecure(),
 			otlpmetrichttp.WithHeaders(map[string]string{
-				"Authorization": "Basic cm9vdEBleGFtcGxlLmNvbTpJbm1PUUtJQmt4NGdQNk12",
+				"Authorization": metricsConfig.AuthTokenType + " " + metricsConfig.AuthToken,
 			}),
 		)
 	default:

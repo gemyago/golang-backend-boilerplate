@@ -44,11 +44,11 @@ func NewTracerProvider(ctx context.Context, deps TracerProviderDeps) (trace.Trac
 		return nil, errors.New("grpc protocol support not implemented yet")
 	case ProtocolHTTPProtobuf:
 		exporter, err = otlptracehttp.New(ctx,
-			// otlptracehttp.WithEndpoint(config.Endpoint),
-			otlptracehttp.WithEndpointURL("http://localhost:5080/api/default/v1/traces"),
+			otlptracehttp.WithEndpoint(tracesConfig.Endpoint),
+			otlptracehttp.WithURLPath(tracesConfig.URLPath),
 			otlptracehttp.WithInsecure(),
 			otlptracehttp.WithHeaders(map[string]string{
-				"Authorization": "Basic cm9vdEBleGFtcGxlLmNvbTpJbm1PUUtJQmt4NGdQNk12",
+				"Authorization": tracesConfig.AuthTokenType + " " + tracesConfig.AuthToken,
 			}),
 		)
 	default:
