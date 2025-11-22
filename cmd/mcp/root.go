@@ -12,6 +12,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/otel"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
@@ -68,6 +69,9 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 
 		err = errors.Join(
 			config.Provide(container, cfg),
+
+			// otel needs to happen separately
+			otel.Register(rootCtx, container),
 
 			// app layer
 			app.Register(container),
