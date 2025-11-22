@@ -17,7 +17,7 @@ func TestLoad(t *testing.T) {
 	})
 	t.Run("should fail if no default config is found", func(t *testing.T) {
 		opts := NewLoadOpts()
-		opts.defaultConfigFileName = "not-existing.json"
+		opts.defaultConfigFileName = "not-existing.yaml"
 		cfg := New()
 		err := Load(cfg, opts)
 		require.ErrorIs(t, err, os.ErrNotExist)

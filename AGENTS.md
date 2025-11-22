@@ -45,7 +45,7 @@ AI must **always** use `--noop` flag to dry-run startup checks without external 
 - Install/upgrade (dry-run): `helm upgrade api-service deploy/helm/api-service --install --namespace golang-backend-boilerplate -f deploy/helm/api-service/values.yaml --create-namespace --dry-run`
 
 ## Configuration & Environment
-- Embedded configs: `internal/config/default.json`, `<env>.json`, optional `<env>-user.json`
+- Embedded configs: `internal/config/default.yaml`, `<env>.yaml`, optional `<env>-user.yaml`
 - Common flags on all binaries: `--env`, `--log-level`, `--json-logs`, `--logs-file`
 - Env vars prefix `APP_` (dots/dashes -> underscores). Examples: `APP_ENV=local`, `APP_DEFAULT_LOG_LEVEL=info`, `APP_JSON_LOGS=true`
 

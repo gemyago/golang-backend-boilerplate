@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-//go:embed *.json
+//go:embed *.yaml
 var resources embed.FS
 
 func mergeResourceCfg(cfg *viper.Viper, resourceName string) error {
@@ -35,7 +35,7 @@ type LoadOpts struct {
 func NewLoadOpts() *LoadOpts {
 	return &LoadOpts{
 		env:                   "local",
-		defaultConfigFileName: "default.json",
+		defaultConfigFileName: "default.yaml",
 	}
 }
 
@@ -49,7 +49,7 @@ func (opts *LoadOpts) WithEnv(val string) *LoadOpts {
 func New() *viper.Viper {
 	v := viper.New()
 	v.SetEnvPrefix("APP")
-	v.SetConfigType("json")
+	v.SetConfigType("yaml")
 	v.SetEnvKeyReplacer(
 		strings.NewReplacer("-", "_", ".", "_"),
 	)
@@ -65,12 +65,12 @@ func Load(cfg *viper.Viper, opts *LoadOpts) error {
 		return err
 	}
 
-	if err := mergeResourceCfg(cfg, opts.env+".json"); err != nil {
+	if err := mergeResourceCfg(cfg, opts.env+".yaml"); err != nil {
 		return err
 	}
 
 	// load env user if exists
-	if err := mergeResourceCfg(cfg, opts.env+"-user.json"); err != nil {
+	if err := mergeResourceCfg(cfg, opts.env+"-user.yaml"); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}

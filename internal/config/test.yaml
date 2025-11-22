@@ -1,0 +1,4 @@
+database:
+  dsn: ":memory:"
+httpServer:
+  host: localhost

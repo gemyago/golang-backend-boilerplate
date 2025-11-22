@@ -1,0 +1,47 @@
+defaultLogLevel: DEBUG
+gracefulShutdownTimeout: 10s
+httpServer:
+  host: "[::]"
+  port: 8080
+  idleTimeout: 60s
+  readHeaderTimeout: 2s
+  readTimeout: 2s
+  writeTimeout: 8s
+  accessLogsLevel: ""
+mcpServer:
+  name: golang-backend-boilerplate-mcp
+  version: 1.0.0
+  httpHost: localhost
+  httpPort: 8080
+openTelemetry:
+  enabled: false
+  traces:
+    enabled: false
+    endpoint: ""
+    urlPath: ""
+    protocol: http/protobuf
+    samplingRate: 1.0
+    auth:
+      token: ""
+      tokenType: ""
+  metrics:
+    enabled: false
+    endpoint: ""
+    urlPath: ""
+    protocol: http/protobuf
+    exportInterval: 30s
+    auth:
+      token: ""
+      tokenType: ""
+  logs:
+    enabled: false
+    endpoint: ""
+    urlPath: ""
+    protocol: http/protobuf
+    auth:
+      token: ""
+      tokenType: ""
+database:
+  dsn: ./data/app.db
+petstore:
+  baseURL: https://petstore3.swagger.io/api/v3
