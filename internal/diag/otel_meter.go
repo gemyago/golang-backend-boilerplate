@@ -46,14 +46,18 @@ func NewMeterProvider(
 	case ProtocolGRPC:
 		return nil, errors.New("grpc protocol support not implemented yet")
 	case ProtocolHTTPProtobuf:
-		exporter, err = otlpmetrichttp.New(ctx,
-			otlpmetrichttp.WithEndpoint(metricsConfig.Endpoint),
+		endpoint, isSecure := detectEndpointSecurity(metricsConfig.Endpoint)
+		opts := []otlpmetrichttp.Option{
+			otlpmetrichttp.WithEndpoint(endpoint),
 			otlpmetrichttp.WithURLPath(metricsConfig.URLPath),
-			otlpmetrichttp.WithInsecure(),
 			otlpmetrichttp.WithHeaders(map[string]string{
 				"Authorization": metricsConfig.AuthTokenType + " " + metricsConfig.AuthToken,
 			}),
-		)
+		}
+		if !isSecure {
+			opts = append(opts, otlpmetrichttp.WithInsecure())
+		}
+		exporter, err = otlpmetrichttp.New(ctx, opts...)
 	default:
 		return nil, fmt.Errorf("unsupported protocol: %s", metricsConfig.Protocol)
 	}

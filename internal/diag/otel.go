@@ -53,3 +53,15 @@ type LogsConfig struct {
 	AuthToken     string
 	AuthTokenType string
 }
+
+// detectEndpointSecurity uses scheme to determine if it's secure or not.
+// returns endpoint without scheme and isSecure bool.
+func detectEndpointSecurity(endpoint string) (string, bool) {
+	if len(endpoint) >= 8 && endpoint[:8] == "https://" {
+		return endpoint[8:], true
+	}
+	if len(endpoint) >= 7 && endpoint[:7] == "http://" {
+		return endpoint[7:], false
+	}
+	return endpoint, false
+}

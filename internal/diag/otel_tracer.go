@@ -45,14 +45,18 @@ func NewTracerProvider(
 	case ProtocolGRPC:
 		return nil, errors.New("grpc protocol support not implemented yet")
 	case ProtocolHTTPProtobuf:
-		exporter, err = otlptracehttp.New(ctx,
-			otlptracehttp.WithEndpoint(tracesConfig.Endpoint),
+		endpoint, isSecure := detectEndpointSecurity(tracesConfig.Endpoint)
+		opts := []otlptracehttp.Option{
+			otlptracehttp.WithEndpoint(endpoint),
 			otlptracehttp.WithURLPath(tracesConfig.URLPath),
-			otlptracehttp.WithInsecure(),
 			otlptracehttp.WithHeaders(map[string]string{
 				"Authorization": tracesConfig.AuthTokenType + " " + tracesConfig.AuthToken,
 			}),
-		)
+		}
+		if !isSecure {
+			opts = append(opts, otlptracehttp.WithInsecure())
+		}
+		exporter, err = otlptracehttp.New(ctx, opts...)
 	default:
 		return nil, fmt.Errorf("unsupported protocol: %s", tracesConfig.Protocol)
 	}
