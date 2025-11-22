@@ -1,4 +1,4 @@
-package otel
+package diag
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -23,7 +22,7 @@ const (
 type MeterProviderDeps struct {
 	dig.In
 
-	*services.ShutdownHooks
+	ShutdownHooks
 
 	Resource *resource.Resource
 

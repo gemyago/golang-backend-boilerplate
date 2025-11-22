@@ -3,19 +3,19 @@ package server
 import (
 	"net/http"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/otel"
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"go.uber.org/dig"
 )
 
 type HTTPRouterDeps struct {
 	dig.In
 
-	OTELMiddleware otel.HTTPMiddlewareFactory
+	OTELMiddleware diag.HTTPMiddlewareFactory
 }
 
 type HTTPRouter struct {
 	mux                   *http.ServeMux
-	otelMiddlewareFactory otel.HTTPMiddlewareFactory
+	otelMiddlewareFactory diag.HTTPMiddlewareFactory
 }
 
 func NewHTTPRouter(

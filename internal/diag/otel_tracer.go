@@ -1,11 +1,10 @@
-package otel
+package diag
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -17,7 +16,7 @@ import (
 type TracerProviderDeps struct {
 	dig.In
 
-	*services.ShutdownHooks
+	ShutdownHooks
 
 	Resource     *resource.Resource
 	Config       Config
