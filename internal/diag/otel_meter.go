@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
@@ -12,11 +11,6 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.uber.org/dig"
-)
-
-const (
-	// DefaultMetricExportInterval is the default interval for periodic metric export.
-	DefaultMetricExportInterval = 60 * time.Second
 )
 
 type MeterProviderDeps struct {
@@ -53,7 +47,6 @@ func NewMeterProvider(
 		return nil, errors.New("grpc protocol support not implemented yet")
 	case ProtocolHTTPProtobuf:
 		exporter, err = otlpmetrichttp.New(ctx,
-			// otlpmetrichttp.WithEndpoint(config.Endpoint),
 			otlpmetrichttp.WithEndpoint(metricsConfig.Endpoint),
 			otlpmetrichttp.WithURLPath(metricsConfig.URLPath),
 			otlpmetrichttp.WithInsecure(),
@@ -71,7 +64,7 @@ func NewMeterProvider(
 
 	meterProvider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter,
-			sdkmetric.WithInterval(DefaultMetricExportInterval),
+			sdkmetric.WithInterval(metricsConfig.ExportInterval),
 		)),
 		sdkmetric.WithResource(res),
 	)
