@@ -26,7 +26,7 @@ type MiddlewareFactoryDeps struct {
 
 	metric.MeterProvider
 	trace.TracerProvider
-	*Config
+	Config
 }
 
 func NewOTELMiddlewareFactory(

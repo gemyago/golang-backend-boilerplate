@@ -80,16 +80,22 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 		provideConfigValue(cfg, "openTelemetry.traces.urlPath").asString(),
 		provideConfigValue(cfg, "openTelemetry.traces.protocol").asString(),
 		provideConfigValue(cfg, "openTelemetry.traces.samplingRate").asFloat64(),
+		provideConfigValue(cfg, "openTelemetry.traces.auth.token").asString(),
+		provideConfigValue(cfg, "openTelemetry.traces.auth.tokenType").asString(),
 
 		provideConfigValue(cfg, "openTelemetry.metrics.enabled").asBool(),
 		provideConfigValue(cfg, "openTelemetry.metrics.endpoint").asString(),
 		provideConfigValue(cfg, "openTelemetry.metrics.urlPath").asString(),
 		provideConfigValue(cfg, "openTelemetry.metrics.protocol").asString(),
 		provideConfigValue(cfg, "openTelemetry.metrics.exportInterval").asDuration(),
+		provideConfigValue(cfg, "openTelemetry.metrics.auth.token").asString(),
+		provideConfigValue(cfg, "openTelemetry.metrics.auth.tokenType").asString(),
 
 		provideConfigValue(cfg, "openTelemetry.logs.enabled").asBool(),
 		provideConfigValue(cfg, "openTelemetry.logs.endpoint").asString(),
 		provideConfigValue(cfg, "openTelemetry.logs.urlPath").asString(),
 		provideConfigValue(cfg, "openTelemetry.logs.protocol").asString(),
+		provideConfigValue(cfg, "openTelemetry.logs.auth.token").asString(),
+		provideConfigValue(cfg, "openTelemetry.logs.auth.tokenType").asString(),
 	)
 }
