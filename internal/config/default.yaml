@@ -1,4 +1,6 @@
-defaultLogLevel: DEBUG
+# Default configuration for the application, applies to all environments.
+
+defaultLogLevel: INFO
 gracefulShutdownTimeout: 10s
 httpServer:
   host: "[::]"
