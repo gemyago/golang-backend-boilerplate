@@ -5,7 +5,7 @@
   "petstore": {
     "baseURL": "https://petstore3.swagger.io/api/v3"
   },
-  "defaultLogLevel": "INFO",
+  "defaultLogLevel": "DEBUG",
   "gracefulShutdownTimeout": "10s",
   "httpServer": {
     "host": "[::]",
@@ -24,10 +24,37 @@
   },
   "openTelemetry": {
     "enabled": false,
-    "endpoint": "",
-    "protocol": "http/protobuf",
-    "samplingRate": 1.0,
-    "enableMetrics": true,
-    "enableLogs": true
+    "traces": {
+      "enabled": false,
+      "endpoint": "",
+      "urlPath": "",
+      "protocol": "http/protobuf",
+      "samplingRate": 1.0,
+      "auth": {
+        "token": "",
+        "tokenType": ""
+      }
+    },
+    "metrics": {
+      "enabled": false,
+      "endpoint": "",
+      "urlPath": "",
+      "protocol": "http/protobuf",
+      "exportInterval": "30s",
+      "auth": {
+        "token": "",
+        "tokenType": ""
+      }
+    },
+    "logs": {
+      "enabled": false,
+      "endpoint": "",
+      "urlPath": "",
+      "protocol": "http/protobuf",
+      "auth": {
+        "token": "",
+        "tokenType": ""
+      }
+    }
   }
 }

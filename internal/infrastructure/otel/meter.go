@@ -2,11 +2,11 @@ package otel
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -26,17 +26,19 @@ type MeterProviderDeps struct {
 	*services.ShutdownHooks
 
 	Resource *resource.Resource
-	Config   *Config
+
+	Config        *Config
+	MetricsConfig *MetricsConfig
 }
 
 // NewMeterProvider creates a new MeterProvider suitable for the given configuration.
 func NewMeterProvider(ctx context.Context, deps MeterProviderDeps) (metric.MeterProvider, error) {
-	config := deps.Config
+	metricsConfig := deps.MetricsConfig
 	res := deps.Resource
 
-	// If metrics are disabled or not configured, return no-op provider
+	// If metrics are disabled return no-op provider
 	// this is very likely a local development scenario.
-	if !config.EnableMetrics || config.Endpoint == "" {
+	if !deps.Config.Enabled || !metricsConfig.Enabled {
 		return noop.NewMeterProvider(), nil
 	}
 
@@ -44,19 +46,21 @@ func NewMeterProvider(ctx context.Context, deps MeterProviderDeps) (metric.Meter
 	var err error
 
 	// Create exporter based on protocol
-	switch config.Protocol {
+	switch metricsConfig.Protocol {
 	case ProtocolGRPC:
-		exporter, err = otlpmetricgrpc.New(ctx,
-			otlpmetricgrpc.WithEndpoint(config.Endpoint),
-			otlpmetricgrpc.WithInsecure(),
-		)
+		return nil, errors.New("grpc protocol support not implemented yet")
 	case ProtocolHTTPProtobuf:
 		exporter, err = otlpmetrichttp.New(ctx,
-			otlpmetrichttp.WithEndpoint(config.Endpoint),
+			// otlpmetrichttp.WithEndpoint(config.Endpoint),
+			otlpmetrichttp.WithEndpoint(metricsConfig.Endpoint),
+			otlpmetrichttp.WithURLPath(metricsConfig.URLPath),
 			otlpmetrichttp.WithInsecure(),
+			otlpmetrichttp.WithHeaders(map[string]string{
+				"Authorization": "Basic cm9vdEBleGFtcGxlLmNvbTpJbm1PUUtJQmt4NGdQNk12",
+			}),
 		)
 	default:
-		return nil, fmt.Errorf("unsupported protocol: %s", config.Protocol)
+		return nil, fmt.Errorf("unsupported protocol: %s", metricsConfig.Protocol)
 	}
 
 	if err != nil {

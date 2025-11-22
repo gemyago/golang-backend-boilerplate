@@ -1,6 +1,3 @@
 {
-  "openTelemetry": {
-    "enabled": true,
-    "endpoint": "localhost:4318"
-  }
+  "defaultLogLevel": "INFO"
 }

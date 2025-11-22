@@ -1,7 +1,5 @@
 {
-  "defaultLogLevel": "DEBUG",
   "openTelemetry": {
-    "enabled": false,
-    "endpoint": ""
+    "enabled": true
   }
 }

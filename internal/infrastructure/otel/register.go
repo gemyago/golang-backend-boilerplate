@@ -11,6 +11,8 @@ import (
 func Register(ctx context.Context, container *dig.Container) error {
 	return di.ProvideAll(
 		container,
+		NewTracesConfig,
+		NewMetricsConfig,
 		NewConfig,
 		di.ProvideWithContext(ctx, NewResource),
 		di.ProvideWithContext(ctx, NewTracerProvider),

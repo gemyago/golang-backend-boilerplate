@@ -75,10 +75,21 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 
 		// opentelemetry config
 		provideConfigValue(cfg, "openTelemetry.enabled").asBool(),
-		provideConfigValue(cfg, "openTelemetry.endpoint").asString(),
-		provideConfigValue(cfg, "openTelemetry.protocol").asString(),
-		provideConfigValue(cfg, "openTelemetry.samplingRate").asFloat64(),
-		provideConfigValue(cfg, "openTelemetry.enableMetrics").asBool(),
-		provideConfigValue(cfg, "openTelemetry.enableLogs").asBool(),
+		provideConfigValue(cfg, "openTelemetry.traces.enabled").asBool(),
+		provideConfigValue(cfg, "openTelemetry.traces.endpoint").asString(),
+		provideConfigValue(cfg, "openTelemetry.traces.urlPath").asString(),
+		provideConfigValue(cfg, "openTelemetry.traces.protocol").asString(),
+		provideConfigValue(cfg, "openTelemetry.traces.samplingRate").asFloat64(),
+
+		provideConfigValue(cfg, "openTelemetry.metrics.enabled").asBool(),
+		provideConfigValue(cfg, "openTelemetry.metrics.endpoint").asString(),
+		provideConfigValue(cfg, "openTelemetry.metrics.urlPath").asString(),
+		provideConfigValue(cfg, "openTelemetry.metrics.protocol").asString(),
+		provideConfigValue(cfg, "openTelemetry.metrics.exportInterval").asDuration(),
+
+		provideConfigValue(cfg, "openTelemetry.logs.enabled").asBool(),
+		provideConfigValue(cfg, "openTelemetry.logs.endpoint").asString(),
+		provideConfigValue(cfg, "openTelemetry.logs.urlPath").asString(),
+		provideConfigValue(cfg, "openTelemetry.logs.protocol").asString(),
 	)
 }
