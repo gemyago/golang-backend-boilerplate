@@ -139,8 +139,11 @@ func NewRouterMiddleware(deps RouterMiddlewareDeps) RouterMiddleware {
 			WithRequestID:      false, // We handle it ourselves (tracing middleware)
 			WithRequestHeader:  true,
 			WithResponseHeader: true,
-			WithSpanID:         true,
-			WithTraceID:        true,
+
+			// Log handler will add those, we don't want them twice
+			// see diag/slog.go for more details
+			WithSpanID:  false,
+			WithTraceID: false,
 		}),
 		middleware.NewRecovererMiddleware(deps.RootLogger),
 	)
