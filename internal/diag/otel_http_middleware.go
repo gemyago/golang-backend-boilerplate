@@ -9,19 +9,9 @@ import (
 	"go.uber.org/dig"
 )
 
-type HTTPMiddlewareFactory func(
-	operation string,
-) func(http.Handler) http.Handler
+type OtelHTTPMiddleware func(http.Handler) http.Handler
 
-func NewNoopOTELMiddlewareFactory() HTTPMiddlewareFactory {
-	return func(string) func(http.Handler) http.Handler {
-		return func(next http.Handler) http.Handler {
-			return next
-		}
-	}
-}
-
-type MiddlewareFactoryDeps struct {
+type OtelMiddlewareFactoryDeps struct {
 	dig.In
 
 	metric.MeterProvider
@@ -29,18 +19,31 @@ type MiddlewareFactoryDeps struct {
 	Config
 }
 
-func NewOTELMiddlewareFactory(
-	deps MiddlewareFactoryDeps,
-) HTTPMiddlewareFactory { // coverage-ignore -- Little value in testing this factory function
-	return func(operation string) func(http.Handler) http.Handler {
+func NewOtelHTTPMiddleware(
+	deps OtelMiddlewareFactoryDeps,
+) OtelHTTPMiddleware { // coverage-ignore -- Little value in testing this factory function
+	return func(next http.Handler) http.Handler {
 		if !deps.Config.Enabled {
-			return NewNoopOTELMiddlewareFactory()(operation)
+			return next
 		}
 
-		return otelhttp.NewMiddleware(
-			operation,
+		return otelhttp.NewHandler(
+			next,
+
+			// we will use route pattern or URI
+			// but need to set something here
+			"http-request",
+
 			otelhttp.WithMeterProvider(deps.MeterProvider),
 			otelhttp.WithTracerProvider(deps.TracerProvider),
+			otelhttp.WithSpanNameFormatter(
+				func(_ string, r *http.Request) string {
+					if r.Pattern != "" {
+						return r.Pattern
+					}
+					return r.RequestURI
+				},
+			),
 		)
 	}
 }
