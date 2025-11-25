@@ -62,6 +62,7 @@ func (c *PetsCommands) AddPet(ctx context.Context, req AddPetRequest) (*AddPetRe
 	}
 
 	petReq := &petstore.Pet{
+		ID:        time.Now().Unix(),
 		Name:      req.Name,
 		Status:    petstore.PetStatus(req.Status),
 		PhotoUrls: req.PhotoUrls,

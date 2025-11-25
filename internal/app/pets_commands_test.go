@@ -63,7 +63,8 @@ func TestPetsCommands(t *testing.T) {
 				if params.Request == nil {
 					return false
 				}
-				return params.Request.Name == req.Name &&
+				return params.Request.ID != 0 &&
+					params.Request.Name == req.Name &&
 					string(params.Request.Status) == req.Status &&
 					len(params.Request.PhotoUrls) == len(req.PhotoUrls)
 			})).Return(pet, nil)
