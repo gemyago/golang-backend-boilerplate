@@ -53,6 +53,12 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
 		return nil, fmt.Errorf("failed to get user pet IDs: %w", err)
 	}
 
+	q.logger.InfoContext(ctx,
+		"Resolving pet details from petstore",
+		slog.String("user_id", userID),
+		slog.Int("pet_count", len(petIDs)),
+	)
+
 	// Fetch pet details from Petstore for each ID
 	var pets []*petstore.Pet
 	for _, petID := range petIDs {
@@ -70,6 +76,13 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
 		}
 		pets = append(pets, pet)
 	}
+
+	q.logger.DebugContext(
+		ctx,
+		"Resolved details for user pets from petstore",
+		slog.String("user_id", userID),
+		slog.Int("resolved_pet_count", len(pets)),
+	)
 
 	return pets, nil
 }
