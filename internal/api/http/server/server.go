@@ -129,7 +129,7 @@ func NewRouterMiddleware(deps RouterMiddlewareDeps) RouterMiddleware {
 
 	chain := middleware.Chain(
 		middleware.Middleware(deps.OTELMiddleware), // otel goes first
-		middleware.NewTracingMiddleware(middleware.NewTracingMiddlewareCfg()),
+		middleware.NewCorrelationMiddleware(middleware.NewCorrelationMiddlewareCfg()),
 		sloghttp.NewWithConfig(deps.RootLogger, sloghttp.Config{
 			DefaultLevel:     defaultLogLevel,
 			ClientErrorLevel: clientErrorLevel,
