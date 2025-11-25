@@ -10,8 +10,6 @@ import (
 func NewTestRootHandler() *handlers.RootHandler {
 	return NewRootHandler(RootHandlerDeps{
 		RootLogger: diag.RootTestLogger(),
-		Router: NewHTTPRouter(HTTPRouterDeps{
-			OTELMiddleware: diag.NewNoopOTELMiddlewareFactory(),
-		}),
+		Router:     NewHTTPRouter(HTTPRouterDeps{}),
 	})
 }

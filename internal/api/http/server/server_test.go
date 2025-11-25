@@ -33,6 +33,7 @@ func TestHTTPServer(t *testing.T) {
 				Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.WriteHeader(http.StatusOK)
 				}),
+				OTELMiddleware:  func(h http.Handler) http.Handler { return h },
 				listeningSignal: listeningSignal,
 			})
 			assert.True(t, hooks.HasHook("http-server", srv.httpSrv.Shutdown))

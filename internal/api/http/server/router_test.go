@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,9 +20,7 @@ func TestMuxRouterAdapter(t *testing.T) {
 			http.NoBody,
 		)
 
-		adapter := NewHTTPRouter(HTTPRouterDeps{
-			OTELMiddleware: diag.NewNoopOTELMiddlewareFactory(),
-		})
+		adapter := NewHTTPRouter(HTTPRouterDeps{})
 		handlerInvoked := false
 		adapter.HandleRoute(
 			http.MethodGet,

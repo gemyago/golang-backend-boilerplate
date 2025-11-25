@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware"
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	sloghttp "github.com/samber/slog-http"
 	"go.uber.org/dig"
@@ -35,6 +36,8 @@ type HTTPServerDeps struct {
 	// handler
 	Handler http.Handler
 
+	OTELMiddleware diag.OtelHTTPMiddleware
+
 	// listeningSignal is an optional channel that Start will close when the server is listening.
 	// Primarily for testing.
 	listeningSignal chan<- struct{}
@@ -55,7 +58,7 @@ func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
 		ReadHeaderTimeout: deps.ReadHeaderTimeout,
 		ReadTimeout:       deps.ReadTimeout,
 		WriteTimeout:      deps.WriteTimeout,
-		Handler:           buildMiddlewareChain(deps),
+		Handler:           deps.Handler,
 		ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
 	}
 
@@ -98,6 +101,52 @@ func (srv *HTTPServer) Start(ctx context.Context) error {
 	return nil
 }
 
+type RouterMiddleware func(http.Handler) http.Handler
+
+type RouterMiddlewareDeps struct {
+	dig.In
+
+	RootLogger *slog.Logger
+
+	// config
+	AccessLogsLevel string `name:"config.httpServer.accessLogsLevel"`
+
+	OTELMiddleware diag.OtelHTTPMiddleware
+}
+
+func NewRouterMiddleware(deps RouterMiddlewareDeps) RouterMiddleware {
+	defaultLogLevel := slog.LevelInfo
+	clientErrorLevel := slog.LevelWarn
+	serverErrorLevel := slog.LevelError
+
+	if deps.AccessLogsLevel != "" {
+		if err := defaultLogLevel.UnmarshalText([]byte(deps.AccessLogsLevel)); err != nil {
+			panic(fmt.Errorf("failed to unmarshal access logs level: %w", err))
+		}
+		clientErrorLevel = defaultLogLevel
+		serverErrorLevel = defaultLogLevel
+	}
+
+	chain := middleware.Chain(
+		middleware.Middleware(deps.OTELMiddleware), // otel goes first
+		middleware.NewTracingMiddleware(middleware.NewTracingMiddlewareCfg()),
+		sloghttp.NewWithConfig(deps.RootLogger, sloghttp.Config{
+			DefaultLevel:     defaultLogLevel,
+			ClientErrorLevel: clientErrorLevel,
+			ServerErrorLevel: serverErrorLevel,
+
+			WithUserAgent:      true,
+			WithRequestID:      false, // We handle it ourselves (tracing middleware)
+			WithRequestHeader:  true,
+			WithResponseHeader: true,
+			WithSpanID:         true,
+			WithTraceID:        true,
+		}),
+		middleware.NewRecovererMiddleware(deps.RootLogger),
+	)
+	return chain
+}
+
 func buildMiddlewareChain(deps HTTPServerDeps) http.Handler {
 	defaultLogLevel := slog.LevelInfo
 	clientErrorLevel := slog.LevelWarn
@@ -113,6 +162,7 @@ func buildMiddlewareChain(deps HTTPServerDeps) http.Handler {
 
 	// Router wire-up
 	chain := middleware.Chain(
+		middleware.Middleware(deps.OTELMiddleware), // otel goes first
 		middleware.NewTracingMiddleware(middleware.NewTracingMiddlewareCfg()),
 		sloghttp.NewWithConfig(deps.RootLogger, sloghttp.Config{
 			DefaultLevel:     defaultLogLevel,
