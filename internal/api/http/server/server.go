@@ -40,7 +40,7 @@ type HTTPServerDeps struct {
 
 	// listeningSignal is an optional channel that Start will close when the server is listening.
 	// Primarily for testing.
-	listeningSignal chan<- struct{}
+	listeningSignal chan struct{}
 }
 
 type HTTPServer struct {
@@ -148,38 +148,4 @@ func NewRouterMiddleware(deps RouterMiddlewareDeps) RouterMiddleware {
 		middleware.NewRecovererMiddleware(deps.RootLogger),
 	)
 	return chain
-}
-
-func buildMiddlewareChain(deps HTTPServerDeps) http.Handler {
-	defaultLogLevel := slog.LevelInfo
-	clientErrorLevel := slog.LevelWarn
-	serverErrorLevel := slog.LevelError
-
-	if deps.AccessLogsLevel != "" {
-		if err := defaultLogLevel.UnmarshalText([]byte(deps.AccessLogsLevel)); err != nil {
-			panic(fmt.Errorf("failed to unmarshal access logs level: %w", err))
-		}
-		clientErrorLevel = defaultLogLevel
-		serverErrorLevel = defaultLogLevel
-	}
-
-	// Router wire-up
-	chain := middleware.Chain(
-		middleware.Middleware(deps.OTELMiddleware), // otel goes first
-		middleware.NewTracingMiddleware(middleware.NewTracingMiddlewareCfg()),
-		sloghttp.NewWithConfig(deps.RootLogger, sloghttp.Config{
-			DefaultLevel:     defaultLogLevel,
-			ClientErrorLevel: clientErrorLevel,
-			ServerErrorLevel: serverErrorLevel,
-
-			WithUserAgent:      true,
-			WithRequestID:      false, // We handle it ourselves (tracing middleware)
-			WithRequestHeader:  true,
-			WithResponseHeader: true,
-			WithSpanID:         true,
-			WithTraceID:        true,
-		}),
-		middleware.NewRecovererMiddleware(deps.RootLogger),
-	)
-	return chain(deps.Handler)
 }
