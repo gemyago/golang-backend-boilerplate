@@ -3,6 +3,7 @@ package diag
 import (
 	"time"
 
+	"go.opentelemetry.io/otel/propagation"
 	"go.uber.org/dig"
 )
 
@@ -52,6 +53,13 @@ type LogsConfig struct {
 	Protocol      string
 	AuthToken     string
 	AuthTokenType string
+}
+
+func NewTextMapPropagator() propagation.TextMapPropagator {
+	return propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	)
 }
 
 // detectEndpointSecurity uses scheme to determine if it's secure or not.

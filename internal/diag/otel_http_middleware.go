@@ -5,6 +5,7 @@ import (
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/dig"
 )
@@ -16,7 +17,27 @@ type OtelMiddlewareFactoryDeps struct {
 
 	metric.MeterProvider
 	trace.TracerProvider
+	propagation.TextMapPropagator
 	Config
+}
+
+// injectOtelResponseHeaders injects OTel trace context headers (traceparent) to the HTTP response.
+// This sometimes helps with debugging and tracing, especially with Postman, or directly from the browser.
+func injectOtelResponseHeaders(
+	deps OtelMiddlewareFactoryDeps,
+	next http.Handler,
+) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		spanCtx := trace.SpanContextFromContext(ctx)
+
+		if spanCtx.IsValid() {
+			deps.TextMapPropagator.Inject(ctx, propagation.HeaderCarrier(w.Header()))
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func NewOtelHTTPMiddleware(
@@ -27,13 +48,15 @@ func NewOtelHTTPMiddleware(
 			return next
 		}
 
-		return otelhttp.NewHandler(
-			next,
+		resultingHandler := otelhttp.NewHandler(
+			injectOtelResponseHeaders(deps, next),
 
+			// span name will be set by the span name formatter below
 			// we will use route pattern or URI
 			// but need to set something here
 			"http-request",
 
+			otelhttp.WithPropagators(deps.TextMapPropagator),
 			otelhttp.WithMeterProvider(deps.MeterProvider),
 			otelhttp.WithTracerProvider(deps.TracerProvider),
 			otelhttp.WithSpanNameFormatter(
@@ -45,5 +68,7 @@ func NewOtelHTTPMiddleware(
 				},
 			),
 		)
+
+		return resultingHandler
 	}
 }
