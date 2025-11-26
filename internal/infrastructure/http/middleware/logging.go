@@ -34,20 +34,30 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 	resp, err := l.transport.RoundTrip(req)
 	duration := time.Since(start)
 
-	// Log response
-	if err != nil {
-		l.logger.ErrorContext(req.Context(), "HTTP request failed",
-			slog.String("method", req.Method),
-			slog.String("url", req.URL.String()),
-			slog.Duration("duration", duration),
-			slog.Any("error", err),
-		)
-		return nil, err
-	}
-
 	requestHeaders := make([]slog.Attr, 0, len(req.Header))
 	for key, values := range req.Header {
 		requestHeaders = append(requestHeaders, slog.Any(key, values))
+	}
+
+	requestAttr := slog.Group("request",
+		slog.String("method", req.Method),
+		slog.String("url", req.URL.String()),
+		slog.GroupAttrs("headers", requestHeaders...),
+	)
+
+	// Log response
+	if err != nil {
+		attrs := []slog.Attr{
+			requestAttr,
+			slog.Group("response", slog.Duration("duration", duration)),
+			slog.Any("error", err),
+		}
+
+		// We still do it with warn level. Upper most layer should log with error
+		l.logger.LogAttrs(req.Context(), slog.LevelWarn, "OUTBOUND_CALL_FAILED",
+			attrs...,
+		)
+		return nil, err
 	}
 
 	responseHeaders := make([]slog.Attr, 0, len(resp.Header))
@@ -63,11 +73,7 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 	}
 
 	attrs := []slog.Attr{
-		slog.Group("request",
-			slog.String("method", req.Method),
-			slog.String("url", req.URL.String()),
-			slog.GroupAttrs("headers", requestHeaders...),
-		),
+		requestAttr,
 		slog.Group("response",
 			slog.Int("status", resp.StatusCode),
 			slog.Duration("duration", duration),

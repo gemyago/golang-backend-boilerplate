@@ -19,6 +19,28 @@ import (
 func TestLoggingMiddleware(t *testing.T) {
 	fake := faker.New()
 
+	type logEntryHeaders = map[string][]string
+
+	type logEntryRequest struct {
+		Method  string          `json:"method"`
+		URL     string          `json:"url"`
+		Headers logEntryHeaders `json:"headers"`
+	}
+
+	type logEntryResponse struct {
+		Status   int             `json:"status"`
+		Duration int             `json:"duration"`
+		Headers  logEntryHeaders `json:"headers"`
+	}
+
+	type logEntry struct {
+		Level    string           `json:"level"`
+		Message  string           `json:"msg"`
+		Request  logEntryRequest  `json:"request"`
+		Response logEntryResponse `json:"response"`
+		Error    string           `json:"error,omitempty"`
+	}
+
 	type mockDeps struct {
 		logBuffer      *bytes.Buffer
 		middlewareDeps LoggingMiddlewareDeps
@@ -82,6 +104,14 @@ func TestLoggingMiddleware(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, expectedError, err)
 		mockTransport.AssertExpectations(t)
+
+		// Check log
+		var errorLogEntry logEntry
+		err = json.Unmarshal(deps.logBuffer.Bytes(), &errorLogEntry)
+		require.NoError(t, err)
+		assert.Equal(t, "WARN", errorLogEntry.Level)
+		assert.Equal(t, "OUTBOUND_CALL_FAILED", errorLogEntry.Message)
+		assert.NotEmpty(t, errorLogEntry.Error)
 	})
 
 	t.Run("should not modify original request", func(t *testing.T) {
@@ -111,27 +141,6 @@ func TestLoggingMiddleware(t *testing.T) {
 	})
 
 	t.Run("request logs", func(t *testing.T) {
-		type logEntryHeaders = map[string][]string
-
-		type logEntryRequest struct {
-			Method  string          `json:"method"`
-			URL     string          `json:"url"`
-			Headers logEntryHeaders `json:"headers"`
-		}
-
-		type logEntryResponse struct {
-			Status   int             `json:"status"`
-			Duration int             `json:"duration"`
-			Headers  logEntryHeaders `json:"headers"`
-		}
-
-		type logEntry struct {
-			Level    string           `json:"level"`
-			Message  string           `json:"msg"`
-			Request  logEntryRequest  `json:"request"`
-			Response logEntryResponse `json:"response"`
-		}
-
 		t.Run("should include log for success request", func(t *testing.T) {
 			// Arrange
 			deps := makeMockDeps()
