@@ -55,6 +55,13 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 		responseHeaders = append(responseHeaders, slog.Any(key, values))
 	}
 
+	level := slog.LevelDebug
+
+	// We log everything above 400 as warnings for better visibility
+	if resp.StatusCode >= 400 && resp.StatusCode < 599 {
+		level = slog.LevelWarn
+	}
+
 	attrs := []slog.Attr{
 		slog.Group("request",
 			slog.String("method", req.Method),
@@ -68,7 +75,7 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 		),
 	}
 
-	l.logger.LogAttrs(req.Context(), slog.LevelDebug, "OUTBOUND_CALL_COMPLETED",
+	l.logger.LogAttrs(req.Context(), level, "OUTBOUND_CALL_COMPLETED",
 		attrs...,
 	)
 

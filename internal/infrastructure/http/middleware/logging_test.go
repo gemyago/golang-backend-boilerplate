@@ -187,5 +187,36 @@ func TestLoggingMiddleware(t *testing.T) {
 			assert.Positive(t, log.Response.Duration)
 			assert.Equal(t, wantResHeaders, log.Response.Headers)
 		})
+
+		t.Run("should log >4xx status with warn level", func(t *testing.T) {
+			// Arrange
+			deps := makeMockDeps()
+			mockTransport := &MockRoundTripper{}
+			loggingMiddleware := NewLoggingMiddleware(mockTransport, deps.middlewareDeps)
+
+			url := fake.Internet().URL()
+			req := httptest.NewRequest(http.MethodGet, url, nil)
+
+			wantStatus := fake.IntBetween(400, 599)
+			expectedResponse := &http.Response{
+				StatusCode: wantStatus,
+				Body:       io.NopCloser(strings.NewReader(`{"error": "bad request"}`)),
+				Header:     http.Header{},
+			}
+
+			mockTransport.On("RoundTrip", req).Return(expectedResponse, nil)
+
+			// Act
+			_, err := loggingMiddleware.RoundTrip(req)
+
+			// Assert
+			require.NoError(t, err)
+
+			var log logEntry
+			require.NoError(t, json.Unmarshal(deps.logBuffer.Bytes(), &log))
+
+			assert.Equal(t, "WARN", log.Level)
+			assert.Equal(t, wantStatus, log.Response.Status)
+		})
 	})
 }
