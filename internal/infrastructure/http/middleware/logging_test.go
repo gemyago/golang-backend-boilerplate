@@ -227,5 +227,67 @@ func TestLoggingMiddleware(t *testing.T) {
 			assert.Equal(t, "WARN", log.Level)
 			assert.Equal(t, wantStatus, log.Response.Status)
 		})
+
+		t.Run("should obfuscate headers", func(t *testing.T) {
+			// Arrange
+			deps := makeMockDeps()
+			mockTransport := &MockRoundTripper{}
+			loggingMiddleware := NewLoggingMiddleware(mockTransport, deps.middlewareDeps)
+
+			url := fake.Internet().URL()
+			req := httptest.NewRequest(http.MethodGet, url, nil)
+
+			for _, header := range []string{
+				"Authorization",
+				"Cookie",
+				"Set-Cookie",
+				"X-Auth-Token",
+				"X-CSRF-Token",
+				"X-XSRF-Token",
+			} {
+				originalValue := fake.Internet().Password()
+				req.Header.Set(header, originalValue)
+			}
+
+			wantStatus := fake.IntBetween(200, 399)
+			expectedResponse := &http.Response{
+				StatusCode: wantStatus,
+				Body:       io.NopCloser(strings.NewReader(`{"success": true}`)),
+				Header:     http.Header{},
+			}
+
+			for _, header := range []string{
+				"set-cookie",
+			} {
+				originalValue := fake.Internet().Password()
+				expectedResponse.Header.Set(header, originalValue)
+			}
+
+			mockTransport.On("RoundTrip", req).Return(expectedResponse, nil)
+
+			// Act
+			_, err := loggingMiddleware.RoundTrip(req)
+
+			// Assert
+			require.NoError(t, err)
+
+			var log logEntry
+			require.NoError(t, json.Unmarshal(deps.logBuffer.Bytes(), &log))
+
+			assert.Equal(t, "DEBUG", log.Level)
+
+			// Request part
+			assert.Equal(t, "OUTBOUND_CALL_COMPLETED", log.Message)
+			for _, val := range log.Request.Headers {
+				// All obfuscated headers should have "[REDACTED]" value
+				assert.Equal(t, []string{"[REDACTED]"}, val)
+			}
+
+			// Response part
+			for _, val := range log.Response.Headers {
+				// All obfuscated headers should have "[REDACTED]" value
+				assert.Equal(t, []string{"[REDACTED]"}, val)
+			}
+		})
 	})
 }

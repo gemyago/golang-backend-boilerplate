@@ -3,6 +3,7 @@ package middleware
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -13,8 +14,10 @@ type LoggingMiddlewareDeps struct {
 
 // LoggingMiddleware wraps an http.RoundTripper to add structured logging.
 type LoggingMiddleware struct {
-	transport http.RoundTripper
-	logger    *slog.Logger
+	transport                 http.RoundTripper
+	logger                    *slog.Logger
+	obfuscatedRequestHeaders  map[string]struct{}
+	obfuscatedResponseHeaders map[string]struct{}
 }
 
 // NewLoggingMiddleware creates a new logging middleware.
@@ -22,6 +25,21 @@ func NewLoggingMiddleware(transport http.RoundTripper, deps LoggingMiddlewareDep
 	return &LoggingMiddleware{
 		transport: transport,
 		logger:    deps.RootLogger.WithGroup("http-logging-middleware"),
+
+		// Request headers to obfuscate in logs. Extend as needed.
+		obfuscatedRequestHeaders: map[string]struct{}{
+			"authorization": {},
+			"cookie":        {},
+			"set-cookie":    {},
+			"x-auth-token":  {},
+			"x-csrf-token":  {},
+			"x-xsrf-token":  {},
+		},
+
+		// Response headers to obfuscate in logs. Extend as needed.
+		obfuscatedResponseHeaders: map[string]struct{}{
+			"set-cookie": {},
+		},
 	}
 }
 
@@ -34,15 +52,12 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 	resp, err := l.transport.RoundTrip(req)
 	duration := time.Since(start)
 
-	requestHeaders := make([]slog.Attr, 0, len(req.Header))
-	for key, values := range req.Header {
-		requestHeaders = append(requestHeaders, slog.Any(key, values))
-	}
+	requestHeadersGroup := buildObfuscateHeadersAttr(req.Header, l.obfuscatedRequestHeaders)
 
 	requestAttr := slog.Group("request",
 		slog.String("method", req.Method),
 		slog.String("url", req.URL.String()),
-		slog.GroupAttrs("headers", requestHeaders...),
+		requestHeadersGroup,
 	)
 
 	// Log response
@@ -60,10 +75,7 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 		return nil, err
 	}
 
-	responseHeaders := make([]slog.Attr, 0, len(resp.Header))
-	for key, values := range resp.Header {
-		responseHeaders = append(responseHeaders, slog.Any(key, values))
-	}
+	responseHeadersGroup := buildObfuscateHeadersAttr(resp.Header, l.obfuscatedResponseHeaders)
 
 	level := slog.LevelDebug
 
@@ -77,7 +89,7 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 		slog.Group("response",
 			slog.Int("status", resp.StatusCode),
 			slog.Duration("duration", duration),
-			slog.GroupAttrs("headers", responseHeaders...),
+			responseHeadersGroup,
 		),
 	}
 
@@ -86,4 +98,18 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 	)
 
 	return resp, nil
+}
+
+func buildObfuscateHeadersAttr(headers http.Header, obfuscatedHeaders map[string]struct{}) slog.Attr {
+	headerAttrs := make([]slog.Attr, 0, len(headers))
+	for key, values := range headers {
+		var headerAttr slog.Attr
+		if _, ok := obfuscatedHeaders[strings.ToLower(key)]; ok {
+			headerAttr = slog.Any(key, []string{"[REDACTED]"})
+		} else {
+			headerAttr = slog.Any(key, values)
+		}
+		headerAttrs = append(headerAttrs, headerAttr)
+	}
+	return slog.GroupAttrs("headers", headerAttrs...)
 }
