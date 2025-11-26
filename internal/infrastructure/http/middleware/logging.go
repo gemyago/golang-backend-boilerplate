@@ -30,13 +30,6 @@ func NewLoggingMiddleware(transport http.RoundTripper, deps LoggingMiddlewareDep
 func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error) {
 	start := time.Now()
 
-	// Log request
-	l.logger.DebugContext(req.Context(), "HTTP request started",
-		slog.String("method", req.Method),
-		slog.String("url", req.URL.String()),
-		slog.String("host", req.Host),
-	)
-
 	// Call next transport
 	resp, err := l.transport.RoundTrip(req)
 	duration := time.Since(start)
@@ -52,11 +45,31 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 		return nil, err
 	}
 
-	l.logger.DebugContext(req.Context(), "HTTP request completed",
-		slog.String("method", req.Method),
-		slog.String("url", req.URL.String()),
-		slog.Int("status_code", resp.StatusCode),
-		slog.Duration("duration", duration),
+	requestHeaders := make([]slog.Attr, 0, len(req.Header))
+	for key, values := range req.Header {
+		requestHeaders = append(requestHeaders, slog.Any(key, values))
+	}
+
+	responseHeaders := make([]slog.Attr, 0, len(resp.Header))
+	for key, values := range resp.Header {
+		responseHeaders = append(responseHeaders, slog.Any(key, values))
+	}
+
+	attrs := []slog.Attr{
+		slog.Group("request",
+			slog.String("method", req.Method),
+			slog.String("url", req.URL.String()),
+			slog.GroupAttrs("headers", requestHeaders...),
+		),
+		slog.Group("response",
+			slog.Int("status", resp.StatusCode),
+			slog.Duration("duration", duration),
+			slog.GroupAttrs("headers", responseHeaders...),
+		),
+	}
+
+	l.logger.LogAttrs(req.Context(), slog.LevelDebug, "OUTBOUND_CALL_COMPLETED",
+		attrs...,
 	)
 
 	return resp, nil
