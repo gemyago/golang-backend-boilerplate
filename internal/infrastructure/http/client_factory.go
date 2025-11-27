@@ -32,10 +32,9 @@ type ClientOption func(*clientConfig)
 
 // clientConfig holds internal configuration for HTTP client creation.
 type clientConfig struct {
-	timeout             time.Duration
-	authTokenSource     oauth2.TokenSource
-	enableLogging       bool
-	enableErrorHandling bool
+	timeout         time.Duration
+	authTokenSource oauth2.TokenSource
+	enableLogging   bool
 }
 
 // WithTimeout sets the HTTP client timeout.
@@ -60,13 +59,6 @@ func WithLogging(enabled bool) ClientOption {
 	}
 }
 
-// WithErrorHandling sets whether error handling middleware is enabled.
-func WithErrorHandling(enabled bool) ClientOption {
-	return func(c *clientConfig) {
-		c.enableErrorHandling = enabled
-	}
-}
-
 // ClientFactory is responsible for creating configured HTTP clients with middleware.
 type ClientFactory struct {
 	logger *slog.Logger
@@ -84,9 +76,8 @@ func NewClientFactory(deps ClientFactoryDeps) *ClientFactory {
 // This ensures logging captures the full request lifecycle, auth adds headers, and error handling catches issues.
 func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 	config := &clientConfig{
-		timeout:             defaultClientTimeout,
-		enableLogging:       true, // Default: enabled
-		enableErrorHandling: true, // Default: enabled
+		timeout:       defaultClientTimeout,
+		enableLogging: true, // Default: enabled
 	}
 
 	for _, option := range options {
@@ -101,14 +92,6 @@ func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 		IdleConnTimeout:       defaultIdleConnTimeout,
 		TLSHandshakeTimeout:   defaultTLSHandshakeTimeout,
 		ExpectContinueTimeout: defaultExpectContinueTimeout,
-	}
-
-	// Apply middleware in reverse order (innermost to outermost)
-	// Error handling middleware is applied closest to the base transport
-	if config.enableErrorHandling {
-		transport = middleware.NewErrorHandlingMiddleware(transport, middleware.ErrorHandlingMiddlewareDeps{
-			RootLogger: f.logger,
-		})
 	}
 
 	if config.authTokenSource != nil {

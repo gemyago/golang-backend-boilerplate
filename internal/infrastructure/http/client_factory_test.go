@@ -112,7 +112,6 @@ func TestClientFactory(t *testing.T) {
 		// Act - disable all middleware
 		client := factory.CreateClient(
 			WithLogging(false),
-			WithErrorHandling(false),
 			WithTimeout(45*time.Second),
 		)
 
