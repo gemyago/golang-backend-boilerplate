@@ -85,7 +85,7 @@ func httpTransportErr(req *http.Request, err error) *RequestError {
 }
 
 func httpStatusErr(req *http.Request, resp *http.Response) *RequestError {
-	message := fmt.Sprintf("http request error (%d %s)", resp.StatusCode, resp.Status)
+	message := fmt.Sprintf("http request error (%s)", resp.Status)
 
 	// Response body may contain additional error details
 	var bodyBytes []byte
