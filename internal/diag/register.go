@@ -16,5 +16,6 @@ func Register(ctx context.Context, container *dig.Container) error {
 		di.ProvideWithContext(ctx, NewMeterProvider),
 		NewTextMapPropagator,
 		NewOtelHTTPMiddleware,
+		NewOtelHTTPTransportFactory,
 	)
 }

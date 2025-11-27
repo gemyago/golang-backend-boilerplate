@@ -19,6 +19,9 @@ func TestClientFactory(t *testing.T) {
 	makeMockDeps := func() ClientFactoryDeps {
 		return ClientFactoryDeps{
 			RootLogger: diag.RootTestLogger(),
+			OtelHTTPTransportFactory: func(base http.RoundTripper) http.RoundTripper {
+				return base // No-op for testing
+			},
 		}
 	}
 

@@ -2,6 +2,7 @@ package diag
 
 import (
 	"context"
+	"path"
 	"runtime/debug"
 
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -26,7 +27,7 @@ func NewResource(
 	serviceName := "n/a"
 	serviceVersion := "n/a"
 	if ok {
-		serviceName = buildInfo.Main.Path
+		_, serviceName = path.Split(buildInfo.Main.Path)
 		serviceVersion = buildInfo.Main.Version
 	}
 

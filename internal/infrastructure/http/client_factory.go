@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http/middleware"
 	"go.uber.org/dig"
 	"golang.org/x/oauth2"
@@ -25,6 +26,8 @@ type ClientFactoryDeps struct {
 	dig.In
 
 	RootLogger *slog.Logger
+
+	OtelHTTPTransportFactory diag.OtelHTTPTransportFactory
 }
 
 // ClientOption configures HTTP client creation.
@@ -61,13 +64,21 @@ func WithLogging(enabled bool) ClientOption {
 
 // ClientFactory is responsible for creating configured HTTP clients with middleware.
 type ClientFactory struct {
-	logger *slog.Logger
+	logger                   *slog.Logger
+	otelHTTPTransportFactory diag.OtelHTTPTransportFactory
 }
 
 // NewClientFactory creates a new client factory.
 func NewClientFactory(deps ClientFactoryDeps) *ClientFactory {
+	otelHTTPFactory := deps.OtelHTTPTransportFactory
+	if otelHTTPFactory == nil {
+		otelHTTPFactory = func(next http.RoundTripper) http.RoundTripper {
+			return next
+		}
+	}
 	return &ClientFactory{
-		logger: deps.RootLogger.WithGroup("http-client-factory"),
+		logger:                   deps.RootLogger.WithGroup("http-client-factory"),
+		otelHTTPTransportFactory: otelHTTPFactory,
 	}
 }
 
@@ -100,6 +111,10 @@ func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 			Base:   transport,
 		}
 	}
+
+	// Enabling/disabling it is controlled globally (in config)
+	// Add option if you need per client control
+	transport = f.otelHTTPTransportFactory(transport)
 
 	// Logging middleware is outermost to capture full request lifecycle
 	if config.enableLogging {
