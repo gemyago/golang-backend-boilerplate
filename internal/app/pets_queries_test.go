@@ -3,12 +3,12 @@ package app
 import (
 	"context"
 	"errors"
+	"strconv"
 	"testing"
 
-	"log/slog"
-
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
-
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,10 +16,21 @@ import (
 func TestPetsQueries(t *testing.T) {
 	t.Parallel()
 
+	fake := faker.New()
+
+	makeMockDeps := func(t *testing.T) PetsQueriesDeps {
+		return PetsQueriesDeps{
+			PetsRepo:       NewMockPetsRepository(t),
+			UsersRepo:      NewMockUsersRepository(t),
+			PetstoreClient: NewMockPetstoreClient(t),
+			RootLogger:     diag.RootTestLogger(),
+		}
+	}
+
 	t.Run("NewPetsQueries", func(t *testing.T) {
 		t.Parallel()
 
-		deps := makeMockPetsQueriesDeps(t)
+		deps := makeMockDeps(t)
 		queries := NewPetsQueries(deps)
 
 		require.NotNil(t, queries)
@@ -34,27 +45,31 @@ func TestPetsQueries(t *testing.T) {
 
 		t.Run("should return list of pets from petstore for existing user", func(t *testing.T) {
 			// Given
-			deps := makeMockPetsQueriesDeps(t)
+			deps := makeMockDeps(t)
 			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
 			mockPetsRepo := deps.PetsRepo.(*MockPetsRepository)
 			mockPetstoreClient := deps.PetstoreClient.(*MockPetstoreClient)
 			queries := NewPetsQueries(deps)
 
 			ctx := context.Background()
-			userID := "user-123"
-			petID1 := int64(1)
-			petID2 := int64(2)
+			userID := fake.UUID().V4()
+			petID1 := fake.Int64Between(1, 1000)
+			petID2 := fake.Int64Between(1001, 2000)
 
 			user := &User{ID: userID}
 			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(user, nil)
 
 			mockPetsRepo.EXPECT().GetUserPetIDs(ctx, userID).Return([]int64{petID1, petID2}, nil)
 
-			pet1 := &petstore.Pet{ID: petID1, Name: "Pet 1"}
-			pet2 := &petstore.Pet{ID: petID2, Name: "Pet 2"}
+			pet1 := &petstore.Pet{ID: petID1, Name: fake.Person().Name()}
+			pet2 := &petstore.Pet{ID: petID2, Name: fake.Person().Name()}
 
-			mockPetstoreClient.EXPECT().GetPetByID(ctx, petstore.GetPetByIDParams{PetID: "1"}).Return(pet1, nil)
-			mockPetstoreClient.EXPECT().GetPetByID(ctx, petstore.GetPetByIDParams{PetID: "2"}).Return(pet2, nil)
+			mockPetstoreClient.EXPECT().
+				GetPetByID(ctx, petstore.GetPetByIDParams{PetID: strconv.FormatInt(petID1, 10)}).
+				Return(pet1, nil)
+			mockPetstoreClient.EXPECT().
+				GetPetByID(ctx, petstore.GetPetByIDParams{PetID: strconv.FormatInt(petID2, 10)}).
+				Return(pet2, nil)
 
 			// When
 			pets, err := queries.ListUserPets(ctx, userID)
@@ -68,12 +83,12 @@ func TestPetsQueries(t *testing.T) {
 
 		t.Run("should return ErrUserNotFound for non-existent user", func(t *testing.T) {
 			// Given
-			deps := makeMockPetsQueriesDeps(t)
+			deps := makeMockDeps(t)
 			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
 			queries := NewPetsQueries(deps)
 
 			ctx := context.Background()
-			userID := "non-existent"
+			userID := fake.UUID().V4()
 
 			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(nil, NewErrNotFound("user", userID))
 
@@ -89,13 +104,13 @@ func TestPetsQueries(t *testing.T) {
 
 		t.Run("should return empty slice when user has no pets", func(t *testing.T) {
 			// Given
-			deps := makeMockPetsQueriesDeps(t)
+			deps := makeMockDeps(t)
 			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
 			mockPetsRepo := deps.PetsRepo.(*MockPetsRepository)
 			queries := NewPetsQueries(deps)
 
 			ctx := context.Background()
-			userID := "user-no-pets"
+			userID := fake.UUID().V4()
 
 			user := &User{ID: userID}
 			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(user, nil)
@@ -112,27 +127,29 @@ func TestPetsQueries(t *testing.T) {
 
 		t.Run("should skip missing pets in petstore and log warning", func(t *testing.T) {
 			// Given
-			deps := makeMockPetsQueriesDeps(t)
+			deps := makeMockDeps(t)
 			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
 			mockPetsRepo := deps.PetsRepo.(*MockPetsRepository)
 			mockPetstoreClient := deps.PetstoreClient.(*MockPetstoreClient)
 			queries := NewPetsQueries(deps)
 
 			ctx := context.Background()
-			userID := "user-missing-pets"
-			petID1 := int64(1)
-			petID2 := int64(999) // Missing
+			userID := fake.UUID().V4()
+			petID1 := fake.Int64Between(1, 1000)
+			petID2 := fake.Int64Between(1001, 2000) // Missing
 
 			user := &User{ID: userID}
 			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(user, nil)
 
 			mockPetsRepo.EXPECT().GetUserPetIDs(ctx, userID).Return([]int64{petID1, petID2}, nil)
 
-			pet1 := &petstore.Pet{ID: petID1, Name: "Pet 1"}
+			pet1 := &petstore.Pet{ID: petID1, Name: fake.Person().Name()}
 
-			mockPetstoreClient.EXPECT().GetPetByID(ctx, petstore.GetPetByIDParams{PetID: "1"}).Return(pet1, nil)
 			mockPetstoreClient.EXPECT().
-				GetPetByID(ctx, petstore.GetPetByIDParams{PetID: "999"}).
+				GetPetByID(ctx, petstore.GetPetByIDParams{PetID: strconv.FormatInt(petID1, 10)}).
+				Return(pet1, nil)
+			mockPetstoreClient.EXPECT().
+				GetPetByID(ctx, petstore.GetPetByIDParams{PetID: strconv.FormatInt(petID2, 10)}).
 				Return(nil, errors.New("pet not found"))
 
 			// When
@@ -142,17 +159,17 @@ func TestPetsQueries(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, pets, 1)
 			require.Equal(t, pet1, pets[0])
-			// Note: Logging is not asserted here; in production, it would log warning for missing pet 999
+			// Note: Logging is not asserted here; in production, it would log warning for missing pet
 		})
 
 		t.Run("should propagate unexpected error from users repository", func(t *testing.T) {
 			// Given
-			deps := makeMockPetsQueriesDeps(t)
+			deps := makeMockDeps(t)
 			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
 			queries := NewPetsQueries(deps)
 
 			ctx := context.Background()
-			userID := "user-unexpected-error"
+			userID := fake.UUID().V4()
 
 			mockErr := errors.New("unexpected db error")
 			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(nil, mockErr)
@@ -167,13 +184,13 @@ func TestPetsQueries(t *testing.T) {
 
 		t.Run("should propagate error from pets repository", func(t *testing.T) {
 			// Given
-			deps := makeMockPetsQueriesDeps(t)
+			deps := makeMockDeps(t)
 			mockUsersRepo := deps.UsersRepo.(*MockUsersRepository)
 			mockPetsRepo := deps.PetsRepo.(*MockPetsRepository)
 			queries := NewPetsQueries(deps)
 
 			ctx := context.Background()
-			userID := "user-pets-error"
+			userID := fake.UUID().V4()
 
 			user := &User{ID: userID}
 			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(user, nil)
@@ -189,13 +206,4 @@ func TestPetsQueries(t *testing.T) {
 			require.Nil(t, pets)
 		})
 	})
-}
-
-func makeMockPetsQueriesDeps(t *testing.T) PetsQueriesDeps {
-	return PetsQueriesDeps{
-		PetsRepo:       NewMockPetsRepository(t),
-		UsersRepo:      NewMockUsersRepository(t),
-		PetstoreClient: NewMockPetstoreClient(t),
-		RootLogger:     slog.Default(),
-	}
 }
