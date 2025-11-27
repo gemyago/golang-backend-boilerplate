@@ -8,8 +8,6 @@ import (
 	"github.com/gofrs/uuid/v5"
 )
 
-const CorrelationIDHeader = "X-Correlation-ID"
-
 type CorrelationMiddlewareCfg struct {
 	generateUUID func() string
 }
@@ -28,7 +26,7 @@ func NewCorrelationMiddleware(cfg *CorrelationMiddlewareCfg) Middleware {
 	generateUUID := cfg.generateUUID
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			correlationID := req.Header.Get(CorrelationIDHeader)
+			correlationID := req.Header.Get(diag.CorrelationIDHeader)
 			if correlationID == "" {
 				correlationID = generateUUID()
 			}
@@ -36,7 +34,7 @@ func NewCorrelationMiddleware(cfg *CorrelationMiddlewareCfg) Middleware {
 			logAttributes.CorrelationID = slog.StringValue(correlationID)
 			nextCtx := diag.SetLogAttributesToContext(req.Context(), logAttributes)
 
-			w.Header().Set(CorrelationIDHeader, correlationID)
+			w.Header().Set(diag.CorrelationIDHeader, correlationID)
 
 			next.ServeHTTP(w, req.WithContext(nextCtx))
 		})

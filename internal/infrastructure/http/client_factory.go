@@ -105,6 +105,15 @@ func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 		ExpectContinueTimeout: defaultExpectContinueTimeout,
 	}
 
+	// Middleware below applied in a reverse order of execution
+	// Logging middleware is outermost to capture full request lifecycle
+
+	if config.enableLogging {
+		transport = middleware.NewLoggingMiddleware(transport, middleware.LoggingMiddlewareDeps{
+			RootLogger: f.logger,
+		})
+	}
+
 	if config.authTokenSource != nil {
 		transport = &oauth2.Transport{
 			Source: config.authTokenSource,
@@ -115,13 +124,6 @@ func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 	// Enabling/disabling it is controlled globally (in config)
 	// Add option if you need per client control
 	transport = f.otelHTTPTransportFactory(transport)
-
-	// Logging middleware is outermost to capture full request lifecycle
-	if config.enableLogging {
-		transport = middleware.NewLoggingMiddleware(transport, middleware.LoggingMiddlewareDeps{
-			RootLogger: f.logger,
-		})
-	}
 
 	return &http.Client{
 		Transport: transport,
