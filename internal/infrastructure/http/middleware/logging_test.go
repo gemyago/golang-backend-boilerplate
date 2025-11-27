@@ -110,7 +110,7 @@ func TestLoggingMiddleware(t *testing.T) {
 		err = json.Unmarshal(deps.logBuffer.Bytes(), &errorLogEntry)
 		require.NoError(t, err)
 		assert.Equal(t, "WARN", errorLogEntry.Level)
-		assert.Equal(t, "OUTBOUND_CALL_FAILED", errorLogEntry.Message)
+		assert.Equal(t, "OUTBOUND_REQUEST_FAILED", errorLogEntry.Message)
 		assert.NotEmpty(t, errorLogEntry.Error)
 	})
 
@@ -186,7 +186,7 @@ func TestLoggingMiddleware(t *testing.T) {
 			assert.Equal(t, "DEBUG", log.Level)
 
 			// Request part
-			assert.Equal(t, "OUTBOUND_CALL_COMPLETED", log.Message)
+			assert.Equal(t, "OUTBOUND_REQUEST_COMPLETED", log.Message)
 			assert.Equal(t, "GET", log.Request.Method)
 			assert.Equal(t, url, log.Request.URL)
 			assert.Equal(t, wantReqHeaders, log.Request.Headers)
@@ -277,7 +277,7 @@ func TestLoggingMiddleware(t *testing.T) {
 			assert.Equal(t, "DEBUG", log.Level)
 
 			// Request part
-			assert.Equal(t, "OUTBOUND_CALL_COMPLETED", log.Message)
+			assert.Equal(t, "OUTBOUND_REQUEST_COMPLETED", log.Message)
 			for _, val := range log.Request.Headers {
 				// All obfuscated headers should have "[REDACTED]" value
 				assert.Equal(t, []string{"[REDACTED]"}, val)

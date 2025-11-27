@@ -52,7 +52,7 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 	resp, err := l.transport.RoundTrip(req)
 	duration := time.Since(start)
 
-	requestHeadersGroup := buildObfuscateHeadersAttr(req.Header, l.obfuscatedRequestHeaders)
+	requestHeadersGroup := buildObfuscatedHeadersAttr(req.Header, l.obfuscatedRequestHeaders)
 
 	requestAttr := slog.Group("request",
 		slog.String("method", req.Method),
@@ -60,7 +60,6 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 		requestHeadersGroup,
 	)
 
-	// Log response
 	if err != nil {
 		attrs := []slog.Attr{
 			requestAttr,
@@ -69,13 +68,13 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 		}
 
 		// We still do it with warn level. Upper most layer should log with error
-		l.logger.LogAttrs(req.Context(), slog.LevelWarn, "OUTBOUND_CALL_FAILED",
+		l.logger.LogAttrs(req.Context(), slog.LevelWarn, "OUTBOUND_REQUEST_FAILED",
 			attrs...,
 		)
 		return nil, err
 	}
 
-	responseHeadersGroup := buildObfuscateHeadersAttr(resp.Header, l.obfuscatedResponseHeaders)
+	responseHeadersGroup := buildObfuscatedHeadersAttr(resp.Header, l.obfuscatedResponseHeaders)
 
 	level := slog.LevelDebug
 
@@ -93,14 +92,14 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 		),
 	}
 
-	l.logger.LogAttrs(req.Context(), level, "OUTBOUND_CALL_COMPLETED",
+	l.logger.LogAttrs(req.Context(), level, "OUTBOUND_REQUEST_COMPLETED",
 		attrs...,
 	)
 
 	return resp, nil
 }
 
-func buildObfuscateHeadersAttr(headers http.Header, obfuscatedHeaders map[string]struct{}) slog.Attr {
+func buildObfuscatedHeadersAttr(headers http.Header, obfuscatedHeaders map[string]struct{}) slog.Attr {
 	headerAttrs := make([]slog.Attr, 0, len(headers))
 	for key, values := range headers {
 		var headerAttr slog.Attr
