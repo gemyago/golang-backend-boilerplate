@@ -83,8 +83,8 @@ func NewClientFactory(deps ClientFactoryDeps) *ClientFactory {
 }
 
 // CreateClient creates a new HTTP client with the specified options.
-// Middleware is applied in the order: Logging -> Auth -> ErrorHandling -> BaseTransport
-// This ensures logging captures the full request lifecycle, auth adds headers, and error handling catches issues.
+// Middleware is applied in the order: Correlation -> Logging -> Auth -> Otel -> BaseTransport
+// This ensures correlation ID is set first, then logging captures the full request lifecycle, auth adds headers, and otel traces.
 func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 	config := &clientConfig{
 		timeout:       defaultClientTimeout,
@@ -106,8 +106,8 @@ func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 	}
 
 	// Middleware below applied in a reverse order of execution
-	// Logging middleware is outermost to capture full request lifecycle
 
+	// Logging middleware is outermost to capture full request lifecycle
 	if config.enableLogging {
 		transport = middleware.NewLoggingMiddleware(transport, middleware.LoggingMiddlewareDeps{
 			RootLogger: f.logger,
@@ -120,6 +120,9 @@ func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client {
 			Base:   transport,
 		}
 	}
+
+	// We still want to keep correlation just in case otel is not enabled/available
+	transport = middleware.NewCorrelationMiddleware(transport)
 
 	// Enabling/disabling it is controlled globally (in config)
 	// Add option if you need per client control
