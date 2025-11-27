@@ -10,6 +10,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
 	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -76,7 +77,7 @@ func TestPetsQueries(t *testing.T) {
 
 			for _, pet := range pets {
 				mockPetstoreClient.EXPECT().
-					GetPetByID(ctx, petstore.GetPetByIDParams{PetID: strconv.FormatInt(pet.ID, 10)}).
+					GetPetByID(mock.Anything, petstore.GetPetByIDParams{PetID: strconv.FormatInt(pet.ID, 10)}).
 					Return(pet, nil)
 			}
 
@@ -86,8 +87,18 @@ func TestPetsQueries(t *testing.T) {
 			// Then
 			require.NoError(t, err)
 			require.Len(t, petsResult, len(petsIDs))
-			for i, pet := range pets {
-				require.Equal(t, pet, petsResult[i])
+			for _, pet := range pets {
+				var resultingPet *petstore.Pet
+
+				// They may come in any order
+				for _, p := range petsResult {
+					if p.ID == pet.ID {
+						resultingPet = p
+						break
+					}
+				}
+
+				assert.Equal(t, pet, resultingPet)
 			}
 		})
 
@@ -156,10 +167,10 @@ func TestPetsQueries(t *testing.T) {
 			pet1 := &petstore.Pet{ID: petID1, Name: fake.Person().Name()}
 
 			mockPetstoreClient.EXPECT().
-				GetPetByID(ctx, petstore.GetPetByIDParams{PetID: strconv.FormatInt(petID1, 10)}).
+				GetPetByID(mock.Anything, petstore.GetPetByIDParams{PetID: strconv.FormatInt(petID1, 10)}).
 				Return(pet1, nil)
 			mockPetstoreClient.EXPECT().
-				GetPetByID(ctx, petstore.GetPetByIDParams{PetID: strconv.FormatInt(petID2, 10)}).
+				GetPetByID(mock.Anything, petstore.GetPetByIDParams{PetID: strconv.FormatInt(petID2, 10)}).
 				Return(nil, errors.New("pet not found"))
 
 			// When
