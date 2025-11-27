@@ -27,6 +27,14 @@ func TestPetsQueries(t *testing.T) {
 		}
 	}
 
+	newPet := func(id int64) *petstore.Pet {
+		return &petstore.Pet{
+			ID:        id,
+			Name:      fake.Person().Name(),
+			PhotoUrls: []string{fake.Internet().URL()},
+		}
+	}
+
 	t.Run("NewPetsQueries", func(t *testing.T) {
 		t.Parallel()
 
@@ -53,32 +61,34 @@ func TestPetsQueries(t *testing.T) {
 
 			ctx := context.Background()
 			userID := fake.UUID().V4()
-			petID1 := fake.Int64Between(1, 1000)
-			petID2 := fake.Int64Between(1001, 2000)
+			basePetID := fake.Int64Between(1, 1000)
+			pets := make([]*petstore.Pet, fake.IntBetween(5, 10))
+			petsIDs := make([]int64, len(pets))
+			for i := range pets {
+				pets[i] = newPet(basePetID + int64(i))
+				petsIDs[i] = pets[i].ID
+			}
 
 			user := &User{ID: userID}
 			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(user, nil)
 
-			mockPetsRepo.EXPECT().GetUserPetIDs(ctx, userID).Return([]int64{petID1, petID2}, nil)
+			mockPetsRepo.EXPECT().GetUserPetIDs(ctx, userID).Return(petsIDs, nil)
 
-			pet1 := &petstore.Pet{ID: petID1, Name: fake.Person().Name()}
-			pet2 := &petstore.Pet{ID: petID2, Name: fake.Person().Name()}
-
-			mockPetstoreClient.EXPECT().
-				GetPetByID(ctx, petstore.GetPetByIDParams{PetID: strconv.FormatInt(petID1, 10)}).
-				Return(pet1, nil)
-			mockPetstoreClient.EXPECT().
-				GetPetByID(ctx, petstore.GetPetByIDParams{PetID: strconv.FormatInt(petID2, 10)}).
-				Return(pet2, nil)
+			for _, pet := range pets {
+				mockPetstoreClient.EXPECT().
+					GetPetByID(ctx, petstore.GetPetByIDParams{PetID: strconv.FormatInt(pet.ID, 10)}).
+					Return(pet, nil)
+			}
 
 			// When
-			pets, err := queries.ListUserPets(ctx, userID)
+			petsResult, err := queries.ListUserPets(ctx, userID)
 
 			// Then
 			require.NoError(t, err)
-			require.Len(t, pets, 2)
-			require.Equal(t, pet1, pets[0])
-			require.Equal(t, pet2, pets[1])
+			require.Len(t, petsResult, len(petsIDs))
+			for i, pet := range pets {
+				require.Equal(t, pet, petsResult[i])
+			}
 		})
 
 		t.Run("should return ErrUserNotFound for non-existent user", func(t *testing.T) {
