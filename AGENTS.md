@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a golang backend project. Go version is defined in [go.mod](./go.mod) file and this is the primary source of truth for the version.
+This is a golang backend project with OpenTelemetry integration for observability. Go version is defined in [go.mod](./go.mod) file and this is the primary source of truth for the version.
 
 ## Purpose & Precedence
 - This file gives AI coding agents the exact commands and conventions to follow in this repo.
