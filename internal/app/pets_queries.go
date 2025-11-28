@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/dig"
 	"golang.org/x/sync/errgroup"
 )
@@ -19,10 +20,13 @@ type PetsQueries struct {
 	usersRepo      UsersRepository
 	petstoreClient PetstoreClient
 	logger         *slog.Logger
+	tracer         trace.Tracer
 }
 
 type PetsQueriesDeps struct {
 	dig.In
+
+	TracerProvider trace.TracerProvider
 
 	PetsRepo       PetsRepository
 	UsersRepo      UsersRepository
@@ -37,11 +41,15 @@ func NewPetsQueries(deps PetsQueriesDeps) *PetsQueries {
 		petsRepo:       deps.PetsRepo,
 		usersRepo:      deps.UsersRepo,
 		petstoreClient: deps.PetstoreClient,
-		logger:         deps.RootLogger.WithGroup("app.pets-queries"),
+		logger:         deps.RootLogger.WithGroup("PetsQueries"),
+		tracer:         deps.TracerProvider.Tracer("app.pets-queries"),
 	}
 }
 
 func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petstore.Pet, error) {
+	ctx, span := q.tracer.Start(ctx, "ListUserPets")
+	defer span.End()
+
 	// Verify user exists
 	_, err := q.usersRepo.GetUserByID(ctx, userID)
 	if err != nil {

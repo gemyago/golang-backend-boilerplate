@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func TestPetsQueries(t *testing.T) {
@@ -25,6 +26,7 @@ func TestPetsQueries(t *testing.T) {
 			UsersRepo:      NewMockUsersRepository(t),
 			PetstoreClient: NewMockPetstoreClient(t),
 			RootLogger:     diag.RootTestLogger(),
+			TracerProvider: noop.NewTracerProvider(),
 		}
 	}
 
@@ -71,9 +73,11 @@ func TestPetsQueries(t *testing.T) {
 			}
 
 			user := &User{ID: userID}
-			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(user, nil)
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(user, nil)
 
-			mockPetsRepo.EXPECT().GetUserPetIDs(ctx, userID).Return(petsIDs, nil)
+			mockPetsRepo.EXPECT().
+				GetUserPetIDs(mock.Anything, userID).
+				Return(petsIDs, nil)
 
 			for _, pet := range pets {
 				mockPetstoreClient.EXPECT().
@@ -111,7 +115,7 @@ func TestPetsQueries(t *testing.T) {
 			ctx := context.Background()
 			userID := fake.UUID().V4()
 
-			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(nil, NewErrNotFound("user", userID))
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(nil, NewErrNotFound("user", userID))
 
 			// When
 			pets, err := queries.ListUserPets(ctx, userID)
@@ -134,9 +138,9 @@ func TestPetsQueries(t *testing.T) {
 			userID := fake.UUID().V4()
 
 			user := &User{ID: userID}
-			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(user, nil)
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(user, nil)
 
-			mockPetsRepo.EXPECT().GetUserPetIDs(ctx, userID).Return([]int64{}, nil)
+			mockPetsRepo.EXPECT().GetUserPetIDs(mock.Anything, userID).Return([]int64{}, nil)
 
 			// When
 			pets, err := queries.ListUserPets(ctx, userID)
@@ -160,9 +164,9 @@ func TestPetsQueries(t *testing.T) {
 			petID2 := fake.Int64Between(1001, 2000) // Missing
 
 			user := &User{ID: userID}
-			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(user, nil)
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(user, nil)
 
-			mockPetsRepo.EXPECT().GetUserPetIDs(ctx, userID).Return([]int64{petID1, petID2}, nil)
+			mockPetsRepo.EXPECT().GetUserPetIDs(mock.Anything, userID).Return([]int64{petID1, petID2}, nil)
 
 			pet1 := &petstore.Pet{ID: petID1, Name: fake.Person().Name()}
 
@@ -193,7 +197,7 @@ func TestPetsQueries(t *testing.T) {
 			userID := fake.UUID().V4()
 
 			mockErr := errors.New("unexpected db error")
-			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(nil, mockErr)
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(nil, mockErr)
 
 			// When
 			pets, err := queries.ListUserPets(ctx, userID)
@@ -214,10 +218,10 @@ func TestPetsQueries(t *testing.T) {
 			userID := fake.UUID().V4()
 
 			user := &User{ID: userID}
-			mockUsersRepo.EXPECT().GetUserByID(ctx, userID).Return(user, nil)
+			mockUsersRepo.EXPECT().GetUserByID(mock.Anything, userID).Return(user, nil)
 
 			mockErr := errors.New("pets repo error")
-			mockPetsRepo.EXPECT().GetUserPetIDs(ctx, userID).Return(nil, mockErr)
+			mockPetsRepo.EXPECT().GetUserPetIDs(mock.Anything, userID).Return(nil, mockErr)
 
 			// When
 			pets, err := queries.ListUserPets(ctx, userID)
