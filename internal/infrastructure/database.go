@@ -6,6 +6,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
+	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/dig"
 )
 
@@ -13,15 +18,34 @@ type Database struct {
 	instance *sql.DB
 }
 
-type DatabaseConfig struct {
+type DatabaseDeps struct {
 	dig.In
+
+	metric.MeterProvider
+	trace.TracerProvider
+
+	OTELConfig diag.OTELConfig
 
 	DSN string `name:"config.database.dsn"`
 }
 
-func newDBProvider(ctx context.Context) func(cfg DatabaseConfig) (*Database, error) {
-	return func(cfg DatabaseConfig) (*Database, error) {
-		db, err := sql.Open("sqlite", cfg.DSN)
+func newDBProvider(ctx context.Context) func(DatabaseDeps) (*Database, error) {
+	return func(deps DatabaseDeps) (*Database, error) {
+		var db *sql.DB
+		var err error
+
+		const driverName = "sqlite"
+
+		if deps.OTELConfig.Enabled {
+			db, err = otelsql.Open(driverName, deps.DSN,
+				otelsql.WithAttributes(semconv.DBSystemSqlite),
+				otelsql.WithMeterProvider(deps.MeterProvider),
+				otelsql.WithTracerProvider(deps.TracerProvider),
+			)
+		} else {
+			db, err = sql.Open(driverName, deps.DSN)
+		}
+
 		if err != nil { // coverage-ignore -- No way to simulate this
 			return nil, fmt.Errorf("failed to open database: %w", err)
 		}

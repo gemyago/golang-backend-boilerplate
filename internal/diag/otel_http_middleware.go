@@ -18,7 +18,7 @@ type OtelMiddlewareFactoryDeps struct {
 	metric.MeterProvider
 	trace.TracerProvider
 	propagation.TextMapPropagator
-	Config
+	OTELConfig
 }
 
 // injectOtelResponseHeaders injects OTel trace context headers (traceparent) to the HTTP response.
@@ -44,7 +44,7 @@ func NewOtelHTTPMiddleware(
 	deps OtelMiddlewareFactoryDeps,
 ) OtelHTTPMiddleware { // coverage-ignore -- Little value in testing this factory function
 	return func(next http.Handler) http.Handler {
-		if !deps.Config.Enabled {
+		if !deps.OTELConfig.Enabled {
 			return next
 		}
 

@@ -14,14 +14,14 @@ const (
 	ProtocolHTTPProtobuf = "http/protobuf"
 )
 
-// Config holds the dependencies for creating a Config.
-type Config struct {
+// OTELConfig holds the dependencies for creating a OTELConfig.
+type OTELConfig struct {
 	dig.In
 
 	Enabled bool `name:"config.openTelemetry.enabled"`
 }
 
-type TracesConfig struct {
+type OTELTracesConfig struct {
 	dig.In
 
 	Enabled       bool    `name:"config.openTelemetry.traces.enabled"`
@@ -33,7 +33,7 @@ type TracesConfig struct {
 	AuthTokenType string  `name:"config.openTelemetry.traces.auth.tokenType"`
 }
 
-type MetricsConfig struct {
+type OTELMetricsConfig struct {
 	dig.In
 
 	Enabled        bool          `name:"config.openTelemetry.metrics.enabled"`
@@ -45,8 +45,8 @@ type MetricsConfig struct {
 	AuthTokenType  string        `name:"config.openTelemetry.metrics.auth.tokenType"`
 }
 
-// LogsConfig holds OpenTelemetry logs configuration.
-type LogsConfig struct {
+// OTELLogsConfig holds OpenTelemetry logs configuration.
+type OTELLogsConfig struct {
 	Enabled       bool
 	Endpoint      string
 	URLPath       string

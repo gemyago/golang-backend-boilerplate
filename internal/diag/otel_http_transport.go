@@ -18,14 +18,14 @@ type OtelHTTPTransportFactoryDeps struct {
 	metric.MeterProvider
 	trace.TracerProvider
 	propagation.TextMapPropagator
-	Config
+	OTELConfig
 }
 
 func NewOtelHTTPTransportFactory(
 	deps OtelHTTPTransportFactoryDeps,
 ) OtelHTTPTransportFactory { // coverage-ignore -- Little value in testing wire-up mostly code
 	return func(next http.RoundTripper) http.RoundTripper {
-		if !deps.Config.Enabled {
+		if !deps.OTELConfig.Enabled {
 			return next
 		}
 

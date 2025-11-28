@@ -23,13 +23,13 @@ func TestOtelHTTPMiddleware(t *testing.T) {
 			TracerProvider: sdktrace.NewTracerProvider(
 				sdktrace.WithBatcher(tracetest.NewInMemoryExporter()),
 			),
-			Config: Config{},
+			OTELConfig: OTELConfig{},
 		}
 	}
 
 	t.Run("call next if not enabled", func(t *testing.T) {
 		deps := makeMockDeps()
-		deps.Config.Enabled = false
+		deps.OTELConfig.Enabled = false
 
 		middleware := NewOtelHTTPMiddleware(deps)
 
@@ -48,7 +48,7 @@ func TestOtelHTTPMiddleware(t *testing.T) {
 
 	t.Run("call next if enabled and start span", func(t *testing.T) {
 		deps := makeMockDeps()
-		deps.Config.Enabled = true
+		deps.OTELConfig.Enabled = true
 
 		middleware := NewOtelHTTPMiddleware(deps)
 

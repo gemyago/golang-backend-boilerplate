@@ -11,7 +11,7 @@ import (
 
 func TestSetupDatabase(t *testing.T) {
 	t.Run("should setup the database with all tables", func(t *testing.T) {
-		db, err := newDBProvider(t.Context())(DatabaseConfig{
+		db, err := newDBProvider(t.Context())(DatabaseDeps{
 			DSN: ":memory:",
 		})
 		require.NoError(t, err)
@@ -42,7 +42,7 @@ func TestSetupDatabase(t *testing.T) {
 
 		require.NoError(t, os.Chmod(dbFilePath, 0400))
 
-		_, err = newDBProvider(t.Context())(DatabaseConfig{
+		_, err = newDBProvider(t.Context())(DatabaseDeps{
 			DSN: dbFilePath,
 		})
 		require.Error(t, err)

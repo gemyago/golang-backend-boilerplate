@@ -20,8 +20,8 @@ type MeterProviderDeps struct {
 
 	Resource *resource.Resource
 
-	Config        Config
-	MetricsConfig MetricsConfig
+	Config        OTELConfig
+	MetricsConfig OTELMetricsConfig
 }
 
 // NewMeterProvider creates a new MeterProvider suitable for the given configuration.

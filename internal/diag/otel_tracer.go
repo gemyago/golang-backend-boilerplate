@@ -19,8 +19,8 @@ type TracerProviderDeps struct {
 	ShutdownHooks
 
 	Resource     *resource.Resource
-	Config       Config
-	TracesConfig TracesConfig
+	Config       OTELConfig
+	TracesConfig OTELTracesConfig
 }
 
 // NewTracerProvider creates a new TracerProvider with OTLP exporter.
