@@ -12,7 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace/noop"
+	meeterNoop "go.opentelemetry.io/otel/metric/noop"
+	traceNoop "go.opentelemetry.io/otel/trace/noop"
 )
 
 func TestPetsQueries(t *testing.T) {
@@ -26,7 +27,8 @@ func TestPetsQueries(t *testing.T) {
 			UsersRepo:      NewMockUsersRepository(t),
 			PetstoreClient: NewMockPetstoreClient(t),
 			RootLogger:     diag.RootTestLogger(),
-			TracerProvider: noop.NewTracerProvider(),
+			TracerProvider: traceNoop.NewTracerProvider(),
+			MeeterProvider: meeterNoop.NewMeterProvider(),
 		}
 	}
 

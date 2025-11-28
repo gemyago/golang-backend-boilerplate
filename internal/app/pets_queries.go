@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/dig"
 	"golang.org/x/sync/errgroup"
@@ -21,12 +22,14 @@ type PetsQueries struct {
 	petstoreClient PetstoreClient
 	logger         *slog.Logger
 	tracer         trace.Tracer
+	meeter         metric.Meter
 }
 
 type PetsQueriesDeps struct {
 	dig.In
 
 	TracerProvider trace.TracerProvider
+	MeeterProvider metric.MeterProvider
 
 	PetsRepo       PetsRepository
 	UsersRepo      UsersRepository
@@ -41,8 +44,9 @@ func NewPetsQueries(deps PetsQueriesDeps) *PetsQueries {
 		petsRepo:       deps.PetsRepo,
 		usersRepo:      deps.UsersRepo,
 		petstoreClient: deps.PetstoreClient,
-		logger:         deps.RootLogger.WithGroup("PetsQueries"),
-		tracer:         deps.TracerProvider.Tracer("app.pets-queries"),
+		logger:         deps.RootLogger.WithGroup("app.pets-queries"),
+		tracer:         deps.TracerProvider.Tracer("PetsQueries"),
+		meeter:         deps.MeeterProvider.Meter("PetsQueries"),
 	}
 }
 
