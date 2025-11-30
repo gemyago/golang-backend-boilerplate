@@ -19,6 +19,9 @@ func TestClientFactory(t *testing.T) {
 	makeMockDeps := func() ClientFactoryDeps {
 		return ClientFactoryDeps{
 			RootLogger: diag.RootTestLogger(),
+			OtelHTTPTransportFactory: func(base http.RoundTripper) http.RoundTripper {
+				return base // No-op for testing
+			},
 		}
 	}
 
@@ -112,7 +115,6 @@ func TestClientFactory(t *testing.T) {
 		// Act - disable all middleware
 		client := factory.CreateClient(
 			WithLogging(false),
-			WithErrorHandling(false),
 			WithTimeout(45*time.Second),
 		)
 

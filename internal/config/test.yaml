@@ -1,0 +1,5 @@
+defaultLogLevel: DEBUG
+database:
+  dsn: ":memory:"
+httpServer:
+  host: localhost

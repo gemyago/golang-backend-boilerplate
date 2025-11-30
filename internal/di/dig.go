@@ -1,6 +1,7 @@
 package di
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
@@ -98,5 +99,15 @@ func ProvideFactoryAs[
 			return target, fmt.Errorf("failed to cast %s to %s", reflect.TypeOf(src), reflect.TypeOf(tgt))
 		}
 		return target, nil
+	}
+}
+
+// ProvideWithContext allows passing context to the constructor at the time of resolution.
+func ProvideWithContext[A any, R any](
+	ctx context.Context,
+	f func(ctx context.Context, arg A) (R, error),
+) func(arg A) (R, error) {
+	return func(arg A) (R, error) {
+		return f(ctx, arg)
 	}
 }

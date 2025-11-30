@@ -1,4 +1,4 @@
-package services
+package infrastructure
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 
 func TestPetsRepository(t *testing.T) {
 	makeMockDeps := func(t *testing.T) petsRepositoryDeps {
-		db, err := newDBProvider(t.Context())(DatabaseConfig{
+		db, err := newDBProvider(t.Context())(DatabaseDeps{
 			DSN: ":memory:",
 		})
 		require.NoError(t, err)

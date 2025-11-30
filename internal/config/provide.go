@@ -41,8 +41,15 @@ func (p configValueProvider) asDuration() di.ConstructorWithOpts {
 	return di.ProvideValue(p.cfg.GetDuration(p.configPath), dig.Name(p.diPath))
 }
 
+func (p configValueProvider) asFloat64() di.ConstructorWithOpts {
+	return di.ProvideValue(p.cfg.GetFloat64(p.configPath), dig.Name(p.diPath))
+}
+
 func Provide(container *dig.Container, cfg *viper.Viper) error {
 	return di.ProvideAll(container,
+		// env should only be used for tracing/debugging purposes
+		provideConfigValue(cfg, "env").asString(),
+
 		provideConfigValue(cfg, "gracefulShutdownTimeout").asDuration(),
 
 		// petstore config
@@ -65,5 +72,31 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 
 		// database config
 		provideConfigValue(cfg, "database.dsn").asString(),
+
+		// opentelemetry config
+		provideConfigValue(cfg, "openTelemetry.enabled").asBool(),
+		provideConfigValue(cfg, "openTelemetry.runtimeMetrics").asBool(),
+		provideConfigValue(cfg, "openTelemetry.traces.enabled").asBool(),
+		provideConfigValue(cfg, "openTelemetry.traces.endpoint").asString(),
+		provideConfigValue(cfg, "openTelemetry.traces.urlPath").asString(),
+		provideConfigValue(cfg, "openTelemetry.traces.protocol").asString(),
+		provideConfigValue(cfg, "openTelemetry.traces.samplingRate").asFloat64(),
+		provideConfigValue(cfg, "openTelemetry.traces.auth.token").asString(),
+		provideConfigValue(cfg, "openTelemetry.traces.auth.tokenType").asString(),
+
+		provideConfigValue(cfg, "openTelemetry.metrics.enabled").asBool(),
+		provideConfigValue(cfg, "openTelemetry.metrics.endpoint").asString(),
+		provideConfigValue(cfg, "openTelemetry.metrics.urlPath").asString(),
+		provideConfigValue(cfg, "openTelemetry.metrics.protocol").asString(),
+		provideConfigValue(cfg, "openTelemetry.metrics.exportInterval").asDuration(),
+		provideConfigValue(cfg, "openTelemetry.metrics.auth.token").asString(),
+		provideConfigValue(cfg, "openTelemetry.metrics.auth.tokenType").asString(),
+
+		provideConfigValue(cfg, "openTelemetry.logs.enabled").asBool(),
+		provideConfigValue(cfg, "openTelemetry.logs.endpoint").asString(),
+		provideConfigValue(cfg, "openTelemetry.logs.urlPath").asString(),
+		provideConfigValue(cfg, "openTelemetry.logs.protocol").asString(),
+		provideConfigValue(cfg, "openTelemetry.logs.auth.token").asString(),
+		provideConfigValue(cfg, "openTelemetry.logs.auth.tokenType").asString(),
 	)
 }

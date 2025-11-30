@@ -20,17 +20,22 @@ func TestMuxRouterAdapter(t *testing.T) {
 			http.NoBody,
 		)
 
-		adapter := (*HTTPRouter)(http.NewServeMux())
-		handlerInvoked := false
+		calls := []string{}
+		adapter := NewHTTPRouter(HTTPRouterDeps{
+			Middleware: func(h http.Handler) http.Handler {
+				calls = append(calls, "middleware")
+				return h
+			},
+		})
 		adapter.HandleRoute(
 			http.MethodGet,
 			"/resources/{param}/value",
 			http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 				gotPathParam := adapter.PathValue(r, "param")
 				assert.Equal(t, wantPathParam, gotPathParam)
-				handlerInvoked = true
+				calls = append(calls, "handler")
 			}))
 		adapter.ServeHTTP(httptest.NewRecorder(), req)
-		assert.True(t, handlerInvoked)
+		assert.Equal(t, []string{"middleware", "handler"}, calls)
 	})
 }

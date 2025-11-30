@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a golang backend project. Go version is defined in [go.mod](./go.mod) file and this is the primary source of truth for the version.
+This is a golang backend project with OpenTelemetry integration for observability. Go version is defined in [go.mod](./go.mod) file and this is the primary source of truth for the version.
 
 ## Purpose & Precedence
 - This file gives AI coding agents the exact commands and conventions to follow in this repo.
@@ -45,7 +45,7 @@ AI must **always** use `--noop` flag to dry-run startup checks without external 
 - Install/upgrade (dry-run): `helm upgrade api-service deploy/helm/api-service --install --namespace golang-backend-boilerplate -f deploy/helm/api-service/values.yaml --create-namespace --dry-run`
 
 ## Configuration & Environment
-- Embedded configs: `internal/config/default.json`, `<env>.json`, optional `<env>-user.json`
+- Embedded configs: `internal/config/default.yaml`, `<env>.yaml`, optional `<env>-user.yaml`
 - Common flags on all binaries: `--env`, `--log-level`, `--json-logs`, `--logs-file`
 - Env vars prefix `APP_` (dots/dashes -> underscores). Examples: `APP_ENV=local`, `APP_DEFAULT_LOG_LEVEL=info`, `APP_JSON_LOGS=true`
 
@@ -75,6 +75,13 @@ More detailed testing best practices are in [doc/testing-best-practices.md](./do
 ## Security
 - NEVER hardcode secrets. Use env vars/secret stores. Authenticate to GHCR before push/pull when required.
 - Validate/sanitize all external inputs. Do not disable security linters without explicit justification.
+
+## Most common AI instructions
+
+When asked to perform common tasks, AI must follow these instructions:
+- [Create plan](.context/instructions/create-plan.md)
+- [Create pull request](.context/commands/create-pull-request.md)
+- [Commit code](.context/commands/commit.md)
 
 ## Living Doc Policy (update with code)
 - Keep this file short (<150 lines) and actionable. Prefer linking to canonical code over long prose.

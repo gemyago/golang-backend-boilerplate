@@ -11,9 +11,10 @@
 - Repeat the process until your code is complete
 - See [TDD Flow](../.context/tdd-flow.md) for more detailed guide
 
-### Test What Matters
+### Testing Philosophy
 - **Focus on business logic** - Test the core functionality your code needs to provide
 - **Avoid excessive tests** - Don't test scenarios that aren't relevant to your actual use cases
+- **Avoid fragmenting one path into multiple tests** - Cover each unique behavior or execution path with a single comprehensive test
 - **Test behavior, not implementation** - Focus on what the code does, not how it does it
 
 ### Keep It Simple

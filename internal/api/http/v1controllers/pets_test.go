@@ -34,7 +34,7 @@ func TestPets(t *testing.T) {
 		return deps
 	}
 	newHandler := func(deps PetsControllerDeps) http.Handler {
-		return server.NewRootHandler(deps.RootLogger).
+		return server.NewTestRootHandler().
 			RegisterPetsRoutes(newPetsController(deps))
 	}
 

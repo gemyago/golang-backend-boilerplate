@@ -1,6 +1,6 @@
 //go:build !release
 
-package services
+package infrastructure
 
 import (
 	"time"

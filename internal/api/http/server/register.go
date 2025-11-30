@@ -12,6 +12,8 @@ func Register(container *dig.Container) error {
 	return di.ProvideAll(
 		container,
 		NewHTTPServer,
+		NewRouterMiddleware,
+		NewHTTPRouter,
 		NewRootHandler,
 		di.ProvideImplementation[*handlers.RootHandler, http.Handler],
 	)

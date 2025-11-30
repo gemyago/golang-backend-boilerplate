@@ -1,0 +1,3 @@
+# Create a local-user.yaml file to override settings for your local environment
+
+defaultLogLevel: DEBUG

@@ -7,20 +7,25 @@ import (
 	"testing"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSendRequest(t *testing.T) {
+	fake := faker.New()
+
 	t.Run("GET request with response target", func(t *testing.T) {
 		// Create test server that returns a JSON response
+		userID := fake.UUID().V4()
+		userName := fake.Person().Name()
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, "GET", r.Method)
-			assert.Equal(t, "/users/123", r.URL.Path)
+			assert.Equal(t, "/users/"+userID, r.URL.Path)
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, `{"id":"123","name":"Test User"}`)
+			fmt.Fprintf(w, `{"id":"%s","name":"%s"}`, userID, userName)
 		}))
 		defer server.Close()
 
@@ -35,7 +40,7 @@ func TestSendRequest(t *testing.T) {
 		var response ResponseData
 		params := SendRequestParams[interface{}, ResponseData]{
 			Method: "GET",
-			URL:    server.URL + "/users/123",
+			URL:    server.URL + "/users/" + userID,
 			Body:   nil,
 			Target: &response,
 		}
@@ -43,12 +48,15 @@ func TestSendRequest(t *testing.T) {
 		err := SendRequest(ctx, client, params)
 
 		require.NoError(t, err)
-		assert.Equal(t, "123", response.ID)
-		assert.Equal(t, "Test User", response.Name)
+		assert.Equal(t, userID, response.ID)
+		assert.Equal(t, userName, response.Name)
 	})
 
 	t.Run("POST request with body and response", func(t *testing.T) {
 		// Create test server that accepts POST and returns response
+		userID := fake.UUID().V4()
+		userName := fake.Person().Name()
+		userEmail := fake.Internet().Email()
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, "POST", r.Method)
 			assert.Equal(t, "/users", r.URL.Path)
@@ -56,7 +64,7 @@ func TestSendRequest(t *testing.T) {
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			fmt.Fprint(w, `{"id":"user123","name":"John Doe","email":"john@example.com"}`)
+			fmt.Fprintf(w, `{"id":"%s","name":"%s","email":"%s"}`, userID, userName, userEmail)
 		}))
 		defer server.Close()
 
@@ -75,8 +83,8 @@ func TestSendRequest(t *testing.T) {
 		}
 
 		requestBody := RequestData{
-			Name:  "John Doe",
-			Email: "john@example.com",
+			Name:  userName,
+			Email: userEmail,
 		}
 
 		var response ResponseData
@@ -90,16 +98,17 @@ func TestSendRequest(t *testing.T) {
 		err := SendRequest(ctx, client, params)
 
 		require.NoError(t, err)
-		assert.Equal(t, "user123", response.ID)
-		assert.Equal(t, "John Doe", response.Name)
-		assert.Equal(t, "john@example.com", response.Email)
+		assert.Equal(t, userID, response.ID)
+		assert.Equal(t, userName, response.Name)
+		assert.Equal(t, userEmail, response.Email)
 	})
 
 	t.Run("DELETE request with no body or response", func(t *testing.T) {
 		// Create test server that handles DELETE
+		userID := fake.UUID().V4()
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, "DELETE", r.Method)
-			assert.Equal(t, "/users/123", r.URL.Path)
+			assert.Equal(t, "/users/"+userID, r.URL.Path)
 
 			w.WriteHeader(http.StatusNoContent)
 		}))
@@ -110,7 +119,7 @@ func TestSendRequest(t *testing.T) {
 
 		params := SendRequestParams[interface{}, interface{}]{
 			Method: "DELETE",
-			URL:    server.URL + "/users/123",
+			URL:    server.URL + "/users/" + userID,
 			Body:   nil,
 			Target: nil,
 		}
@@ -121,10 +130,12 @@ func TestSendRequest(t *testing.T) {
 	})
 
 	t.Run("handles HTTP error responses", func(t *testing.T) {
-		// Create test server that returns 404
+		// Create test server that returns error
+		nonExistentPath := "/" + fake.Lorem().Word()
+		wantErrorBody := `{"error":"` + fake.Lorem().Word() + `"}`
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, `{"error":"Not Found"}`)
+			fmt.Fprint(w, wantErrorBody)
 		}))
 		defer server.Close()
 
@@ -136,7 +147,7 @@ func TestSendRequest(t *testing.T) {
 
 		params := SendRequestParams[interface{}, interface{}]{
 			Method: "GET",
-			URL:    server.URL + "/nonexistent",
+			URL:    server.URL + nonExistentPath,
 			Body:   nil,
 			Target: nil,
 		}
@@ -145,6 +156,13 @@ func TestSendRequest(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "500")
+
+		var reqErr *RequestError
+		require.ErrorAs(t, err, &reqErr)
+		assert.Equal(t, http.StatusInternalServerError, reqErr.StatusCode)
+		assert.Equal(t, "GET", reqErr.Method)
+		assert.Equal(t, server.URL+nonExistentPath, reqErr.URL)
+		assert.Contains(t, string(reqErr.Body), wantErrorBody)
 	})
 
 	t.Run("handles invalid URL", func(t *testing.T) {
@@ -161,6 +179,11 @@ func TestSendRequest(t *testing.T) {
 		err := SendRequest(ctx, client, params)
 
 		require.Error(t, err)
+
+		var reqErr *RequestError
+		require.ErrorAs(t, err, &reqErr)
+		assert.Equal(t, "GET", reqErr.Method)
+		assert.Equal(t, "not-a-valid-url", reqErr.URL)
 	})
 
 	t.Run("handles request body marshaling error", func(t *testing.T) {
@@ -191,6 +214,7 @@ func TestSendRequest(t *testing.T) {
 
 	t.Run("handles response unmarshaling error", func(t *testing.T) {
 		// Create test server that returns invalid JSON
+		invalidPath := "/" + fake.Lorem().Word()
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
@@ -209,7 +233,7 @@ func TestSendRequest(t *testing.T) {
 		var response ResponseData
 		params := SendRequestParams[interface{}, ResponseData]{
 			Method: "GET",
-			URL:    server.URL + "/invalid-json",
+			URL:    server.URL + invalidPath,
 			Body:   nil,
 			Target: &response,
 		}

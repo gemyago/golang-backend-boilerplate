@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware"
+	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	sloghttp "github.com/samber/slog-http"
 	"go.uber.org/dig"
@@ -35,9 +36,11 @@ type HTTPServerDeps struct {
 	// handler
 	Handler http.Handler
 
+	OTELMiddleware diag.OtelHTTPMiddleware
+
 	// listeningSignal is an optional channel that Start will close when the server is listening.
 	// Primarily for testing.
-	listeningSignal chan<- struct{}
+	listeningSignal chan struct{}
 }
 
 type HTTPServer struct {
@@ -55,7 +58,7 @@ func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
 		ReadHeaderTimeout: deps.ReadHeaderTimeout,
 		ReadTimeout:       deps.ReadTimeout,
 		WriteTimeout:      deps.WriteTimeout,
-		Handler:           buildMiddlewareChain(deps),
+		Handler:           deps.Handler,
 		ErrorLog:          slog.NewLogLogger(deps.RootLogger.Handler(), slog.LevelError),
 	}
 
@@ -98,7 +101,20 @@ func (srv *HTTPServer) Start(ctx context.Context) error {
 	return nil
 }
 
-func buildMiddlewareChain(deps HTTPServerDeps) http.Handler {
+type RouterMiddleware func(http.Handler) http.Handler
+
+type RouterMiddlewareDeps struct {
+	dig.In
+
+	RootLogger *slog.Logger
+
+	// config
+	AccessLogsLevel string `name:"config.httpServer.accessLogsLevel"`
+
+	OTELMiddleware diag.OtelHTTPMiddleware
+}
+
+func NewRouterMiddleware(deps RouterMiddlewareDeps) RouterMiddleware {
 	defaultLogLevel := slog.LevelInfo
 	clientErrorLevel := slog.LevelWarn
 	serverErrorLevel := slog.LevelError
@@ -111,9 +127,9 @@ func buildMiddlewareChain(deps HTTPServerDeps) http.Handler {
 		serverErrorLevel = defaultLogLevel
 	}
 
-	// Router wire-up
 	chain := middleware.Chain(
-		middleware.NewTracingMiddleware(middleware.NewTracingMiddlewareCfg()),
+		middleware.Middleware(deps.OTELMiddleware), // otel goes first
+		middleware.NewCorrelationMiddleware(middleware.NewCorrelationMiddlewareCfg()),
 		sloghttp.NewWithConfig(deps.RootLogger, sloghttp.Config{
 			DefaultLevel:     defaultLogLevel,
 			ClientErrorLevel: clientErrorLevel,
@@ -123,10 +139,13 @@ func buildMiddlewareChain(deps HTTPServerDeps) http.Handler {
 			WithRequestID:      false, // We handle it ourselves (tracing middleware)
 			WithRequestHeader:  true,
 			WithResponseHeader: true,
-			WithSpanID:         true,
-			WithTraceID:        true,
+
+			// Log handler will add those, we don't want them twice
+			// see diag/slog.go for more details
+			WithSpanID:  false,
+			WithTraceID: false,
 		}),
 		middleware.NewRecovererMiddleware(deps.RootLogger),
 	)
-	return chain(deps.Handler)
+	return chain
 }
