@@ -67,6 +67,8 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 		)
 
 		err = errors.Join(
+			di.ProvideAll(container, di.ProvideValue(rootLogger)),
+
 			config.Provide(container, cfg),
 
 			// diag needs to happen separately
@@ -82,10 +84,6 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 			controllers.Register(container),
 			di.ProvideAll(container,
 				server.NewMCPServer,
-			),
-
-			di.ProvideAll(container,
-				di.ProvideValue(rootLogger),
 			),
 		)
 

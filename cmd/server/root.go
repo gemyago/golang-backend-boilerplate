@@ -64,6 +64,8 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 		)
 
 		err = errors.Join(
+			di.ProvideAll(container, di.ProvideValue(rootLogger)),
+
 			config.Provide(container, cfg),
 
 			// diag needs to happen separately
@@ -74,10 +76,6 @@ func newRootCmd(container *dig.Container) *cobra.Command {
 
 			// services
 			infrastructure.Register(rootCtx, container),
-
-			di.ProvideAll(container,
-				di.ProvideValue(rootLogger),
-			),
 		)
 
 		return lo.
