@@ -1,8 +1,13 @@
 package diag
 
 import (
+	"log/slog"
 	"time"
 
+	"github.com/go-logr/logr"
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.uber.org/dig"
 )
@@ -18,7 +23,8 @@ const (
 type OTELConfig struct {
 	dig.In
 
-	Enabled bool `name:"config.openTelemetry.enabled"`
+	Enabled        bool `name:"config.openTelemetry.enabled"`
+	RuntimeMetrics bool `name:"config.openTelemetry.runtimeMetrics"`
 }
 
 type OTELTracesConfig struct {
@@ -72,4 +78,30 @@ func detectEndpointSecurity(endpoint string) (string, bool) {
 		return endpoint[7:], false
 	}
 	return endpoint, false
+}
+
+type setupDeps struct {
+	dig.In
+
+	OTELConfig
+
+	metric.MeterProvider
+
+	RootLogger *slog.Logger
+}
+
+func setup(deps setupDeps) error {
+	otelLogger := slog.New(deps.RootLogger.WithGroup("otel").Handler())
+
+	otel.SetLogger(logr.FromSlogHandler(otelLogger.Handler()))
+
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(cause error) {
+		otelLogger.Error("OTEL error", slog.String("cause", cause.Error()))
+	}))
+
+	if !deps.OTELConfig.Enabled || !deps.OTELConfig.RuntimeMetrics {
+		return nil
+	}
+
+	return runtime.Start(runtime.WithMeterProvider(deps.MeterProvider))
 }

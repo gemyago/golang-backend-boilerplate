@@ -1,7 +1,10 @@
 # Default configuration for the application, applies to all environments.
 
 defaultLogLevel: INFO
+
+# This should be aligned with actual runtime environment (e.g k8s or similar)
 gracefulShutdownTimeout: 10s
+
 httpServer:
   host: "[::]"
   port: 8080
@@ -10,13 +13,22 @@ httpServer:
   readTimeout: 2s
   writeTimeout: 8s
   accessLogsLevel: ""
+
 mcpServer:
   name: golang-backend-boilerplate-mcp
   version: 1.0.0
   httpHost: localhost
   httpPort: 8080
+
 openTelemetry:
+  # Enable or disable OpenTelemetry integration in one place
   enabled: false
+
+  # Enable or disable collection of golang runtime metrics (CPU, memory, GC, etc.)
+  # Uses https://pkg.go.dev/go.opentelemetry.io/contrib/instrumentation/runtime
+  runtimeMetrics: true
+
+  # Traces configuration
   traces:
     enabled: false
     endpoint: ""
@@ -26,6 +38,8 @@ openTelemetry:
     auth:
       token: ""
       tokenType: ""
+  
+  # Metrics configuration
   metrics:
     enabled: false
     endpoint: ""
@@ -35,6 +49,8 @@ openTelemetry:
     auth:
       token: ""
       tokenType: ""
+
+  # Logs configuration
   logs:
     enabled: false
     endpoint: ""
@@ -43,7 +59,9 @@ openTelemetry:
     auth:
       token: ""
       tokenType: ""
+
 database:
   dsn: ./data/app.db
+
 petstore:
   baseURL: https://petstore3.swagger.io/api/v3

@@ -3,11 +3,8 @@ package diag
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
-	"github.com/go-logr/logr"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/dig"
 )
 
@@ -30,14 +27,6 @@ func Register(ctx context.Context, container *dig.Container) error {
 			NewOtelHTTPMiddleware,
 			NewOtelHTTPTransportFactory,
 		),
-		container.Invoke(func(logger *slog.Logger) {
-			otelLogger := slog.New(logger.WithGroup("otel").Handler())
-
-			otel.SetLogger(logr.FromSlogHandler(otelLogger.Handler()))
-
-			otel.SetErrorHandler(otel.ErrorHandlerFunc(func(cause error) {
-				otelLogger.Error("OTEL error", slog.String("cause", cause.Error()))
-			}))
-		}),
+		container.Invoke(setup),
 	)
 }

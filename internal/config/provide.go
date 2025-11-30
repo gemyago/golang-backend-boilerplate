@@ -75,6 +75,7 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 
 		// opentelemetry config
 		provideConfigValue(cfg, "openTelemetry.enabled").asBool(),
+		provideConfigValue(cfg, "openTelemetry.runtimeMetrics").asBool(),
 		provideConfigValue(cfg, "openTelemetry.traces.enabled").asBool(),
 		provideConfigValue(cfg, "openTelemetry.traces.endpoint").asString(),
 		provideConfigValue(cfg, "openTelemetry.traces.urlPath").asString(),
