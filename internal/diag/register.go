@@ -10,13 +10,6 @@ import (
 
 // Register registers OTel components in the DI container.
 func Register(ctx context.Context, container *dig.Container) error {
-	// TODOS:
-	/*
-		- Figure out if we can inject different logger for otel components
-		- Allow enabling logs
-		- Enable runtime metrics https://github.com/open-telemetry/opentelemetry-go-contrib/blob/main/instrumentation/runtime/runtime.go
-	*/
-
 	return errors.Join(
 		di.ProvideAll(
 			container,
