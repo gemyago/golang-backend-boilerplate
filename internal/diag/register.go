@@ -16,8 +16,6 @@ func Register(ctx context.Context, container *dig.Container) error {
 	// TODOS:
 	/*
 		- Figure out if we can inject different logger for otel components
-		- Add example of instrumenting custom operations
-		- Add example of custom metrics
 		- Allow enabling logs
 		- Enable runtime metrics https://github.com/open-telemetry/opentelemetry-go-contrib/blob/main/instrumentation/runtime/runtime.go
 	*/
