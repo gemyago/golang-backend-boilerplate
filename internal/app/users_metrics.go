@@ -15,15 +15,21 @@ type UsersMetrics struct {
 func newUsersMetrics(
 	provider metric.MeterProvider,
 ) (*UsersMetrics, error) { // coverage-ignore -- coverage drops on error handling, hard to simulate this in tests
-	meter := provider.Meter("app.metrics")
+	meter := provider.Meter("app.user_metrics")
 
-	usersCreated, err := meter.Int64Counter("users.created")
+	usersCreated, err := meter.Int64Counter("users.created",
+		metric.WithDescription("The total number of created users."),
+		metric.WithUnit("users"),
+	)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create users.created counter: %w", err)
 	}
 
-	usersEmailConflict, err := meter.Int64Counter("users.email_conflict")
+	usersEmailConflict, err := meter.Int64Counter("users.email_conflict",
+		metric.WithDescription("The total number of user creation attempts that failed due to email conflict."),
+		metric.WithUnit("users"),
+	)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create users.email_conflict counter: %w", err)
