@@ -27,6 +27,5 @@ func Register(ctx context.Context, container *dig.Container) error {
 			NewOtelHTTPMiddleware,
 			NewOtelHTTPTransportFactory,
 		),
-		container.Invoke(setup),
 	)
 }

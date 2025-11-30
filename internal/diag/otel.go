@@ -80,7 +80,7 @@ func detectEndpointSecurity(endpoint string) (string, bool) {
 	return endpoint, false
 }
 
-type setupDeps struct {
+type SetupDeps struct {
 	dig.In
 
 	OTELConfig
@@ -90,7 +90,7 @@ type setupDeps struct {
 	RootLogger *slog.Logger
 }
 
-func setup(deps setupDeps) error {
+func OTELSetup(deps SetupDeps) error { // coverage-ignore -- Hard to test and this is mostly wireup code
 	otelLogger := slog.New(deps.RootLogger.WithGroup("otel").Handler())
 
 	otel.SetLogger(logr.FromSlogHandler(otelLogger.Handler()))
