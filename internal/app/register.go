@@ -14,5 +14,6 @@ func Register(container *dig.Container) error {
 		NewPetsCommands,
 		NewUserQueries,
 		NewPetsQueries,
+		newUsersMetrics,
 	)
 }

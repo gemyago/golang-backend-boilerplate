@@ -20,7 +20,10 @@ type LogAttributes struct {
 }
 
 func GetLogAttributesFromContext(ctx context.Context) LogAttributes {
-	res, _ := ctx.Value(contextDiagAttrs).(LogAttributes)
+	res, ok := ctx.Value(contextDiagAttrs).(LogAttributes)
+	if !ok {
+		return LogAttributes{}
+	}
 	return res
 }
 

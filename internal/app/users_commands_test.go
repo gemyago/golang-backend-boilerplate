@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/metric/noop"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 )
@@ -17,9 +18,11 @@ import (
 func TestUserCommands(t *testing.T) {
 	fake := faker.New()
 	makeMockDeps := func(t *testing.T) UserCommandsDeps {
+		usersMetrics, _ := newUsersMetrics(noop.NewMeterProvider())
 		return UserCommandsDeps{
-			UsersRepo:  NewMockUsersRepository(t),
-			RootLogger: diag.RootTestLogger(),
+			UsersRepo:    NewMockUsersRepository(t),
+			RootLogger:   diag.RootTestLogger(),
+			UsersMetrics: usersMetrics,
 		}
 	}
 

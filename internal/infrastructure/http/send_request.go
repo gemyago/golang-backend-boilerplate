@@ -90,7 +90,11 @@ func httpStatusErr(req *http.Request, resp *http.Response) *RequestError {
 	// Response body may contain additional error details
 	var bodyBytes []byte
 	if resp.Body != nil {
-		bodyBytes, _ = io.ReadAll(resp.Body)
+		var err error
+		bodyBytes, err = io.ReadAll(resp.Body)
+		if err != nil {
+			message += fmt.Sprintf("failed to read error response body: %v", err)
+		}
 
 		// Caller is closing the body
 	}

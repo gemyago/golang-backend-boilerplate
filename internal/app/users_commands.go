@@ -33,12 +33,15 @@ type UpdateUserRequest struct {
 // UserCommands is a concrete struct (not an interface).
 // Controllers use this directly.
 type UserCommands struct {
-	usersRepo UsersRepository
-	logger    *slog.Logger
+	usersRepo    UsersRepository
+	logger       *slog.Logger
+	usersMetrics *UsersMetrics
 }
 
 type UserCommandsDeps struct {
 	dig.In
+
+	*UsersMetrics
 
 	UsersRepo  UsersRepository
 	RootLogger *slog.Logger
@@ -48,8 +51,9 @@ type UserCommandsDeps struct {
 // This follows "accept interface, return struct" principle.
 func NewUserCommands(deps UserCommandsDeps) *UserCommands {
 	return &UserCommands{
-		usersRepo: deps.UsersRepo,
-		logger:    deps.RootLogger.WithGroup("app.user-commands"),
+		usersRepo:    deps.UsersRepo,
+		logger:       deps.RootLogger.WithGroup("app.user-commands"),
+		usersMetrics: deps.UsersMetrics,
 	}
 }
 
@@ -81,6 +85,7 @@ func (c *UserCommands) CreateUser(ctx context.Context, req CreateUserRequest) (*
 		// not found, which is expected
 	}
 	if existing != nil {
+		c.usersMetrics.recordUserEmailConflict(ctx)
 		return nil, NewErrConflict("user email", "already exists")
 	}
 
@@ -97,6 +102,8 @@ func (c *UserCommands) CreateUser(ctx context.Context, req CreateUserRequest) (*
 	if err = c.usersRepo.CreateUser(ctx, user); err != nil {
 		return nil, err
 	}
+
+	c.usersMetrics.recordUserCreated(ctx)
 
 	return &CreateUserResponse{UserID: id}, nil
 }
@@ -134,6 +141,7 @@ func (c *UserCommands) UpdateUser(ctx context.Context, req UpdateUserRequest) er
 			}
 		}
 		if emailCheck != nil {
+			c.usersMetrics.recordUserEmailConflict(ctx)
 			return NewErrConflict("user email", "already exists")
 		}
 	}
