@@ -26,6 +26,7 @@ jobs:
   docker-image:
     permissions:
       packages: 'write'
+      contents: 'read' # to download the code if the repo is private
     needs: build-artifacts
     name: Docker Image
     uses: ./.github/workflows/build-docker-image.yml
