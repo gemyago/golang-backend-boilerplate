@@ -15,6 +15,7 @@ jobs:
     name: Publish Test Artifacts
     runs-on: ubuntu-latest
     permissions:
+      contents: 'read' # to download the code if the repo is private
       contents: 'write'
     steps:
       - name: Checkout
