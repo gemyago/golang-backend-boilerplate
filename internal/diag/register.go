@@ -14,6 +14,7 @@ func Register(ctx context.Context, container *dig.Container) error {
 		container.Invoke(StartPProfListener),
 		di.ProvideAll(
 			container,
+			NewRootLogger,
 			di.ProvideWithContext(ctx, NewResource),
 			di.ProvideWithContext(ctx, NewTracerProvider),
 			di.ProvideWithContext(ctx, NewMeterProvider),

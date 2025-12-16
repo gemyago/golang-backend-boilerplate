@@ -87,19 +87,29 @@ type SetupDeps struct {
 	dig.In
 
 	OTELConfig
+	OTELLogsConfig
 
 	metric.MeterProvider
 
-	RootLogger *slog.Logger
+	RootLogger     *slog.Logger
+	RootLoggerOpts *RootLoggerOpts
 }
 
 func OTELSetup(deps SetupDeps) error { // coverage-ignore -- Hard to test and this is mostly wireup code
-	otelLogger := slog.New(deps.RootLogger.WithGroup("otel").Handler())
+	var otelLogger logr.Logger
 
-	otel.SetLogger(logr.FromSlogHandler(otelLogger.Handler()))
+	// We can not use standard RootLogger for otel itself if otel logs forwarding is enabled
+	// Doing so will cause deadloop.
+	if deps.OTELConfig.Enabled && deps.OTELLogsConfig.Enabled {
+		otelLogger = logr.FromSlogHandler(newStandardSlogHandler(deps.RootLoggerOpts))
+	} else {
+		otelLogger = logr.FromSlogHandler(deps.RootLogger.WithGroup("otel").Handler())
+	}
+
+	otel.SetLogger(otelLogger)
 
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(cause error) {
-		otelLogger.Error("OTEL error", slog.String("cause", cause.Error()))
+		otelLogger.Error(cause, "OTEL error")
 	}))
 
 	if !deps.OTELConfig.Enabled || !deps.OTELConfig.RuntimeMetrics {

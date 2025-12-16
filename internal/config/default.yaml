@@ -59,7 +59,7 @@ openTelemetry:
   logs:
     enabled: false
 
-    # If true, logs will be sent to both default handler and OTEL handler
+    # If true, logs will be sent to both default handler (e.g stdout) and OTEL handler
     # If false, logs will be sent only to OTEL handler
     defaultHandlerFanout: false
     
