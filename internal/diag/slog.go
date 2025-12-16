@@ -6,6 +6,9 @@ import (
 	"log/slog"
 	"os"
 
+	slogmulti "github.com/samber/slog-multi"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
+	otellog "go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -76,6 +79,10 @@ type RootLoggerOpts struct {
 
 	// Info is default (zero)
 	logLevel slog.Level
+
+	otelConfig      OTELConfig
+	otelLogsConfig  OTELLogsConfig
+	otellogProvider otellog.LoggerProvider
 }
 
 func NewRootLoggerOpts() *RootLoggerOpts {
@@ -111,13 +118,44 @@ func (opts *RootLoggerOpts) WithOptionalOutputFile(outputFile string) *RootLogge
 	return opts
 }
 
+func (opts *RootLoggerOpts) WithOTELConfigs(
+	otelConfig OTELConfig,
+	otelLogsConfig OTELLogsConfig,
+	otellogProvider otellog.LoggerProvider,
+) *RootLoggerOpts {
+	opts.otelConfig = otelConfig
+	opts.otelLogsConfig = otelLogsConfig
+	opts.otellogProvider = otellogProvider
+	return opts
+}
+
+func newStandardSlogHandler(opts *RootLoggerOpts) slog.Handler {
+	logHandlerOpts := &slog.HandlerOptions{Level: opts.logLevel}
+	if opts.jsonLogs {
+		return slog.NewJSONHandler(opts.output, logHandlerOpts)
+	}
+	return slog.NewTextHandler(opts.output, logHandlerOpts)
+}
+
 func SetupRootLogger(opts *RootLoggerOpts) *slog.Logger {
 	logHandlerOpts := &slog.HandlerOptions{Level: opts.logLevel}
 	var logHandler slog.Handler
-	if opts.jsonLogs {
-		logHandler = slog.NewJSONHandler(opts.output, logHandlerOpts)
+	if opts.otelConfig.Enabled && opts.otelLogsConfig.Enabled {
+		logHandler = otelslog.NewHandler(
+			"app", otelslog.WithLoggerProvider(opts.otellogProvider),
+		)
+
+		if opts.otelLogsConfig.DefaultHandlerFanout {
+			logHandler = slogmulti.Fanout(
+				slog.NewJSONHandler(opts.output, logHandlerOpts),
+				logHandler,
+			)
+		}
 	} else {
-		logHandler = slog.NewTextHandler(opts.output, logHandlerOpts)
+		logHandler = newStandardSlogHandler(opts)
 	}
-	return slog.New(&diagLogHandler{target: logHandler})
+
+	rootLogger := slog.New(&diagLogHandler{target: logHandler})
+
+	return rootLogger
 }

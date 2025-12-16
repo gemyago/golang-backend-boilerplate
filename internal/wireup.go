@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
@@ -11,6 +12,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/spf13/viper"
+	otellog "go.opentelemetry.io/otel/log"
 	"go.uber.org/dig"
 )
 
@@ -29,17 +31,25 @@ func Setup(
 		return err
 	}
 
-	rootLogger := diag.SetupRootLogger(
-		diag.NewRootLoggerOpts().
-			WithJSONLogs(cfg.GetBool("jsonLogs")).
-			WithLogLevel(logLevel).
-			WithOptionalOutputFile(cfg.GetString("logs-file")),
-	)
+	rootLoggerProvider := func(
+		otelConfig diag.OTELConfig,
+		otelLogsConfig diag.OTELLogsConfig,
+		otellogProvider otellog.LoggerProvider,
+	) *slog.Logger {
+		fmt.Println("wireup: Setting up root logger")
+		return diag.SetupRootLogger(
+			diag.NewRootLoggerOpts().
+				WithJSONLogs(cfg.GetBool("jsonLogs")).
+				WithLogLevel(logLevel).
+				WithOptionalOutputFile(cfg.GetString("logs-file")).
+				WithOTELConfigs(otelConfig, otelLogsConfig, otellogProvider),
+		)
+	}
 
 	return errors.Join(
 		di.ProvideAll(
 			container,
-			di.ProvideValue(rootLogger),
+			rootLoggerProvider,
 
 			// We can't directly use shutdown hooks in diag, since diag is used everywhere.
 			// This is a good place to register the implementation.
