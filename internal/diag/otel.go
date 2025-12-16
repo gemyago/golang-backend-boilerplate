@@ -53,12 +53,14 @@ type OTELMetricsConfig struct {
 
 // OTELLogsConfig holds OpenTelemetry logs configuration.
 type OTELLogsConfig struct {
-	Enabled       bool
-	Endpoint      string
-	URLPath       string
-	Protocol      string
-	AuthToken     string
-	AuthTokenType string
+	dig.In
+
+	Enabled       bool   `name:"config.openTelemetry.logs.enabled"`
+	Endpoint      string `name:"config.openTelemetry.logs.endpoint"`
+	URLPath       string `name:"config.openTelemetry.logs.urlPath"`
+	Protocol      string `name:"config.openTelemetry.logs.protocol"`
+	AuthToken     string `name:"config.openTelemetry.logs.auth.token"`
+	AuthTokenType string `name:"config.openTelemetry.logs.auth.tokenType"`
 }
 
 func NewTextMapPropagator() propagation.TextMapPropagator {
