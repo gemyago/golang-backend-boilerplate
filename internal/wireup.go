@@ -30,7 +30,7 @@ func Setup(
 		return err
 	}
 
-	rootLoggerOptionsProvider := func(
+	newRootLoggerOptions := func(
 		otelConfig diag.OTELConfig,
 		otelLogsConfig diag.OTELLogsConfig,
 		otellogProvider otellog.LoggerProvider,
@@ -45,7 +45,7 @@ func Setup(
 	return errors.Join(
 		di.ProvideAll(
 			container,
-			rootLoggerOptionsProvider,
+			newRootLoggerOptions,
 
 			// We can't directly use shutdown hooks in diag, since diag is used everywhere.
 			// This is a good place to register the implementation.

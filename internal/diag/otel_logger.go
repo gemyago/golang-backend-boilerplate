@@ -16,9 +16,8 @@ import (
 type LoggerProviderDeps struct {
 	dig.In
 
-	// ShutdownHooks
+	Resource *resource.Resource
 
-	Resource   *resource.Resource
 	Config     OTELConfig
 	LogsConfig OTELLogsConfig
 }
