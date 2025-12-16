@@ -50,6 +50,10 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 		// env should only be used for tracing/debugging purposes
 		provideConfigValue(cfg, "env").asString(),
 
+		// pprof listener config
+		provideConfigValue(cfg, "pprofListener.enabled").asBool(),
+		provideConfigValue(cfg, "pprofListener.addr").asString(),
+
 		provideConfigValue(cfg, "gracefulShutdownTimeout").asDuration(),
 
 		// petstore config

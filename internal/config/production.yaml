@@ -1,1 +1,5 @@
 defaultLogLevel: INFO
+
+pprofListener:
+  # Make sure your app is fully internal if enabling it in production
+  enabled: false
