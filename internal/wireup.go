@@ -3,7 +3,6 @@ package internal
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
@@ -36,7 +35,6 @@ func Setup(
 		otelLogsConfig diag.OTELLogsConfig,
 		otellogProvider otellog.LoggerProvider,
 	) *slog.Logger {
-		fmt.Println("wireup: Setting up root logger")
 		return diag.SetupRootLogger(
 			diag.NewRootLoggerOpts().
 				WithJSONLogs(cfg.GetBool("jsonLogs")).

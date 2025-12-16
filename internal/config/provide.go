@@ -97,6 +97,7 @@ func Provide(container *dig.Container, cfg *viper.Viper) error {
 		provideConfigValue(cfg, "openTelemetry.metrics.auth.tokenType").asString(),
 
 		provideConfigValue(cfg, "openTelemetry.logs.enabled").asBool(),
+		provideConfigValue(cfg, "openTelemetry.logs.defaultHandlerFanout").asBool(),
 		provideConfigValue(cfg, "openTelemetry.logs.endpoint").asString(),
 		provideConfigValue(cfg, "openTelemetry.logs.urlPath").asString(),
 		provideConfigValue(cfg, "openTelemetry.logs.protocol").asString(),
