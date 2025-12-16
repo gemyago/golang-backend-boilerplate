@@ -137,7 +137,7 @@ func newStandardSlogHandler(opts *RootLoggerOpts) slog.Handler {
 	return slog.NewTextHandler(opts.output, logHandlerOpts)
 }
 
-func SetupRootLogger(opts *RootLoggerOpts) *slog.Logger {
+func NewRootLogger(opts *RootLoggerOpts) *slog.Logger {
 	logHandlerOpts := &slog.HandlerOptions{Level: opts.logLevel}
 	var logHandler slog.Handler
 	if opts.otelConfig.Enabled && opts.otelLogsConfig.Enabled {

@@ -35,7 +35,7 @@ func Setup(
 		otelLogsConfig diag.OTELLogsConfig,
 		otellogProvider otellog.LoggerProvider,
 	) *slog.Logger {
-		return diag.SetupRootLogger(
+		return diag.NewRootLogger(
 			diag.NewRootLoggerOpts().
 				WithJSONLogs(cfg.GetBool("jsonLogs")).
 				WithLogLevel(logLevel).
