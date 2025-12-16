@@ -146,6 +146,7 @@ func NewRootLogger(opts *RootLoggerOpts) *slog.Logger {
 		)
 
 		if opts.otelLogsConfig.DefaultHandlerFanout {
+			// TODO: Once 1.26 is out, replace it with sdk multi handler
 			logHandler = slogmulti.Fanout(
 				slog.NewJSONHandler(opts.output, logHandlerOpts),
 				logHandler,
