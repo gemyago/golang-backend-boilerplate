@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
@@ -13,10 +14,20 @@ import (
 	"go.uber.org/dig"
 )
 
-type MeterProviderDeps struct {
+type OTELMetricsConfig struct {
 	dig.In
 
-	ShutdownHooks
+	Enabled        bool          `name:"config.openTelemetry.metrics.enabled"`
+	Endpoint       string        `name:"config.openTelemetry.metrics.endpoint"`
+	URLPath        string        `name:"config.openTelemetry.metrics.urlPath"`
+	Protocol       string        `name:"config.openTelemetry.metrics.protocol"`
+	ExportInterval time.Duration `name:"config.openTelemetry.metrics.exportInterval"`
+	AuthToken      string        `name:"config.openTelemetry.metrics.auth.token"`
+	AuthTokenType  string        `name:"config.openTelemetry.metrics.auth.tokenType"`
+}
+
+type MeterProviderDeps struct {
+	dig.In
 
 	Resource *resource.Resource
 
@@ -72,8 +83,6 @@ func NewMeterProvider(
 		)),
 		sdkmetric.WithResource(res),
 	)
-
-	deps.ShutdownHooks.Register("otel-meter", meterProvider.Shutdown)
 
 	return meterProvider, nil
 }

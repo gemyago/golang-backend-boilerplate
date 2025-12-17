@@ -50,7 +50,7 @@ func SetMockNowValue(p TimeProvider, val time.Time) {
 const defaultTestShutdownTimeout = 30 * time.Second
 
 func NewTestShutdownHooks() *ShutdownHooks {
-	return NewShutdownHooks(ShutdownHooksRegistryDeps{
+	return NewShutdownHooks(ShutdownHooksDeps{
 		RootLogger:              diag.RootTestLogger(),
 		GracefulShutdownTimeout: defaultTestShutdownTimeout,
 	})

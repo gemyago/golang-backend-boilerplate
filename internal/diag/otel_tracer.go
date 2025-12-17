@@ -13,10 +13,20 @@ import (
 	"go.uber.org/dig"
 )
 
-type TracerProviderDeps struct {
+type OTELTracesConfig struct {
 	dig.In
 
-	ShutdownHooks
+	Enabled       bool    `name:"config.openTelemetry.traces.enabled"`
+	Endpoint      string  `name:"config.openTelemetry.traces.endpoint"`
+	URLPath       string  `name:"config.openTelemetry.traces.urlPath"`
+	Protocol      string  `name:"config.openTelemetry.traces.protocol"`
+	SamplingRate  float64 `name:"config.openTelemetry.traces.samplingRate"`
+	AuthToken     string  `name:"config.openTelemetry.traces.auth.token"`
+	AuthTokenType string  `name:"config.openTelemetry.traces.auth.tokenType"`
+}
+
+type TracerProviderDeps struct {
+	dig.In
 
 	Resource     *resource.Resource
 	Config       OTELConfig
@@ -70,8 +80,6 @@ func NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.ParentBased(sdktrace.TraceIDRatioBased(tracesConfig.SamplingRate))),
 		sdktrace.WithResource(res),
 	)
-
-	deps.ShutdownHooks.Register("otel-tracer", tracerProvider.Shutdown)
 
 	return tracerProvider, nil
 }

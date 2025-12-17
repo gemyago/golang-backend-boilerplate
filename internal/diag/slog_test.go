@@ -9,8 +9,11 @@ import (
 	"time"
 
 	"github.com/jaswdr/faker"
+	slogmulti "github.com/samber/slog-multi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
+	"go.opentelemetry.io/otel/log/noop"
 )
 
 func TestGetLogAttributesFromContext(t *testing.T) {
@@ -75,22 +78,42 @@ func TestDiagSlogHandler(t *testing.T) {
 			assert.NoError(t, handler.Handle(ctx, originalRec))
 		})
 	})
-	t.Run("SetupRootLogger", func(t *testing.T) {
+	t.Run("NewRootLogger", func(t *testing.T) {
 		t.Run("should setup text handler by default", func(t *testing.T) {
-			logger := SetupRootLogger(NewRootLoggerOpts())
+			logger := NewRootLogger(NewRootLoggerOpts())
 			diagHandler, ok := logger.Handler().(*diagLogHandler)
 			require.True(t, ok)
 			assert.IsType(t, &slog.TextHandler{}, diagHandler.target)
 		})
 		t.Run("should optionally setup json handler", func(t *testing.T) {
-			logger := SetupRootLogger(NewRootLoggerOpts().WithJSONLogs(true).WithLogLevel(slog.LevelDebug))
+			logger := NewRootLogger(NewRootLoggerOpts().WithJSONLogs(true).WithLogLevel(slog.LevelDebug))
 			diagHandler, ok := logger.Handler().(*diagLogHandler)
 			require.True(t, ok)
 			assert.IsType(t, &slog.JSONHandler{}, diagHandler.target)
 		})
+		t.Run("should setup otel handler", func(t *testing.T) {
+			logger := NewRootLogger(NewRootLoggerOpts().WithOTELConfigs(
+				OTELConfig{Enabled: true},
+				OTELLogsConfig{Enabled: true},
+				noop.NewLoggerProvider(),
+			))
+			diagHandler, ok := logger.Handler().(*diagLogHandler)
+			require.True(t, ok)
+			assert.IsType(t, &otelslog.Handler{}, diagHandler.target)
+		})
+		t.Run("should setup otel handler with fanout", func(t *testing.T) {
+			logger := NewRootLogger(NewRootLoggerOpts().WithOTELConfigs(
+				OTELConfig{Enabled: true},
+				OTELLogsConfig{Enabled: true, DefaultHandlerFanout: true},
+				noop.NewLoggerProvider(),
+			))
+			diagHandler, ok := logger.Handler().(*diagLogHandler)
+			require.True(t, ok)
+			assert.IsType(t, &slogmulti.FanoutHandler{}, diagHandler.target)
+		})
 		t.Run("should ignore optional output file", func(t *testing.T) {
 			testOutput := bytes.Buffer{}
-			logger := SetupRootLogger(NewRootLoggerOpts().WithOutput(&testOutput).WithOptionalOutputFile(""))
+			logger := NewRootLogger(NewRootLoggerOpts().WithOutput(&testOutput).WithOptionalOutputFile(""))
 			logger.InfoContext(t.Context(), fake.Lorem().Sentence(10))
 			assert.NotEmpty(t, testOutput.String())
 		})

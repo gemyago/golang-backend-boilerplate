@@ -32,8 +32,8 @@ func (m *mockShutdownHook) shutdownNoCtx() error {
 
 func TestShutdownHooks(t *testing.T) {
 	fake := faker.New()
-	makeMockDeps := func() ShutdownHooksRegistryDeps {
-		return ShutdownHooksRegistryDeps{
+	makeMockDeps := func() ShutdownHooksDeps {
+		return ShutdownHooksDeps{
 			RootLogger:              diag.RootTestLogger(),
 			GracefulShutdownTimeout: time.Duration(10+rand.IntN(1000)) * time.Second,
 		}

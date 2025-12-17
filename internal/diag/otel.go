@@ -2,13 +2,14 @@ package diag
 
 import (
 	"log/slog"
-	"time"
 
 	"github.com/go-logr/logr"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/dig"
 )
 
@@ -25,40 +26,6 @@ type OTELConfig struct {
 
 	Enabled        bool `name:"config.openTelemetry.enabled"`
 	RuntimeMetrics bool `name:"config.openTelemetry.runtimeMetrics"`
-}
-
-type OTELTracesConfig struct {
-	dig.In
-
-	Enabled       bool    `name:"config.openTelemetry.traces.enabled"`
-	Endpoint      string  `name:"config.openTelemetry.traces.endpoint"`
-	URLPath       string  `name:"config.openTelemetry.traces.urlPath"`
-	Protocol      string  `name:"config.openTelemetry.traces.protocol"`
-	SamplingRate  float64 `name:"config.openTelemetry.traces.samplingRate"`
-	AuthToken     string  `name:"config.openTelemetry.traces.auth.token"`
-	AuthTokenType string  `name:"config.openTelemetry.traces.auth.tokenType"`
-}
-
-type OTELMetricsConfig struct {
-	dig.In
-
-	Enabled        bool          `name:"config.openTelemetry.metrics.enabled"`
-	Endpoint       string        `name:"config.openTelemetry.metrics.endpoint"`
-	URLPath        string        `name:"config.openTelemetry.metrics.urlPath"`
-	Protocol       string        `name:"config.openTelemetry.metrics.protocol"`
-	ExportInterval time.Duration `name:"config.openTelemetry.metrics.exportInterval"`
-	AuthToken      string        `name:"config.openTelemetry.metrics.auth.token"`
-	AuthTokenType  string        `name:"config.openTelemetry.metrics.auth.tokenType"`
-}
-
-// OTELLogsConfig holds OpenTelemetry logs configuration.
-type OTELLogsConfig struct {
-	Enabled       bool
-	Endpoint      string
-	URLPath       string
-	Protocol      string
-	AuthToken     string
-	AuthTokenType string
 }
 
 func NewTextMapPropagator() propagation.TextMapPropagator {
@@ -84,22 +51,43 @@ type SetupDeps struct {
 	dig.In
 
 	OTELConfig
+	OTELLogsConfig
+	ShutdownHooks
 
 	metric.MeterProvider
+	trace.TracerProvider
+	log.LoggerProvider
 
-	RootLogger *slog.Logger
+	RootLogger     *slog.Logger
+	RootLoggerOpts *RootLoggerOpts
 }
 
 func OTELSetup(deps SetupDeps) error { // coverage-ignore -- Hard to test and this is mostly wireup code
-	otelLogger := slog.New(deps.RootLogger.WithGroup("otel").Handler())
+	if !deps.OTELConfig.Enabled {
+		return nil
+	}
 
-	otel.SetLogger(logr.FromSlogHandler(otelLogger.Handler()))
+	var otelLogger logr.Logger
+
+	// We can not use standard RootLogger for otel itself if otel logs forwarding is enabled
+	// Doing so will cause deadloop.
+	if deps.OTELLogsConfig.Enabled {
+		otelLogger = logr.FromSlogHandler(newStandardSlogHandler(deps.RootLoggerOpts))
+	} else {
+		otelLogger = logr.FromSlogHandler(deps.RootLogger.WithGroup("otel").Handler())
+	}
+
+	otel.SetLogger(otelLogger)
 
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(cause error) {
-		otelLogger.Error("OTEL error", slog.String("cause", cause.Error()))
+		otelLogger.Error(cause, "OTEL error")
 	}))
 
-	if !deps.OTELConfig.Enabled || !deps.OTELConfig.RuntimeMetrics {
+	registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-tracer", deps.TracerProvider)
+	registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-meter", deps.MeterProvider)
+	registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-logger", deps.LoggerProvider)
+
+	if !deps.OTELConfig.RuntimeMetrics {
 		return nil
 	}
 

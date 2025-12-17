@@ -2,6 +2,11 @@
 
 defaultLogLevel: INFO
 
+pprofListener:
+  # Make sure your app is fully internal if enabling it in production
+  enabled: false
+  addr: "localhost:6060"
+
 # This should be aligned with actual runtime environment (e.g k8s or similar)
 gracefulShutdownTimeout: 10s
 
@@ -53,6 +58,11 @@ openTelemetry:
   # Logs configuration
   logs:
     enabled: false
+
+    # If true, logs will be sent to both default handler (e.g stdout) and OTEL handler
+    # If false, logs will be sent only to OTEL handler
+    defaultHandlerFanout: false
+    
     endpoint: ""
     urlPath: ""
     protocol: http/protobuf

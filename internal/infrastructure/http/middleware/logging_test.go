@@ -47,7 +47,7 @@ func TestLoggingMiddleware(t *testing.T) {
 	}
 	makeMockDeps := func() mockDeps {
 		var buf bytes.Buffer
-		logger := diag.SetupRootLogger(
+		logger := diag.NewRootLogger(
 			diag.NewRootLoggerOpts().
 				WithJSONLogs(true).
 				WithOutput(&buf).
