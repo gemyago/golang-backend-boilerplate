@@ -5,7 +5,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/apptime"
 
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/require"
 )
 

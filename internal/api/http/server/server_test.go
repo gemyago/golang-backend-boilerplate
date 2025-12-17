@@ -15,7 +15,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

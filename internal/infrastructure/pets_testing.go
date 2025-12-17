@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 )
 
 type RandomUserPetOpt func(*app.UserPet)

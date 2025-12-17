@@ -5,7 +5,6 @@ go 1.25
 require (
 	github.com/go-logr/logr v1.4.3
 	github.com/gofrs/uuid/v5 v5.4.0
-	github.com/jaswdr/faker v1.19.1
 	github.com/jaswdr/faker/v2 v2.9.1
 	github.com/mark3labs/mcp-go v0.43.2
 	github.com/samber/lo v1.52.0
@@ -63,7 +62,7 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/invopop/jsonschema v0.13.0 // indirect
-	github.com/jedib0t/go-pretty/v6 v6.7.5 // indirect
+	github.com/jedib0t/go-pretty/v6 v6.7.7 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/knadh/koanf/parsers/yaml v1.1.0 // indirect
@@ -95,7 +94,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/vektra/mockery/v3 v3.6.1 // indirect
-	github.com/vladopajic/go-test-coverage/v2 v2.18.0 // indirect
+	github.com/vladopajic/go-test-coverage/v2 v2.18.1 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
@@ -105,7 +104,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.39.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/image v0.33.0 // indirect
+	golang.org/x/image v0.34.0 // indirect
 	golang.org/x/mod v0.31.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/term v0.38.0 // indirect

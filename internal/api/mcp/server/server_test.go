@@ -10,7 +10,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/gofrs/uuid/v5"
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 )
 
 const pastYearHours = 24 * 365

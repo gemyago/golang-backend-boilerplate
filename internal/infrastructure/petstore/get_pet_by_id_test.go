@@ -9,7 +9,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	httpservices "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

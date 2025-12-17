@@ -3,7 +3,7 @@
 package app
 
 import (
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 )
 
 func NewRandomAddPetRequest(fake faker.Faker) *AddPetRequest {
