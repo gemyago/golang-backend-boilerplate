@@ -23,11 +23,11 @@ type shutdownHook struct {
 type ShutdownHooks struct {
 	logger *slog.Logger
 	hooks  []shutdownHook
-	deps   ShutdownHooksRegistryDeps
+	deps   ShutdownHooksDeps
 }
 
 // NewShutdownHooks constructor for ShutdownHooks.
-func NewShutdownHooks(deps ShutdownHooksRegistryDeps) *ShutdownHooks {
+func NewShutdownHooks(deps ShutdownHooksDeps) *ShutdownHooks {
 	return &ShutdownHooks{
 		logger: deps.RootLogger.WithGroup("shutdown"),
 		deps:   deps,
@@ -84,7 +84,7 @@ func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error {
 	}
 }
 
-type ShutdownHooksRegistryDeps struct {
+type ShutdownHooksDeps struct {
 	dig.In
 
 	RootLogger *slog.Logger
