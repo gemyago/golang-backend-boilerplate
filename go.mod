@@ -6,6 +6,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/gofrs/uuid/v5 v5.4.0
 	github.com/jaswdr/faker v1.19.1
+	github.com/jaswdr/faker/v2 v2.9.1
 	github.com/mark3labs/mcp-go v0.43.2
 	github.com/samber/lo v1.52.0
 	github.com/samber/slog-http v1.9.0

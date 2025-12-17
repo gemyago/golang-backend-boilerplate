@@ -5,13 +5,14 @@ import (
 	"database/sql"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/apptime"
 	"go.uber.org/dig"
 	_ "modernc.org/sqlite" // SQLite driver
 )
 
 type sqlitePetsRepository struct {
 	db   *sql.DB
-	time TimeProvider
+	time apptime.Provider
 }
 
 // Ensure sqlitePetsRepository implements app.PetsRepository.
@@ -21,7 +22,7 @@ type petsRepositoryDeps struct {
 	dig.In
 
 	DB   *Database
-	Time TimeProvider
+	Time apptime.Provider
 }
 
 func newPetsRepository(deps petsRepositoryDeps) *sqlitePetsRepository {

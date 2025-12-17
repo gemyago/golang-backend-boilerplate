@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/apptime"
 	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,7 @@ func TestUsersRepository(t *testing.T) {
 		})
 		return usersRepositoryDeps{
 			DB:   db,
-			Time: NewMockNow(),
+			Time: apptime.NewMockProvider(),
 		}
 	}
 
@@ -35,7 +36,7 @@ func TestUsersRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newUsersRepository(deps)
-			mockNow := MockNowValue(deps.Time)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
 
@@ -117,7 +118,7 @@ func TestUsersRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newUsersRepository(deps)
-			mockNow := MockNowValue(deps.Time)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
 			err := repo.CreateUser(ctx, *user)
@@ -127,7 +128,7 @@ func TestUsersRepository(t *testing.T) {
 			user.Name = fake.Person().Name()
 			user.Email = fake.Internet().Email()
 			newUpdatedAt := mockNow.Add(1 * time.Millisecond)
-			SetMockNowValue(deps.Time, newUpdatedAt)
+			apptime.SetMockProviderValue(deps.Time, newUpdatedAt)
 
 			// When
 			err = repo.UpdateUser(ctx, *user)
@@ -207,7 +208,7 @@ func TestUsersRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newUsersRepository(deps)
-			mockNow := MockNowValue(deps.Time)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
 			err := repo.CreateUser(ctx, *user)
@@ -276,7 +277,7 @@ func TestUsersRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newUsersRepository(deps)
-			mockNow := MockNowValue(deps.Time)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
 			err := repo.CreateUser(ctx, *user)
@@ -307,7 +308,7 @@ func TestUsersRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newUsersRepository(deps)
-			mockNow := MockNowValue(deps.Time)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
 
@@ -328,7 +329,7 @@ func TestUsersRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newUsersRepository(deps)
-			mockNow := MockNowValue(deps.Time)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
 			err := repo.CreateUser(ctx, *user)
@@ -354,7 +355,7 @@ func TestUsersRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newUsersRepository(deps)
-			mockNow := MockNowValue(deps.Time)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
 			err := repo.CreateUser(ctx, *user)
@@ -415,7 +416,7 @@ func TestUsersRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newUsersRepository(deps)
-			mockNow := MockNowValue(deps.Time)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
 			err := repo.CreateUser(ctx, *user)
@@ -476,7 +477,7 @@ func TestUsersRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newUsersRepository(deps)
-			mockNow := MockNowValue(deps.Time)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
 			// Create multiple users
 			user1 := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
