@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"regexp"
 	"testing"
 
 	"github.com/jaswdr/faker/v2"
@@ -13,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/metric/noop"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
 )
 
 func TestUserCommands(t *testing.T) {
@@ -23,6 +23,7 @@ func TestUserCommands(t *testing.T) {
 			UsersRepo:    NewMockUsersRepository(t),
 			RootLogger:   diag.RootTestLogger(),
 			UsersMetrics: usersMetrics,
+			IDGen:        ident.NewMockGenerator(),
 		}
 	}
 
@@ -48,8 +49,6 @@ func TestUserCommands(t *testing.T) {
 			ctx := context.Background()
 			req := NewRandomCreateUserRequest(fake)
 
-			idRe := regexp.MustCompile(`^[0-9a-fA-F-]{36,36}$`)
-
 			// Expect repository will be queried for email and not found
 			mockRepo.EXPECT().
 				GetUserByEmail(mock.Anything, req.Email).
@@ -62,7 +61,8 @@ func TestUserCommands(t *testing.T) {
 				if u.Name != req.Name {
 					return false
 				}
-				return idRe.MatchString(u.ID)
+				wantID := ident.MockGeneratorLastGenerated(deps.IDGen)
+				return u.ID == wantID.String()
 			})).Return(nil)
 
 			// When

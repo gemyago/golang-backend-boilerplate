@@ -10,6 +10,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
 	"github.com/jaswdr/faker/v2"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
@@ -24,6 +25,7 @@ func TestMCPServer(t *testing.T) {
 			RootLogger:    diag.RootTestLogger(),
 			ShutdownHooks: services.NewTestShutdownHooks(),
 			Controllers:   []ToolsFactory{},
+			IDGen:         ident.NewDefaultGenerator(),
 		}
 	}
 

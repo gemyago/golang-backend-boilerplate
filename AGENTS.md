@@ -76,8 +76,8 @@ More detailed testing best practices are in [doc/testing-best-practices.md](./do
 - Use require.Error or require.ErrorIs when asserting errors
 - Use `t.Context()` instead `context.Background()` OR `context.TODO()` in tests
 - Use factory functions to create reusable random data
-- Use [apptime](../internal/system/apptime/) for time-related testing
-- Use [ident](../internal/system/ident/) for deterministic UUIDs in tests
+- Use [apptime](../internal/system/apptime/) for time-related testing (apptime.NewMockProvider())
+- Use [ident](../internal/system/ident/) for deterministic UUIDs in tests (ident.NewMockGenerator())
 - Follow [mockery](.context/mockery.md) for defining and generating mocks
 
 ## Security

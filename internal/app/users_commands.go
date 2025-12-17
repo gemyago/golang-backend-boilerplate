@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofrs/uuid/v5"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
 	"go.uber.org/dig"
 )
 
@@ -36,6 +36,7 @@ type UserCommands struct {
 	usersRepo    UsersRepository
 	logger       *slog.Logger
 	usersMetrics *UsersMetrics
+	idGen        ident.Generator
 }
 
 type UserCommandsDeps struct {
@@ -45,6 +46,7 @@ type UserCommandsDeps struct {
 
 	UsersRepo  UsersRepository
 	RootLogger *slog.Logger
+	IDGen      ident.Generator
 }
 
 // NewUserCommands returns a concrete struct (not an interface).
@@ -54,6 +56,7 @@ func NewUserCommands(deps UserCommandsDeps) *UserCommands {
 		usersRepo:    deps.UsersRepo,
 		logger:       deps.RootLogger.WithGroup("app.user-commands"),
 		usersMetrics: deps.UsersMetrics,
+		idGen:        deps.IDGen,
 	}
 }
 
@@ -90,7 +93,7 @@ func (c *UserCommands) CreateUser(ctx context.Context, req CreateUserRequest) (*
 	}
 
 	// Generate UUID and create user
-	id := uuid.Must(uuid.NewV4()).String()
+	id := c.idGen.MustNewV7().String()
 	now := time.Now().UTC()
 	user := User{
 		ID:        id,
