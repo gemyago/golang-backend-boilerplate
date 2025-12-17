@@ -31,11 +31,19 @@
 
 ### Common principles
 
+- Define tests in same package
+- Prefer a single top-level test function per component, with nested `t.Run` blocks organizing tests by method and their scenarios.
 - Avoid static variables shared across tests
-- Use random data when possible, use faker (github.com/jaswdr/faker)
+- Use makeMockDeps to initialize dependencies, no inline or repeated setup
+- Use random data when possible, use faker (github.com/jaswdr/faker/v2)
 - Don't pollute testing namespace - if helper functions are only used within one test, nest them inside that test function
 - Compare entire structs when possible instead of individual fields (e.g `assert.Equal(t, expectedUser, actualUser)`)
+- Use require.Error or require.ErrorIs when asserting errors
+- Use `t.Context()` instead `context.Background()` OR `context.TODO()` in tests
 - Use factory functions to create reusable random data
+- Use [apptime](../internal/system/apptime/) for time-related testing
+- Use [ident](../internal/system/ident/) for deterministic UUIDs in tests
+- Follow [mockery](.context/mockery.md) for defining and generating mocks
 
 ### IMPORTANT: Always Use Randomized Data
 
