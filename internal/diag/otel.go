@@ -6,8 +6,10 @@ import (
 	"github.com/go-logr/logr"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/dig"
 )
 
@@ -50,19 +52,26 @@ type SetupDeps struct {
 
 	OTELConfig
 	OTELLogsConfig
+	ShutdownHooks
 
 	metric.MeterProvider
+	trace.TracerProvider
+	log.LoggerProvider
 
 	RootLogger     *slog.Logger
 	RootLoggerOpts *RootLoggerOpts
 }
 
 func OTELSetup(deps SetupDeps) error { // coverage-ignore -- Hard to test and this is mostly wireup code
+	if !deps.OTELConfig.Enabled {
+		return nil
+	}
+
 	var otelLogger logr.Logger
 
 	// We can not use standard RootLogger for otel itself if otel logs forwarding is enabled
 	// Doing so will cause deadloop.
-	if deps.OTELConfig.Enabled && deps.OTELLogsConfig.Enabled {
+	if deps.OTELLogsConfig.Enabled {
 		otelLogger = logr.FromSlogHandler(newStandardSlogHandler(deps.RootLoggerOpts))
 	} else {
 		otelLogger = logr.FromSlogHandler(deps.RootLogger.WithGroup("otel").Handler())
@@ -74,7 +83,11 @@ func OTELSetup(deps SetupDeps) error { // coverage-ignore -- Hard to test and th
 		otelLogger.Error(cause, "OTEL error")
 	}))
 
-	if !deps.OTELConfig.Enabled || !deps.OTELConfig.RuntimeMetrics {
+	registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-tracer", deps.TracerProvider)
+	registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-meter", deps.MeterProvider)
+	registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-logger", deps.LoggerProvider)
+
+	if !deps.OTELConfig.RuntimeMetrics {
 		return nil
 	}
 

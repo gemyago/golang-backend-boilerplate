@@ -25,7 +25,7 @@ type PProfListenerDeps struct {
 //     go tool trace trace.out
 //
 // Also you can use the pprof UI at http://localhost:6060/debug/pprof/
-func StartPProfListener(deps PProfListenerDeps) error {
+func StartPProfListener(deps PProfListenerDeps) error { // coverage-ignore
 	if !deps.Enabled {
 		return nil
 	}

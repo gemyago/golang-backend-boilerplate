@@ -28,8 +28,6 @@ type OTELTracesConfig struct {
 type TracerProviderDeps struct {
 	dig.In
 
-	ShutdownHooks
-
 	Resource     *resource.Resource
 	Config       OTELConfig
 	TracesConfig OTELTracesConfig
@@ -82,8 +80,6 @@ func NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.ParentBased(sdktrace.TraceIDRatioBased(tracesConfig.SamplingRate))),
 		sdktrace.WithResource(res),
 	)
-
-	deps.ShutdownHooks.Register("otel-tracer", tracerProvider.Shutdown)
 
 	return tracerProvider, nil
 }

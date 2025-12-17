@@ -84,7 +84,5 @@ func NewLoggerProvider(
 		sdklog.WithResource(res),
 	)
 
-	// deps.ShutdownHooks.Register("otel-logger", loggerProvider.Shutdown)
-
 	return loggerProvider, nil
 }

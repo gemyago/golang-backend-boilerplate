@@ -29,8 +29,6 @@ type OTELMetricsConfig struct {
 type MeterProviderDeps struct {
 	dig.In
 
-	ShutdownHooks
-
 	Resource *resource.Resource
 
 	Config        OTELConfig
@@ -85,8 +83,6 @@ func NewMeterProvider(
 		)),
 		sdkmetric.WithResource(res),
 	)
-
-	deps.ShutdownHooks.Register("otel-meter", meterProvider.Shutdown)
 
 	return meterProvider, nil
 }

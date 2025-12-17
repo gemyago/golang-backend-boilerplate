@@ -9,8 +9,11 @@ import (
 	"time"
 
 	"github.com/jaswdr/faker"
+	slogmulti "github.com/samber/slog-multi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
+	"go.opentelemetry.io/otel/log/noop"
 )
 
 func TestGetLogAttributesFromContext(t *testing.T) {
@@ -75,7 +78,7 @@ func TestDiagSlogHandler(t *testing.T) {
 			assert.NoError(t, handler.Handle(ctx, originalRec))
 		})
 	})
-	t.Run("SetupRootLogger", func(t *testing.T) {
+	t.Run("NewRootLogger", func(t *testing.T) {
 		t.Run("should setup text handler by default", func(t *testing.T) {
 			logger := NewRootLogger(NewRootLoggerOpts())
 			diagHandler, ok := logger.Handler().(*diagLogHandler)
@@ -87,6 +90,26 @@ func TestDiagSlogHandler(t *testing.T) {
 			diagHandler, ok := logger.Handler().(*diagLogHandler)
 			require.True(t, ok)
 			assert.IsType(t, &slog.JSONHandler{}, diagHandler.target)
+		})
+		t.Run("should setup otel handler", func(t *testing.T) {
+			logger := NewRootLogger(NewRootLoggerOpts().WithOTELConfigs(
+				OTELConfig{Enabled: true},
+				OTELLogsConfig{Enabled: true},
+				noop.NewLoggerProvider(),
+			))
+			diagHandler, ok := logger.Handler().(*diagLogHandler)
+			require.True(t, ok)
+			assert.IsType(t, &otelslog.Handler{}, diagHandler.target)
+		})
+		t.Run("should setup otel handler with fanout", func(t *testing.T) {
+			logger := NewRootLogger(NewRootLoggerOpts().WithOTELConfigs(
+				OTELConfig{Enabled: true},
+				OTELLogsConfig{Enabled: true, DefaultHandlerFanout: true},
+				noop.NewLoggerProvider(),
+			))
+			diagHandler, ok := logger.Handler().(*diagLogHandler)
+			require.True(t, ok)
+			assert.IsType(t, &slogmulti.FanoutHandler{}, diagHandler.target)
 		})
 		t.Run("should ignore optional output file", func(t *testing.T) {
 			testOutput := bytes.Buffer{}

@@ -138,7 +138,6 @@ func newStandardSlogHandler(opts *RootLoggerOpts) slog.Handler {
 }
 
 func NewRootLogger(opts *RootLoggerOpts) *slog.Logger {
-	logHandlerOpts := &slog.HandlerOptions{Level: opts.logLevel}
 	var logHandler slog.Handler
 	if opts.otelConfig.Enabled && opts.otelLogsConfig.Enabled {
 		logHandler = otelslog.NewHandler(
@@ -148,7 +147,7 @@ func NewRootLogger(opts *RootLoggerOpts) *slog.Logger {
 		if opts.otelLogsConfig.DefaultHandlerFanout {
 			// TODO: Once 1.26 is out, replace it with sdk multi handler
 			logHandler = slogmulti.Fanout(
-				slog.NewJSONHandler(opts.output, logHandlerOpts),
+				newStandardSlogHandler(opts),
 				logHandler,
 			)
 		}
