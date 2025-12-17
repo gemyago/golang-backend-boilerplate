@@ -2,7 +2,6 @@ package diag
 
 import (
 	"log/slog"
-	"time"
 
 	"github.com/go-logr/logr"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
@@ -25,43 +24,6 @@ type OTELConfig struct {
 
 	Enabled        bool `name:"config.openTelemetry.enabled"`
 	RuntimeMetrics bool `name:"config.openTelemetry.runtimeMetrics"`
-}
-
-type OTELTracesConfig struct {
-	dig.In
-
-	Enabled       bool    `name:"config.openTelemetry.traces.enabled"`
-	Endpoint      string  `name:"config.openTelemetry.traces.endpoint"`
-	URLPath       string  `name:"config.openTelemetry.traces.urlPath"`
-	Protocol      string  `name:"config.openTelemetry.traces.protocol"`
-	SamplingRate  float64 `name:"config.openTelemetry.traces.samplingRate"`
-	AuthToken     string  `name:"config.openTelemetry.traces.auth.token"`
-	AuthTokenType string  `name:"config.openTelemetry.traces.auth.tokenType"`
-}
-
-type OTELMetricsConfig struct {
-	dig.In
-
-	Enabled        bool          `name:"config.openTelemetry.metrics.enabled"`
-	Endpoint       string        `name:"config.openTelemetry.metrics.endpoint"`
-	URLPath        string        `name:"config.openTelemetry.metrics.urlPath"`
-	Protocol       string        `name:"config.openTelemetry.metrics.protocol"`
-	ExportInterval time.Duration `name:"config.openTelemetry.metrics.exportInterval"`
-	AuthToken      string        `name:"config.openTelemetry.metrics.auth.token"`
-	AuthTokenType  string        `name:"config.openTelemetry.metrics.auth.tokenType"`
-}
-
-// OTELLogsConfig holds OpenTelemetry logs configuration.
-type OTELLogsConfig struct {
-	dig.In
-
-	Enabled              bool   `name:"config.openTelemetry.logs.enabled"`
-	DefaultHandlerFanout bool   `name:"config.openTelemetry.logs.defaultHandlerFanout"`
-	Endpoint             string `name:"config.openTelemetry.logs.endpoint"`
-	URLPath              string `name:"config.openTelemetry.logs.urlPath"`
-	Protocol             string `name:"config.openTelemetry.logs.protocol"`
-	AuthToken            string `name:"config.openTelemetry.logs.auth.token"`
-	AuthTokenType        string `name:"config.openTelemetry.logs.auth.tokenType"`
 }
 
 func NewTextMapPropagator() propagation.TextMapPropagator {

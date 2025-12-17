@@ -13,6 +13,18 @@ import (
 	"go.uber.org/dig"
 )
 
+type OTELTracesConfig struct {
+	dig.In
+
+	Enabled       bool    `name:"config.openTelemetry.traces.enabled"`
+	Endpoint      string  `name:"config.openTelemetry.traces.endpoint"`
+	URLPath       string  `name:"config.openTelemetry.traces.urlPath"`
+	Protocol      string  `name:"config.openTelemetry.traces.protocol"`
+	SamplingRate  float64 `name:"config.openTelemetry.traces.samplingRate"`
+	AuthToken     string  `name:"config.openTelemetry.traces.auth.token"`
+	AuthTokenType string  `name:"config.openTelemetry.traces.auth.tokenType"`
+}
+
 type TracerProviderDeps struct {
 	dig.In
 

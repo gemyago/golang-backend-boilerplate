@@ -13,6 +13,19 @@ import (
 	"go.uber.org/dig"
 )
 
+// OTELLogsConfig holds OpenTelemetry logs configuration.
+type OTELLogsConfig struct {
+	dig.In
+
+	Enabled              bool   `name:"config.openTelemetry.logs.enabled"`
+	DefaultHandlerFanout bool   `name:"config.openTelemetry.logs.defaultHandlerFanout"`
+	Endpoint             string `name:"config.openTelemetry.logs.endpoint"`
+	URLPath              string `name:"config.openTelemetry.logs.urlPath"`
+	Protocol             string `name:"config.openTelemetry.logs.protocol"`
+	AuthToken            string `name:"config.openTelemetry.logs.auth.token"`
+	AuthTokenType        string `name:"config.openTelemetry.logs.auth.tokenType"`
+}
+
 type LoggerProviderDeps struct {
 	dig.In
 
