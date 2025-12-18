@@ -1,9 +1,9 @@
 //go:build !release
 
 // TODO: generated code should include "//go:build !release" tags
-//go:generate mockgen -typed -package diag -destination mock_slog_handler_test.go log/slog Handler
+//go:generate mockgen -typed -package telemetry -destination mock_slog_handler_test.go log/slog Handler
 
-package diag
+package telemetry
 
 import (
 	"fmt"

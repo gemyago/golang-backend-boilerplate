@@ -1,3 +1,3 @@
-package diag
+package telemetry
 
 const CorrelationIDHeader = "X-Correlation-ID"

@@ -191,7 +191,7 @@ import (
 		"net/http/httptest"
 		"testing"
 
-		"github.com/gemyago/atlacp/internal/diag"
+		"github.com/gemyago/atlacp/internal/telemetry"
 		httpservices "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
 		"github.com/jaswdr/faker/v2"
 		"github.com/stretchr/testify/assert"
@@ -202,7 +202,7 @@ import (
 func TestClient_CreateResource(t *testing.T) {
 		makeMockDeps := func(t *testing.T, baseURL string) ClientDeps {
 				// Always include test name in the logger for better debugging
-				rootLogger := diag.RootTestLogger().With("test", t.Name())
+				rootLogger := telemetry.RootTestLogger().With("test", t.Name())
 				return ClientDeps{
 						ClientFactory: httpservices.NewClientFactory(httpservices.ClientFactoryDeps{
 								RootLogger: rootLogger,

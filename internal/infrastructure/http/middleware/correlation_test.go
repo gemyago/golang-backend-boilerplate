@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,9 +20,9 @@ func TestCorrelationMiddleware_RoundTrip(t *testing.T) {
 		// Given
 		expectedCorrelationID := faker.UUID().V4()
 		ctx := context.Background()
-		logAttrs := diag.GetLogAttributesFromContext(ctx)
+		logAttrs := telemetry.GetLogAttributesFromContext(ctx)
 		logAttrs.CorrelationID = slog.StringValue(expectedCorrelationID)
-		ctx = diag.SetLogAttributesToContext(ctx, logAttrs)
+		ctx = telemetry.SetLogAttributesToContext(ctx, logAttrs)
 
 		req := httptest.NewRequest(http.MethodGet, "http://example.com", nil).WithContext(ctx)
 
@@ -34,7 +34,7 @@ func TestCorrelationMiddleware_RoundTrip(t *testing.T) {
 
 		// Then
 		require.NoError(t, err)
-		assert.Equal(t, expectedCorrelationID, req.Header.Get(diag.CorrelationIDHeader))
+		assert.Equal(t, expectedCorrelationID, req.Header.Get(telemetry.CorrelationIDHeader))
 	})
 
 	t.Run("should overwrite existing correlation ID header", func(t *testing.T) {
@@ -42,12 +42,12 @@ func TestCorrelationMiddleware_RoundTrip(t *testing.T) {
 		expectedCorrelationID := faker.UUID().V4()
 		existingHeaderValue := faker.UUID().V4()
 		ctx := context.Background()
-		logAttrs := diag.GetLogAttributesFromContext(ctx)
+		logAttrs := telemetry.GetLogAttributesFromContext(ctx)
 		logAttrs.CorrelationID = slog.StringValue(expectedCorrelationID)
-		ctx = diag.SetLogAttributesToContext(ctx, logAttrs)
+		ctx = telemetry.SetLogAttributesToContext(ctx, logAttrs)
 
 		req := httptest.NewRequest(http.MethodGet, "http://example.com", nil).WithContext(ctx)
-		req.Header.Set(diag.CorrelationIDHeader, existingHeaderValue)
+		req.Header.Set(telemetry.CorrelationIDHeader, existingHeaderValue)
 
 		mockTransport := &mockRoundTripper{}
 		middleware := NewCorrelationMiddleware(mockTransport)
@@ -57,7 +57,7 @@ func TestCorrelationMiddleware_RoundTrip(t *testing.T) {
 
 		// Then
 		require.NoError(t, err)
-		assert.Equal(t, expectedCorrelationID, req.Header.Get(diag.CorrelationIDHeader))
+		assert.Equal(t, expectedCorrelationID, req.Header.Get(telemetry.CorrelationIDHeader))
 	})
 
 	t.Run("should not set header when no correlation ID in context", func(t *testing.T) {
@@ -73,7 +73,7 @@ func TestCorrelationMiddleware_RoundTrip(t *testing.T) {
 
 		// Then
 		require.NoError(t, err)
-		assert.Empty(t, req.Header.Get(diag.CorrelationIDHeader))
+		assert.Empty(t, req.Header.Get(telemetry.CorrelationIDHeader))
 	})
 }
 

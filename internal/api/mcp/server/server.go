@@ -7,9 +7,9 @@ import (
 	"time"
 
 	httpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"go.uber.org/dig"
@@ -78,13 +78,13 @@ func NewMCPServer(deps MCPServerDeps) *MCPServer {
 			func(next mcpserver.ToolHandlerFunc) mcpserver.ToolHandlerFunc {
 				return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 					nextCtx := ctx
-					diagCtx := diag.GetLogAttributesFromContext(nextCtx)
+					diagCtx := telemetry.GetLogAttributesFromContext(nextCtx)
 
-					// We may need to revisit this. It may be so that the diag context is always set
+					// We may need to revisit this. It may be so that the telemetry context is always set
 					// for the stdio transport at least.
 					if diagCtx.CorrelationID.Kind() != slog.KindString {
 						diagCtx.CorrelationID = slog.StringValue(deps.IDGen.MustNewV7().String())
-						nextCtx = diag.SetLogAttributesToContext(nextCtx, diagCtx)
+						nextCtx = telemetry.SetLogAttributesToContext(nextCtx, diagCtx)
 					}
 
 					// It may be quite verbose and we may want to log just the "processed" part.

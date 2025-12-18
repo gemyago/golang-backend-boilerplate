@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http/middleware"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"go.uber.org/dig"
 	"golang.org/x/oauth2"
 )
@@ -27,7 +27,7 @@ type ClientFactoryDeps struct {
 
 	RootLogger *slog.Logger
 
-	OtelHTTPTransportFactory diag.OtelHTTPTransportFactory
+	OtelHTTPTransportFactory telemetry.OtelHTTPTransportFactory
 }
 
 // ClientOption configures HTTP client creation.
@@ -65,7 +65,7 @@ func WithLogging(enabled bool) ClientOption {
 // ClientFactory is responsible for creating configured HTTP clients with middleware.
 type ClientFactory struct {
 	logger                   *slog.Logger
-	otelHTTPTransportFactory diag.OtelHTTPTransportFactory
+	otelHTTPTransportFactory telemetry.OtelHTTPTransportFactory
 }
 
 // NewClientFactory creates a new client factory.

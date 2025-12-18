@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -141,7 +141,7 @@ func TestSendRequest(t *testing.T) {
 
 		client := server.Client()
 		client.Transport = NewClientFactory(ClientFactoryDeps{
-			RootLogger: diag.RootTestLogger(),
+			RootLogger: telemetry.RootTestLogger(),
 		}).CreateClient().Transport
 		ctx := t.Context()
 

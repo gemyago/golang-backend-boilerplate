@@ -9,8 +9,8 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
 	"golang.org/x/sys/unix"
@@ -39,7 +39,7 @@ func startServer(params startServerParams) error {
 
 		err := params.ShutdownHooks.PerformShutdown(rootCtx)
 		if err != nil {
-			rootLogger.ErrorContext(rootCtx, "Failed to shut down gracefully", diag.ErrAttr(err))
+			rootLogger.ErrorContext(rootCtx, "Failed to shut down gracefully", telemetry.ErrAttr(err))
 		}
 
 		rootLogger.InfoContext(rootCtx, "Service stopped",

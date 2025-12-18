@@ -11,7 +11,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -25,7 +25,7 @@ func TestUsers(t *testing.T) {
 		mockCommands := NewMockUserCommands(t)
 		mockQueries := NewMockUserQueries(t)
 		deps := UsersControllerDeps{
-			RootLogger:   diag.RootTestLogger(),
+			RootLogger:   telemetry.RootTestLogger(),
 			UserCommands: mockCommands,
 			UserQueries:  mockQueries,
 		}

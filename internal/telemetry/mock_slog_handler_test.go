@@ -4,7 +4,7 @@
 
 //go:build !release
 
-package diag
+package telemetry
 
 import (
 	"context"

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 )
 
 func TestPetsCommands(t *testing.T) {
@@ -21,7 +21,7 @@ func TestPetsCommands(t *testing.T) {
 			PetsRepo:       NewMockPetsRepository(t),
 			UsersRepo:      NewMockUsersRepository(t),
 			PetstoreClient: NewMockPetstoreClient(t),
-			RootLogger:     diag.RootTestLogger(),
+			RootLogger:     telemetry.RootTestLogger(),
 		}
 	}
 

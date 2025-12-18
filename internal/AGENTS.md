@@ -74,7 +74,7 @@ Mapping from adapter specific data types to application layer data types may nee
   - [internal/infrastructure/users_repository_test.go](./infrastructure/users_repository_test.go)
 
 ## Logging and Diagnostics
-- Use log/slog via DI; no globals. See [internal/diag/slog.go](./diag/slog.go) and [internal/diag/testing.go](./diag/testing.go)
+- Use log/slog via DI; no globals. See [internal/telemetry/slog.go](./telemetry/slog.go) and [internal/telemetry/testing.go](./telemetry/testing.go)
 - Follow `.golangci.yml` slog rules; prefer context-aware logging.
 
 ## Task completion protocol

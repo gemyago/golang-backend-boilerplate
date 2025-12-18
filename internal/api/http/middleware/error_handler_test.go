@@ -7,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewAppErrorHandler(t *testing.T) {
-	handler := NewAppErrorHandler(diag.RootTestLogger())
+	handler := NewAppErrorHandler(telemetry.RootTestLogger())
 	t.Run("NotFoundError sets 404", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/", nil)

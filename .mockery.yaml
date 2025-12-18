@@ -13,10 +13,10 @@ packages:
     interfaces:
       Handler:
         config:
-          pkgname: diag
+          pkgname: telemetry
           structname: '{{.Mock}}Slog{{.InterfaceName}}'
           filename: "mock_slog_{{snakecase .InterfaceName}}_test.go"
-          dir: 'internal/diag'
+          dir: 'internal/telemetry'
   github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1controllers:
     interfaces:
       UserCommands:

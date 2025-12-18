@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 )
 
 func NewAppErrorHandler(rootLogger *slog.Logger) func(w http.ResponseWriter, r *http.Request, err error) {
@@ -27,6 +27,6 @@ func NewAppErrorHandler(rootLogger *slog.Logger) func(w http.ResponseWriter, r *
 			logLevel = slog.LevelError
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-		logger.Log(r.Context(), logLevel, "Failed to process request", diag.ErrAttr(err))
+		logger.Log(r.Context(), logLevel, "Failed to process request", telemetry.ErrAttr(err))
 	}
 }

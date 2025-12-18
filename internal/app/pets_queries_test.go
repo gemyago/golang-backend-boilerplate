@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,7 +26,7 @@ func TestPetsQueries(t *testing.T) {
 			PetsRepo:       NewMockPetsRepository(t),
 			UsersRepo:      NewMockUsersRepository(t),
 			PetstoreClient: NewMockPetstoreClient(t),
-			RootLogger:     diag.RootTestLogger(),
+			RootLogger:     telemetry.RootTestLogger(),
 			TracerProvider: traceNoop.NewTracerProvider(),
 			MeeterProvider: meeterNoop.NewMeterProvider(),
 		}

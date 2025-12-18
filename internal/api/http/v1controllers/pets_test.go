@@ -12,8 +12,8 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -27,7 +27,7 @@ func TestPets(t *testing.T) {
 		mockCommands := NewMockPetsCommands(t)
 		mockQueries := NewMockPetsQueries(t)
 		deps := PetsControllerDeps{
-			RootLogger:   diag.RootTestLogger(),
+			RootLogger:   telemetry.RootTestLogger(),
 			PetsCommands: mockCommands,
 			PetsQueries:  mockQueries,
 		}

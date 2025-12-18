@@ -8,7 +8,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,7 +19,7 @@ func TestEcho(t *testing.T) {
 		echoService *app.EchoService
 	}
 	makeMockDeps := func() mockDeps {
-		rootLogger := diag.RootTestLogger()
+		rootLogger := telemetry.RootTestLogger()
 
 		// In real world example a mock of EchoService would be used
 		echoService := app.NewEchoService(app.EchoServiceDeps{

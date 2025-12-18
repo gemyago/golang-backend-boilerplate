@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 )
 
 // CorrelationMiddlewareDeps contains dependencies for the correlation middleware.
@@ -25,10 +25,10 @@ func NewCorrelationMiddleware(transport http.RoundTripper) http.RoundTripper {
 // RoundTrip implements http.RoundTripper interface.
 // Adds correlation ID header to the request.
 func (c *CorrelationMiddleware) RoundTrip(req *http.Request) (*http.Response, error) {
-	logAttrs := diag.GetLogAttributesFromContext(req.Context())
+	logAttrs := telemetry.GetLogAttributesFromContext(req.Context())
 	if logAttrs.CorrelationID.Kind() == slog.KindString {
 		if correlationID := logAttrs.CorrelationID.String(); correlationID != "" {
-			req.Header.Set(diag.CorrelationIDHeader, correlationID)
+			req.Header.Set(telemetry.CorrelationIDHeader, correlationID)
 		}
 	}
 	return c.transport.RoundTrip(req)

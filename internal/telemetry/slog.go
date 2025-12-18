@@ -1,4 +1,4 @@
-package diag
+package telemetry
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 type contextKey string
 
 const (
-	contextDiagAttrs = contextKey("diag.context-key.log-attribs")
+	contextDiagAttrs = contextKey("telemetry.context-key.log-attribs")
 )
 
 type LogAttributes struct {
