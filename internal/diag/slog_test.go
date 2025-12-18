@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 	slogmulti "github.com/samber/slog-multi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

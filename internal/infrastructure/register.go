@@ -2,7 +2,6 @@ package infrastructure
 
 import (
 	"context"
-	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
@@ -13,9 +12,6 @@ import (
 
 func Register(rootCtx context.Context, container *dig.Container) error {
 	return di.ProvideAll(container,
-		NewTimeProvider,
-		di.ProvideValue(time.NewTicker),
-		NewShutdownHooks,
 		httpservices.NewClientFactory,
 		newDBProvider(rootCtx),
 		di.ProvideFactoryAs[app.UsersRepository](newUsersRepository),

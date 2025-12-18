@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
-	"github.com/gofrs/uuid/v5"
-	"github.com/jaswdr/faker"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
+	"github.com/jaswdr/faker/v2"
 )
 
 const pastYearHours = 24 * 365
@@ -42,7 +42,7 @@ func WithUserTimestamps(createdAt, updatedAt time.Time) RandomUserOpt {
 func NewRandomUser(fake faker.Faker, opts ...RandomUserOpt) *app.User {
 	randomPrefix := "(" + fake.RandomStringWithLength(5) + ") "
 	user := &app.User{
-		ID:        uuid.Must(uuid.NewV4()).String(),
+		ID:        ident.NewDefaultGenerator().MustNewV7().String(),
 		Name:      randomPrefix + fake.Person().Name(),
 		Email:     randomPrefix + fake.Internet().Email(),
 		CreatedAt: fake.Time().Time(time.Now().Add(-time.Hour * pastYearHours)), // Random time in the past year

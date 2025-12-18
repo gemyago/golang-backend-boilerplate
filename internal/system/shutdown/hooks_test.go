@@ -1,4 +1,4 @@
-package infrastructure
+package shutdown
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -32,8 +32,8 @@ func (m *mockShutdownHook) shutdownNoCtx() error {
 
 func TestShutdownHooks(t *testing.T) {
 	fake := faker.New()
-	makeMockDeps := func() ShutdownHooksDeps {
-		return ShutdownHooksDeps{
+	makeMockDeps := func() HooksDeps {
+		return HooksDeps{
 			RootLogger:              diag.RootTestLogger(),
 			GracefulShutdownTimeout: time.Duration(10+rand.IntN(1000)) * time.Second,
 		}
@@ -42,7 +42,7 @@ func TestShutdownHooks(t *testing.T) {
 	t.Run("HasHook", func(t *testing.T) {
 		t.Run("should return true if such hook has been registered", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewShutdownHooks(deps)
+			registry := NewHooks(deps)
 			hookName := fake.Lorem().Word()
 			fn := func(_ context.Context) error { return nil }
 			assert.False(t, registry.HasHook(hookName, fn))
@@ -55,7 +55,7 @@ func TestShutdownHooks(t *testing.T) {
 	t.Run("PerformShutdown", func(t *testing.T) {
 		t.Run("should call all hooks", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewShutdownHooks(deps)
+			registry := NewHooks(deps)
 
 			hooks := []*mockShutdownHook{
 				{name: fake.Lorem().Word()},
@@ -80,7 +80,7 @@ func TestShutdownHooks(t *testing.T) {
 
 		t.Run("should call hooks without context", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewShutdownHooks(deps)
+			registry := NewHooks(deps)
 
 			hooks := []*mockShutdownHook{
 				{name: fake.Lorem().Word()},
@@ -105,7 +105,7 @@ func TestShutdownHooks(t *testing.T) {
 
 		t.Run("should return error if any hook fails", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewShutdownHooks(deps)
+			registry := NewHooks(deps)
 
 			hooks := []*mockShutdownHook{
 				{name: fake.Lorem().Word()},

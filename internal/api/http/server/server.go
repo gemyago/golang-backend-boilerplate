@@ -9,18 +9,20 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
 	sloghttp "github.com/samber/slog-http"
 	"go.uber.org/dig"
+
+	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/middleware"
 )
 
 type HTTPServerDeps struct {
 	dig.In `ignore-unexported:"true"`
 
 	// services
-	*services.ShutdownHooks
+	ShutdownHooks *shutdown.Hooks
 
 	RootLogger *slog.Logger
 
@@ -112,6 +114,7 @@ type RouterMiddlewareDeps struct {
 	AccessLogsLevel string `name:"config.httpServer.accessLogsLevel"`
 
 	OTELMiddleware diag.OtelHTTPMiddleware
+	IDGen          ident.Generator
 }
 
 func NewRouterMiddleware(deps RouterMiddlewareDeps) RouterMiddleware {
@@ -129,7 +132,7 @@ func NewRouterMiddleware(deps RouterMiddlewareDeps) RouterMiddleware {
 
 	chain := middleware.Chain(
 		middleware.Middleware(deps.OTELMiddleware), // otel goes first
-		middleware.NewCorrelationMiddleware(middleware.NewCorrelationMiddlewareCfg()),
+		middleware.NewCorrelationMiddleware(deps.IDGen),
 		sloghttp.NewWithConfig(deps.RootLogger, sloghttp.Config{
 			DefaultLevel:     defaultLogLevel,
 			ClientErrorLevel: clientErrorLevel,

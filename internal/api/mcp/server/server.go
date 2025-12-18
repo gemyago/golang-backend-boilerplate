@@ -8,8 +8,8 @@ import (
 
 	httpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
-	"github.com/gofrs/uuid/v5"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"go.uber.org/dig"
@@ -37,9 +37,10 @@ func (f ToolsFactoryFunc) NewTools() []mcpserver.ServerTool {
 type MCPServerDeps struct {
 	dig.In
 
-	*services.ShutdownHooks
+	ShutdownHooks *shutdown.Hooks
 
 	RootLogger *slog.Logger
+	IDGen      ident.Generator
 
 	// config
 	Name     string `name:"config.mcpServer.name"`
@@ -62,7 +63,7 @@ type MCPServer struct {
 	mcpServer     *mcpserver.MCPServer
 	deps          MCPServerDeps
 	logger        *slog.Logger
-	shutdownHooks *services.ShutdownHooks
+	shutdownHooks *shutdown.Hooks
 }
 
 // NewMCPServer creates a new MCP server instance.
@@ -82,7 +83,7 @@ func NewMCPServer(deps MCPServerDeps) *MCPServer {
 					// We may need to revisit this. It may be so that the diag context is always set
 					// for the stdio transport at least.
 					if diagCtx.CorrelationID.Kind() != slog.KindString {
-						diagCtx.CorrelationID = slog.StringValue(uuid.Must(uuid.NewV4()).String())
+						diagCtx.CorrelationID = slog.StringValue(deps.IDGen.MustNewV7().String())
 						nextCtx = diag.SetLogAttributesToContext(nextCtx, diagCtx)
 					}
 

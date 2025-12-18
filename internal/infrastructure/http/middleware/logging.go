@@ -79,7 +79,7 @@ func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error)
 	level := slog.LevelDebug
 
 	// We log everything above 400 as warnings for better visibility
-	if resp.StatusCode >= 400 && resp.StatusCode < 599 {
+	if resp.StatusCode >= 400 && resp.StatusCode < 600 {
 		level = slog.LevelWarn
 	}
 

@@ -5,7 +5,7 @@ package app
 import (
 	"time"
 
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 )
 
 type UserOption func(*User)

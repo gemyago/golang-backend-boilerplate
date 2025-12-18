@@ -3,7 +3,9 @@ package infrastructure
 import (
 	"testing"
 
-	"github.com/jaswdr/faker"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/apptime"
+
+	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,7 +20,7 @@ func TestPetsRepository(t *testing.T) {
 		})
 		return petsRepositoryDeps{
 			DB:   db,
-			Time: NewMockNow(),
+			Time: apptime.NewMockProvider(),
 		}
 	}
 
@@ -266,7 +268,7 @@ func TestPetsRepository(t *testing.T) {
 			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
 			usersRepo := newUsersRepository(usersDeps)
 			fake := faker.New()
-			mockNow := MockNowValue(deps.Time)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
 			// Create a user
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))

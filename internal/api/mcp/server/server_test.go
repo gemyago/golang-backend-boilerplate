@@ -9,8 +9,9 @@ import (
 	"net/http"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
-	"github.com/jaswdr/faker"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/jaswdr/faker/v2"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
@@ -22,8 +23,9 @@ func TestMCPServer(t *testing.T) {
 	makeMockDeps := func() MCPServerDeps {
 		return MCPServerDeps{
 			RootLogger:    diag.RootTestLogger(),
-			ShutdownHooks: services.NewTestShutdownHooks(),
+			ShutdownHooks: shutdown.NewTestHooks(),
 			Controllers:   []ToolsFactory{},
+			IDGen:         ident.NewDefaultGenerator(),
 		}
 	}
 

@@ -42,7 +42,7 @@ AI must **always** use `--noop` flag to dry-run startup checks without external 
 ## Deploy (iteration)
 - Install Helm toolchain: `make -C deploy tools`
 - Render chart: `helm template deploy/helm/api-service --debug --name-template api-service -f deploy/helm/api-service/values.yaml`
-- Install/upgrade (dry-run): `helm upgrade api-service deploy/helm/api-service --install --namespace golang-backend-boilerplate -f deploy/helm/api-service/values.yaml --create-namespace --dry-run`
+- Install/upgrade (dry-run): `helm upgrade api-service deploy/helm/api-service --install --namespace community-manager -f deploy/helm/api-service/values.yaml --create-namespace --dry-run`
 
 ## Configuration & Environment
 - Embedded configs: `internal/config/default.yaml`, `<env>.yaml`, optional `<env>-user.yaml`
@@ -61,15 +61,23 @@ Codebase is split on multiple parts:
 ## Code Style & Patterns
 - Lint strictly: `make lint` (see `.golangci.yml`). Use `//nolint:<rule>` only with justification.
 - Many linting issues are auto fixable with `bin/golangci-lint run --fix`, try running it to apply fixes prior to direct updates
+- Wrap errors with `fmt.Errorf("<something>: %w", err)`
 
 ### Testing Style and Patterns
 
-More detailed testing best practices are in [doc/testing-best-practices.md](./doc/testing-best-practices.md). Key points:
+More detailed testing best practices are in [doc/testing-best-practices.md](./doc/testing-best-practices.md). Common principles:
 - Define tests in same package
-- Prefer single top-level test function per component and do multiple nested run blocks
+- Prefer a single top-level test function per component, with nested `t.Run` blocks organizing tests by method and their scenarios.
+- Avoid static variables shared across tests
 - Use makeMockDeps to initialize dependencies, no inline or repeated setup
+- Use random data when possible, use faker (github.com/jaswdr/faker/v2)
+- Don't pollute testing namespace - if helper functions are only used within one test, nest them inside that test function
+- Compare entire structs when possible instead of individual fields (e.g `assert.Equal(t, expectedUser, actualUser)`)
 - Use require.Error or require.ErrorIs when asserting errors
-- Use faker (github.com/jaswdr/faker) to generate random texts or other data
+- Use `t.Context()` instead `context.Background()` OR `context.TODO()` in tests
+- Use factory functions to create reusable random data
+- Use [apptime](../internal/system/apptime/) for time-related testing (apptime.NewMockProvider())
+- Use [ident](../internal/system/ident/) for deterministic UUIDs in tests (ident.NewMockGenerator())
 - Follow [mockery](.context/mockery.md) for defining and generating mocks
 
 ## Security

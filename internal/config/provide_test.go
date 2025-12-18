@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
-	"github.com/jaswdr/faker"
+	"github.com/jaswdr/faker/v2"
 	"github.com/samber/lo"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"

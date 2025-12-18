@@ -21,6 +21,8 @@ exclude:
   paths:
     - testing.go
     - mock_.*.go
+    - mock_*.go
+    - mock.go
     - register.go # Dependency injection setup
     - internal/api/http/v1routes/.* # Generated code
     - internal/app/models/.* # Generated code

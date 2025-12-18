@@ -6,14 +6,16 @@ import (
 	"errors"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
-	"github.com/gofrs/uuid/v5"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/apptime"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
 	"go.uber.org/dig"
 	_ "modernc.org/sqlite" // SQLite driver
 )
 
 type sqliteUsersRepository struct {
-	db   *sql.DB
-	time TimeProvider
+	db    *sql.DB
+	time  apptime.Provider
+	idGen ident.Generator
 }
 
 // Ensure sqliteUsersRepository implements app.UsersRepository.
@@ -22,12 +24,17 @@ var _ app.UsersRepository = (*sqliteUsersRepository)(nil)
 type usersRepositoryDeps struct {
 	dig.In
 
-	DB   *Database
-	Time TimeProvider
+	DB    *Database
+	Time  apptime.Provider
+	IDGen ident.Generator
 }
 
 func newUsersRepository(deps usersRepositoryDeps) *sqliteUsersRepository {
-	return &sqliteUsersRepository{db: deps.DB.instance, time: deps.Time}
+	return &sqliteUsersRepository{
+		db:    deps.DB.instance,
+		time:  deps.Time,
+		idGen: deps.IDGen,
+	}
 }
 
 func (r *sqliteUsersRepository) ensureRowsUpdated(result sql.Result) error {
@@ -44,7 +51,7 @@ func (r *sqliteUsersRepository) ensureRowsUpdated(result sql.Result) error {
 func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user app.User) error {
 	// Generate UUID if not provided
 	if user.ID == "" {
-		user.ID = uuid.Must(uuid.NewV4()).String()
+		user.ID = r.idGen.MustNewV7().String()
 	}
 
 	// Set timestamps

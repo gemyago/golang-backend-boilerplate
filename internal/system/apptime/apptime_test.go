@@ -1,4 +1,4 @@
-package infrastructure
+package apptime
 
 import (
 	"testing"
@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTimeProvider_Now(t *testing.T) {
-	tp := NewTimeProvider()
+func TestSystemProvider_Now(t *testing.T) {
+	tp := NewSystemProvider()
 	now := time.Now()
 	got := tp.Now()
 	assert.WithinDuration(t, now, got, time.Second)
