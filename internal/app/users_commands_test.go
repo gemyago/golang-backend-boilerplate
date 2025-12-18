@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric/noop"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 )
 
 func TestUserCommands(t *testing.T) {
@@ -21,7 +21,7 @@ func TestUserCommands(t *testing.T) {
 		usersMetrics, _ := newUsersMetrics(noop.NewMeterProvider())
 		return UserCommandsDeps{
 			UsersRepo:    NewMockUsersRepository(t),
-			RootLogger:   diag.RootTestLogger(),
+			RootLogger:   telemetry.RootTestLogger(),
 			UsersMetrics: usersMetrics,
 			IDGen:        ident.NewMockGenerator(),
 		}

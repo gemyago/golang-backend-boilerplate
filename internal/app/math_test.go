@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,7 +12,7 @@ import (
 
 func makeMathServiceDeps() MathServiceDeps {
 	return MathServiceDeps{
-		RootLogger: diag.RootTestLogger(),
+		RootLogger: telemetry.RootTestLogger(),
 	}
 }
 

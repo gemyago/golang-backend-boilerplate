@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ func TestHTTPServer(t *testing.T) {
 	makeDeps := func() HTTPServerDeps {
 		port := 50000 + rand.IntN(15000)
 		return HTTPServerDeps{
-			RootLogger:    diag.RootTestLogger(),
+			RootLogger:    telemetry.RootTestLogger(),
 			Host:          "localhost",
 			Port:          port,
 			ShutdownHooks: shutdown.NewTestHooks(),
@@ -133,7 +133,7 @@ func TestRouterMiddleware(t *testing.T) {
 	t.Run("should wireup the middleware", func(t *testing.T) {
 		otelInvoked := false
 		deps := RouterMiddlewareDeps{
-			RootLogger:      diag.RootTestLogger(),
+			RootLogger:      telemetry.RootTestLogger(),
 			AccessLogsLevel: slog.LevelInfo.String(),
 			OTELMiddleware: func(h http.Handler) http.Handler {
 				otelInvoked = true

@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +16,7 @@ import (
 
 func TestRecover(t *testing.T) {
 	fake := faker.New()
-	rootLogger := diag.RootTestLogger()
+	rootLogger := telemetry.RootTestLogger()
 
 	t.Run("should call next", func(t *testing.T) {
 		nextCalled := true

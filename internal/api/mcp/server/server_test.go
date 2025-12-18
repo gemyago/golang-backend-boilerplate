@@ -8,9 +8,9 @@ import (
 
 	"net/http"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
@@ -22,7 +22,7 @@ func TestMCPServer(t *testing.T) {
 	fake := faker.New()
 	makeMockDeps := func() MCPServerDeps {
 		return MCPServerDeps{
-			RootLogger:    diag.RootTestLogger(),
+			RootLogger:    telemetry.RootTestLogger(),
 			ShutdownHooks: shutdown.NewTestHooks(),
 			Controllers:   []ToolsFactory{},
 			IDGen:         ident.NewDefaultGenerator(),
@@ -101,7 +101,7 @@ func TestMCPServer(t *testing.T) {
 			deps.Controllers = newToolsFactories(
 				wantCall.Params.Name,
 				func(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-					diagCtx := diag.GetLogAttributesFromContext(ctx)
+					diagCtx := telemetry.GetLogAttributesFromContext(ctx)
 					assert.NotEmpty(t, diagCtx.CorrelationID)
 					contextChecked = true
 					return newToolCallResult(), nil
@@ -125,7 +125,7 @@ func TestMCPServer(t *testing.T) {
 			wantCorrelationID := fake.UUID().V4()
 			wantCall := makeToolCallRequest()
 
-			callCtx := diag.SetLogAttributesToContext(t.Context(), diag.LogAttributes{
+			callCtx := telemetry.SetLogAttributesToContext(t.Context(), telemetry.LogAttributes{
 				CorrelationID: slog.StringValue(wantCorrelationID),
 			})
 
@@ -133,7 +133,7 @@ func TestMCPServer(t *testing.T) {
 			deps.Controllers = newToolsFactories(
 				wantCall.Params.Name,
 				func(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-					diagCtx := diag.GetLogAttributesFromContext(ctx)
+					diagCtx := telemetry.GetLogAttributesFromContext(ctx)
 					assert.Equal(t, wantCorrelationID, diagCtx.CorrelationID.String())
 					contextChecked = true
 					return newToolCallResult(), nil

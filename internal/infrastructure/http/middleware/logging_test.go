@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,8 +47,8 @@ func TestLoggingMiddleware(t *testing.T) {
 	}
 	makeMockDeps := func() mockDeps {
 		var buf bytes.Buffer
-		logger := diag.NewRootLogger(
-			diag.NewRootLoggerOpts().
+		logger := telemetry.NewRootLogger(
+			telemetry.NewRootLoggerOpts().
 				WithJSONLogs(true).
 				WithOutput(&buf).
 				WithLogLevel(slog.LevelDebug),

@@ -8,11 +8,11 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
 	"github.com/gemyago/golang-backend-boilerplate/internal/config"
 	"github.com/gemyago/golang-backend-boilerplate/internal/di"
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/apptime"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/spf13/viper"
 	otellog "go.opentelemetry.io/otel/log"
 	"go.uber.org/dig"
@@ -34,11 +34,11 @@ func Setup(
 	}
 
 	newRootLoggerOptions := func(
-		otelConfig diag.OTELConfig,
-		otelLogsConfig diag.OTELLogsConfig,
+		otelConfig telemetry.OTELConfig,
+		otelLogsConfig telemetry.OTELLogsConfig,
 		otellogProvider otellog.LoggerProvider,
-	) *diag.RootLoggerOpts {
-		return diag.NewRootLoggerOpts().
+	) *telemetry.RootLoggerOpts {
+		return telemetry.NewRootLoggerOpts().
 			WithJSONLogs(cfg.GetBool("jsonLogs")).
 			WithLogLevel(logLevel).
 			WithOptionalOutputFile(cfg.GetString("logs-file")).
@@ -56,16 +56,16 @@ func Setup(
 			ident.NewDefaultGenerator,
 			di.ProvideImplementation[*ident.DefaultGenerator, ident.Generator],
 
-			// We can't directly use shutdown hooks in diag, since diag is used everywhere.
+			// We can't directly use shutdown hooks in telemetry, since telemetry is used everywhere.
 			// This is a good place to register the implementation.
 			shutdown.NewHooks,
-			di.ProvideImplementation[*shutdown.Hooks, diag.ShutdownHooks],
+			di.ProvideImplementation[*shutdown.Hooks, telemetry.ShutdownHooks],
 		),
 
 		config.Provide(container, cfg),
 
-		// diag needs to happen separately
-		diag.Register(rootCtx, container),
+		// telemetry needs to happen separately
+		telemetry.Register(rootCtx, container),
 
 		// app layer
 		app.Register(container),
@@ -74,6 +74,6 @@ func Setup(
 		infrastructure.Register(rootCtx, container),
 
 		// some setup after all components are registered
-		container.Invoke(diag.OTELSetup),
+		container.Invoke(telemetry.OTELSetup),
 	)
 }

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
@@ -24,7 +24,7 @@ type DatabaseDeps struct {
 	metric.MeterProvider
 	trace.TracerProvider
 
-	OTELConfig diag.OTELConfig
+	OTELConfig telemetry.OTELConfig
 
 	DSN string `name:"config.database.dsn"`
 }

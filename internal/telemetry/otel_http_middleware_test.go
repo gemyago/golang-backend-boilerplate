@@ -1,4 +1,4 @@
-package diag
+package telemetry
 
 import (
 	"net/http"

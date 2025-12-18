@@ -1,4 +1,4 @@
-package diag
+package telemetry
 
 import (
 	"bytes"
@@ -63,7 +63,7 @@ func TestDiagSlogHandler(t *testing.T) {
 			target.EXPECT().Handle(ctx, originalRec).Return(nil)
 			assert.NoError(t, handler.Handle(ctx, originalRec))
 		})
-		t.Run("should add diag attributes", func(t *testing.T) {
+		t.Run("should add telemetry attributes", func(t *testing.T) {
 			target := NewMockSlogHandler(t)
 
 			handler := diagLogHandler{target: target}

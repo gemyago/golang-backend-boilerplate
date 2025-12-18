@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	sloghttp "github.com/samber/slog-http"
 	"go.uber.org/dig"
 
@@ -38,7 +38,7 @@ type HTTPServerDeps struct {
 	// handler
 	Handler http.Handler
 
-	OTELMiddleware diag.OtelHTTPMiddleware
+	OTELMiddleware telemetry.OtelHTTPMiddleware
 
 	// listeningSignal is an optional channel that Start will close when the server is listening.
 	// Primarily for testing.
@@ -113,7 +113,7 @@ type RouterMiddlewareDeps struct {
 	// config
 	AccessLogsLevel string `name:"config.httpServer.accessLogsLevel"`
 
-	OTELMiddleware diag.OtelHTTPMiddleware
+	OTELMiddleware telemetry.OtelHTTPMiddleware
 	IDGen          ident.Generator
 }
 
@@ -144,7 +144,7 @@ func NewRouterMiddleware(deps RouterMiddlewareDeps) RouterMiddleware {
 			WithResponseHeader: true,
 
 			// Log handler will add those, we don't want them twice
-			// see diag/slog.go for more details
+			// see telemetry/slog.go for more details
 			WithSpanID:  false,
 			WithTraceID: false,
 		}),

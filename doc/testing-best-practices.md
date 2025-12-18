@@ -161,7 +161,7 @@ func TestMyService(t *testing.T) {
     // Use explicit t parameter if mock constructor requires it
     // do not use top-level t parameter
     makeMockDeps := func(t *testing.T) MyServiceDeps {
-        rootLogger := diag.RootTestLogger().With("test", t.Name())
+        rootLogger := telemetry.RootTestLogger().With("test", t.Name())
         return MyServiceDeps{
             Repository: NewMockMyRepository(t),
             RootLogger: rootLogger,
