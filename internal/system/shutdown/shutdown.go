@@ -1,6 +1,6 @@
-// ShutdownHooks are used to implement a graceful shutdown
-// of the application. This may include closing database connections, flushing pending
-// events to the queue, shutting down the http server, etc.
+// Hooks are used to perform a graceful shutdown
+// of the application. This may include closing database connections,
+// shutting down the http server, etc.
 
 package lifecycle
 
