@@ -2,7 +2,7 @@
 // of the application. This may include closing database connections,
 // shutting down the http server, etc.
 
-package lifecycle
+package shutdown
 
 import (
 	"context"
@@ -35,7 +35,7 @@ type Hooks struct {
 	deps   HooksDeps
 }
 
-// NewHooks constructor for ShutdownHooks.
+// NewHooks creates a new instance of Hooks.
 func NewHooks(deps HooksDeps) *Hooks {
 	return &Hooks{
 		logger: deps.RootLogger.WithGroup("shutdown"),
