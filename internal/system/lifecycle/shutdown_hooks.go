@@ -2,7 +2,7 @@
 // of the application. This may include closing database connections,
 // shutting down the http server, etc.
 
-package shutdown
+package lifecycle
 
 import (
 	"context"
@@ -15,12 +15,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type hook struct {
+type shutdownHook struct {
 	name       string
 	shutdownFn func(ctx context.Context) error
 }
 
-type HooksDeps struct {
+type ShutdownHooksDeps struct {
 	dig.In
 
 	RootLogger *slog.Logger
@@ -29,15 +29,15 @@ type HooksDeps struct {
 	GracefulShutdownTimeout time.Duration `name:"config.gracefulShutdownTimeout"`
 }
 
-type Hooks struct {
+type ShutdownHooks struct {
 	logger *slog.Logger
-	hooks  []hook
-	deps   HooksDeps
+	hooks  []shutdownHook
+	deps   ShutdownHooksDeps
 }
 
-// NewHooks creates a new instance of Hooks.
-func NewHooks(deps HooksDeps) *Hooks {
-	return &Hooks{
+// NewShutdownHooks creates a new instance of Hooks.
+func NewShutdownHooks(deps ShutdownHooksDeps) *ShutdownHooks {
+	return &ShutdownHooks{
 		logger: deps.RootLogger.WithGroup("shutdown"),
 		deps:   deps,
 	}
@@ -45,7 +45,7 @@ func NewHooks(deps HooksDeps) *Hooks {
 
 // HasHook checks if a shutdown hook with the given name is registered.
 // Typical usage is in tests and must be carefully considered for production scenarios.
-func (h *Hooks) HasHook(name string, method any) bool {
+func (h *ShutdownHooks) HasHook(name string, method any) bool {
 	for _, hook := range h.hooks {
 		if hook.name == name {
 			return reflect.ValueOf(hook.shutdownFn).Pointer() == reflect.ValueOf(method).Pointer()
@@ -54,17 +54,17 @@ func (h *Hooks) HasHook(name string, method any) bool {
 	return false
 }
 
-func (h *Hooks) Register(name string, shutdown func(ctx context.Context) error) {
-	h.hooks = append(h.hooks, hook{name: name, shutdownFn: shutdown})
+func (h *ShutdownHooks) Register(name string, shutdown func(ctx context.Context) error) {
+	h.hooks = append(h.hooks, shutdownHook{name: name, shutdownFn: shutdown})
 }
 
-func (h *Hooks) RegisterNoCtx(name string, shutdown func() error) {
+func (h *ShutdownHooks) RegisterNoCtx(name string, shutdown func() error) {
 	h.Register(name, func(_ context.Context) error {
 		return shutdown()
 	})
 }
 
-func (h *Hooks) PerformShutdown(ctx context.Context) error {
+func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, h.deps.GracefulShutdownTimeout)
 	defer cancel()
 

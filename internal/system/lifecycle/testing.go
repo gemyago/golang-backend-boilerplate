@@ -1,6 +1,6 @@
 //go:build !release
 
-package shutdown
+package lifecycle
 
 import (
 	"time"
@@ -10,9 +10,9 @@ import (
 
 const defaultTestShutdownTimeout = 30 * time.Second
 
-// NewTestHooks constructor for shutdown Hooks that can be used in tests.
-func NewTestHooks() *Hooks {
-	return NewHooks(HooksDeps{
+// NewTestShutdownHooks constructor for shutdown Hooks that can be used in tests.
+func NewTestShutdownHooks() *ShutdownHooks {
+	return NewShutdownHooks(ShutdownHooksDeps{
 		RootLogger:              telemetry.RootTestLogger(),
 		GracefulShutdownTimeout: defaultTestShutdownTimeout,
 	})

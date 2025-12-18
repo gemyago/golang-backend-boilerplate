@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
-	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/lifecycle"
 	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	sloghttp "github.com/samber/slog-http"
 	"go.uber.org/dig"
@@ -22,7 +22,7 @@ type HTTPServerDeps struct {
 	dig.In `ignore-unexported:"true"`
 
 	// services
-	ShutdownHooks *shutdown.Hooks
+	ShutdownHooks *lifecycle.ShutdownHooks
 
 	RootLogger *slog.Logger
 

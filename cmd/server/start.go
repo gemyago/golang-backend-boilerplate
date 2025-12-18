@@ -9,7 +9,7 @@ import (
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
-	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/lifecycle"
 	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
@@ -19,7 +19,7 @@ import (
 type startServerParams struct {
 	dig.In `ignore-unexported:"true"`
 
-	ShutdownHooks *shutdown.Hooks
+	ShutdownHooks *lifecycle.ShutdownHooks
 
 	RootLogger *slog.Logger
 
