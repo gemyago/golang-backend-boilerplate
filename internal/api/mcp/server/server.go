@@ -8,8 +8,8 @@ import (
 
 	httpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"go.uber.org/dig"
@@ -37,7 +37,7 @@ func (f ToolsFactoryFunc) NewTools() []mcpserver.ServerTool {
 type MCPServerDeps struct {
 	dig.In
 
-	*services.ShutdownHooks
+	ShutdownHooks *shutdown.Hooks
 
 	RootLogger *slog.Logger
 	IDGen      ident.Generator
@@ -63,7 +63,7 @@ type MCPServer struct {
 	mcpServer     *mcpserver.MCPServer
 	deps          MCPServerDeps
 	logger        *slog.Logger
-	shutdownHooks *services.ShutdownHooks
+	shutdownHooks *shutdown.Hooks
 }
 
 // NewMCPServer creates a new MCP server instance.

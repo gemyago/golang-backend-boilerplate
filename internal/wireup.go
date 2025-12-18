@@ -12,6 +12,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/apptime"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
 	"github.com/spf13/viper"
 	otellog "go.opentelemetry.io/otel/log"
 	"go.uber.org/dig"
@@ -57,7 +58,8 @@ func Setup(
 
 			// We can't directly use shutdown hooks in diag, since diag is used everywhere.
 			// This is a good place to register the implementation.
-			di.ProvideImplementation[*infrastructure.ShutdownHooks, diag.ShutdownHooks],
+			shutdown.NewHooks,
+			di.ProvideImplementation[*shutdown.Hooks, diag.ShutdownHooks],
 		),
 
 		config.Provide(container, cfg),

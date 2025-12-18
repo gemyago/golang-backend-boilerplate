@@ -12,7 +12,6 @@ import (
 
 func Register(rootCtx context.Context, container *dig.Container) error {
 	return di.ProvideAll(container,
-		NewShutdownHooks,
 		httpservices.NewClientFactory,
 		newDBProvider(rootCtx),
 		di.ProvideFactoryAs[app.UsersRepository](newUsersRepository),

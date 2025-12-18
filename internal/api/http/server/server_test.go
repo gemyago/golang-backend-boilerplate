@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/diag"
-	services "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +28,7 @@ func TestHTTPServer(t *testing.T) {
 			RootLogger:    diag.RootTestLogger(),
 			Host:          "localhost",
 			Port:          port,
-			ShutdownHooks: services.NewTestShutdownHooks(),
+			ShutdownHooks: shutdown.NewTestHooks(),
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusOK)
 			}),
