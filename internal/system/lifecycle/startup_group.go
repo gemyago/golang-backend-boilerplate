@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"go.uber.org/dig"
@@ -40,6 +39,9 @@ func (g *StartupGroup) Add(fn StartupFn) {
 	g.startupFns = append(g.startupFns, fn)
 }
 
+// Start runs all startup functions and waits for shutdown signal.
+// It also sets up a listener for forceful shutdown signals to
+// terminate the application immediately if needed.
 func (g *StartupGroup) Start(ctx context.Context) error {
 	watchForceSignal := func(
 		rootCtx context.Context,
@@ -55,24 +57,14 @@ func (g *StartupGroup) Start(ctx context.Context) error {
 		}()
 	}
 
+	shutdownSignals := []os.Signal{unix.SIGINT, unix.SIGTERM}
+
 	shutdown := func() error {
-		watchForceSignal(ctx, []os.Signal{unix.SIGINT, unix.SIGTERM})
-
-		g.logger.InfoContext(ctx, "Attempting to shut down gracefully")
-		ts := time.Now()
-
-		err := g.shutdownHooks.PerformShutdown(ctx)
-		if err != nil {
-			g.logger.ErrorContext(ctx, "Failed to shut down gracefully", telemetry.ErrAttr(err))
-		}
-
-		g.logger.InfoContext(ctx, "Application stopped",
-			slog.Duration("duration", time.Since(ts)),
-		)
-		return err
+		watchForceSignal(ctx, shutdownSignals)
+		return g.shutdownHooks.PerformShutdown(ctx)
 	}
 
-	signalCtx, cancel := signal.NotifyContext(ctx, unix.SIGINT, unix.SIGTERM)
+	signalCtx, cancel := signal.NotifyContext(ctx, shutdownSignals...)
 	defer cancel()
 
 	startupErrors := make(chan error, len(g.startupFns))
