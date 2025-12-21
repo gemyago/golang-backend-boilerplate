@@ -6,13 +6,14 @@ package lifecycle
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"reflect"
+	"sync"
 	"time"
 
 	"go.uber.org/dig"
-	"golang.org/x/sync/errgroup"
 )
 
 type shutdownHook struct {
@@ -68,27 +69,42 @@ func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, h.deps.GracefulShutdownTimeout)
 	defer cancel()
 
-	errGrp := errgroup.Group{}
+	resultsChan := make(chan error, len(h.hooks))
+
+	var wg sync.WaitGroup
+
 	for _, hook := range h.hooks {
-		errGrp.Go(func() error {
+		wg.Add(1)
+		go func() {
 			hookName := hook.name
 			h.logger.InfoContext(ctx, fmt.Sprintf("Shutting down %s", hookName))
 			if err := hook.shutdownFn(ctx); err != nil {
-				return fmt.Errorf("failed to perform shutdown hook %s: %w", hookName, err)
+				resultsChan <- fmt.Errorf("failed to perform shutdown hook %s: %w", hookName, err)
+			} else {
+				resultsChan <- nil
 			}
-			return nil
-		})
+			wg.Done()
+		}()
 	}
 
 	done := make(chan error)
 	go func() {
-		done <- errGrp.Wait()
+		wg.Wait()
+		close(resultsChan)
+		errs := make([]error, 0)
+		for err := range resultsChan {
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+
+		done <- errors.Join(errs...)
 	}()
 
 	select {
 	case err := <-done:
 		return err
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("shutdown hooks did not complete timely: %w", ctx.Err())
 	}
 }
