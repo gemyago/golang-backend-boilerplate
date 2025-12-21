@@ -2,24 +2,19 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"os"
-	"os/signal"
-	"time"
 
 	mcpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/mcp/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/lifecycle"
-	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
-	"golang.org/x/sys/unix"
 )
 
 type stdioServerParams struct {
 	dig.In `ignore-unexported:"true"`
 
-	ShutdownHooks *lifecycle.ShutdownHooks
+	StartupGroupFactory lifecycle.StartupGroupFactory
 
 	RootLogger *slog.Logger
 
@@ -31,46 +26,15 @@ type stdioServerParams struct {
 func startStdioServer(rootCtx context.Context, params stdioServerParams) error {
 	rootLogger := params.RootLogger
 
-	shutdown := func() error {
-		rootLogger.InfoContext(rootCtx, "Trying to shut down gracefully")
-		ts := time.Now()
-
-		err := params.ShutdownHooks.PerformShutdown(rootCtx)
-		if err != nil {
-			rootLogger.ErrorContext(rootCtx, "Failed to shut down gracefully", telemetry.ErrAttr(err))
-		}
-
-		rootLogger.InfoContext(rootCtx, "Service stopped",
-			slog.Duration("duration", time.Since(ts)),
-		)
-		return err
-	}
-
-	signalCtx, cancel := signal.NotifyContext(rootCtx, unix.SIGINT, unix.SIGTERM)
-	defer cancel()
-
-	const startedComponents = 2
-	startupErrors := make(chan error, startedComponents)
-	go func() {
+	startupGroup := params.StartupGroupFactory.NewGroup()
+	startupGroup.Add(func(ctx context.Context) error {
 		if params.noop {
-			rootLogger.InfoContext(signalCtx, "NOOP: Starting stdio server")
-			startupErrors <- nil
-			return
+			rootLogger.InfoContext(ctx, "NOOP: Starting stdio server")
+			return nil
 		}
-		startupErrors <- params.MCPServer.ListenStdioServer(signalCtx, os.Stdin, os.Stdout)
-	}()
-
-	var startupErr error
-	select {
-	case startupErr = <-startupErrors:
-		if startupErr != nil {
-			rootLogger.ErrorContext(rootCtx, "Server startup failed", "err", startupErr)
-		}
-	case <-signalCtx.Done(): // coverage-ignore
-		// We will attempt to shut down in both cases
-		// so doing it once on a next line
-	}
-	return errors.Join(startupErr, shutdown())
+		return params.MCPServer.ListenStdioServer(ctx, os.Stdin, os.Stdout)
+	})
+	return startupGroup.Start(rootCtx)
 }
 
 func newStdioCmd(container *dig.Container) *cobra.Command {

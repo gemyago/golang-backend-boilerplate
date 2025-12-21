@@ -15,15 +15,8 @@ import (
 
 func TestUsersRepository(t *testing.T) {
 	makeMockDeps := func(t *testing.T) usersRepositoryDeps {
-		db, err := newDBProvider(t.Context())(DatabaseDeps{
-			DSN: ":memory:",
-		})
-		require.NoError(t, err)
-		t.Cleanup(func() {
-			db.instance.Close()
-		})
 		return usersRepositoryDeps{
-			DB:    db,
+			DB:    newTestDatabase(t),
 			Time:  apptime.NewMockProvider(),
 			IDGen: ident.NewMockGenerator(),
 		}

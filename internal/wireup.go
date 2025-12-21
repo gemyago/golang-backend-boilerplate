@@ -56,9 +56,9 @@ func Setup(
 			ident.NewDefaultGenerator,
 			di.ProvideImplementation[*ident.DefaultGenerator, ident.Generator],
 
+			lifecycle.NewShutdownHooks,
 			// We can't directly use shutdown hooks in telemetry, since telemetry is used everywhere.
 			// This is a good place to register the implementation.
-			lifecycle.NewShutdownHooks,
 			di.ProvideImplementation[*lifecycle.ShutdownHooks, telemetry.ShutdownHooks],
 		),
 
