@@ -68,6 +68,11 @@ func (h *ShutdownHooks) RegisterNoCtx(name string, shutdown func() error) {
 
 func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error {
 	ts := time.Now()
+	defer func() {
+		h.logger.InfoContext(ctx, "Application stopped",
+			slog.Duration("duration", time.Since(ts)),
+		)
+	}()
 	h.logger.InfoContext(ctx, "Attempting to shut down gracefully")
 
 	ctx, cancel := context.WithTimeout(ctx, h.deps.GracefulShutdownTimeout)
@@ -110,11 +115,9 @@ func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error {
 		if err != nil {
 			h.logger.ErrorContext(ctx, "Failed to shut down gracefully", telemetry.ErrAttr(err))
 		}
-		h.logger.InfoContext(ctx, "Application stopped",
-			slog.Duration("duration", time.Since(ts)),
-		)
 		return err
 	case <-ctx.Done():
+		h.logger.WarnContext(ctx, "Shutdown hooks did not complete timely", telemetry.ErrAttr(ctx.Err()))
 		return fmt.Errorf("shutdown hooks did not complete timely: %w", ctx.Err())
 	}
 }
