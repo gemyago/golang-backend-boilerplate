@@ -1,4 +1,4 @@
-package shutdown
+package lifecycle
 
 import (
 	"context"
@@ -32,8 +32,8 @@ func (m *mockShutdownHook) shutdownNoCtx() error {
 
 func TestShutdownHooks(t *testing.T) {
 	fake := faker.New()
-	makeMockDeps := func() HooksDeps {
-		return HooksDeps{
+	makeMockDeps := func() ShutdownHooksDeps {
+		return ShutdownHooksDeps{
 			RootLogger:              telemetry.RootTestLogger(),
 			GracefulShutdownTimeout: time.Duration(10+rand.IntN(1000)) * time.Second,
 		}
@@ -42,7 +42,7 @@ func TestShutdownHooks(t *testing.T) {
 	t.Run("HasHook", func(t *testing.T) {
 		t.Run("should return true if such hook has been registered", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewHooks(deps)
+			registry := NewShutdownHooks(deps)
 			hookName := fake.Lorem().Word()
 			fn := func(_ context.Context) error { return nil }
 			assert.False(t, registry.HasHook(hookName, fn))
@@ -55,7 +55,7 @@ func TestShutdownHooks(t *testing.T) {
 	t.Run("PerformShutdown", func(t *testing.T) {
 		t.Run("should call all hooks", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewHooks(deps)
+			registry := NewShutdownHooks(deps)
 
 			hooks := []*mockShutdownHook{
 				{name: fake.Lorem().Word()},
@@ -80,7 +80,7 @@ func TestShutdownHooks(t *testing.T) {
 
 		t.Run("should call hooks without context", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewHooks(deps)
+			registry := NewShutdownHooks(deps)
 
 			hooks := []*mockShutdownHook{
 				{name: fake.Lorem().Word()},
@@ -105,7 +105,7 @@ func TestShutdownHooks(t *testing.T) {
 
 		t.Run("should return error if any hook fails", func(t *testing.T) {
 			deps := makeMockDeps()
-			registry := NewHooks(deps)
+			registry := NewShutdownHooks(deps)
 
 			hooks := []*mockShutdownHook{
 				{name: fake.Lorem().Word()},
@@ -131,6 +131,42 @@ func TestShutdownHooks(t *testing.T) {
 			for _, hook := range hooks {
 				hook.AssertExpectations(t)
 			}
+		})
+
+		t.Run("should call all hooks even if some fail and return joined errors", func(t *testing.T) {
+			deps := makeMockDeps()
+			registry := NewShutdownHooks(deps)
+
+			ctx := t.Context()
+
+			// Given three hooks where two will fail
+			err1 := errors.New(fake.Lorem().Sentence(10))
+			err2 := errors.New(fake.Lorem().Sentence(10))
+
+			hook1 := &mockShutdownHook{name: "hook1-fail"}
+			hook1.On("shutdown", mock.AnythingOfType("*context.timerCtx")).Return(err1)
+			registry.Register(hook1.name, hook1.shutdown)
+
+			hook2 := &mockShutdownHook{name: "hook2-success"}
+			hook2.On("shutdown", mock.AnythingOfType("*context.timerCtx")).Return(nil)
+			registry.Register(hook2.name, hook2.shutdown)
+
+			hook3 := &mockShutdownHook{name: "hook3-fail"}
+			hook3.On("shutdown", mock.AnythingOfType("*context.timerCtx")).Return(err2)
+			registry.Register(hook3.name, hook3.shutdown)
+
+			// When performing shutdown
+			err := registry.PerformShutdown(ctx)
+
+			// Then all hooks should be called
+			hook1.AssertExpectations(t)
+			hook2.AssertExpectations(t)
+			hook3.AssertExpectations(t)
+
+			// And error should contain both failures
+			require.Error(t, err)
+			require.ErrorIs(t, err, err1)
+			require.ErrorIs(t, err, err2)
 		})
 	})
 }

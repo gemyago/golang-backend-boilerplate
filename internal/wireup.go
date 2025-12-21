@@ -11,7 +11,7 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/apptime"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
-	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/lifecycle"
 	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/spf13/viper"
 	otellog "go.opentelemetry.io/otel/log"
@@ -56,10 +56,10 @@ func Setup(
 			ident.NewDefaultGenerator,
 			di.ProvideImplementation[*ident.DefaultGenerator, ident.Generator],
 
+			lifecycle.NewShutdownHooks,
 			// We can't directly use shutdown hooks in telemetry, since telemetry is used everywhere.
 			// This is a good place to register the implementation.
-			shutdown.NewHooks,
-			di.ProvideImplementation[*shutdown.Hooks, telemetry.ShutdownHooks],
+			di.ProvideImplementation[*lifecycle.ShutdownHooks, telemetry.ShutdownHooks],
 		),
 
 		config.Provide(container, cfg),

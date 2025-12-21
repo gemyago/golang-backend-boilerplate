@@ -8,7 +8,7 @@ import (
 
 	httpserver "github.com/gemyago/golang-backend-boilerplate/internal/api/http/server"
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
-	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/lifecycle"
 	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
@@ -37,7 +37,7 @@ func (f ToolsFactoryFunc) NewTools() []mcpserver.ServerTool {
 type MCPServerDeps struct {
 	dig.In
 
-	ShutdownHooks *shutdown.Hooks
+	ShutdownHooks *lifecycle.ShutdownHooks
 
 	RootLogger *slog.Logger
 	IDGen      ident.Generator
@@ -63,7 +63,7 @@ type MCPServer struct {
 	mcpServer     *mcpserver.MCPServer
 	deps          MCPServerDeps
 	logger        *slog.Logger
-	shutdownHooks *shutdown.Hooks
+	shutdownHooks *lifecycle.ShutdownHooks
 }
 
 // NewMCPServer creates a new MCP server instance.

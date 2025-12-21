@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/lifecycle"
 	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 	"go.opentelemetry.io/otel/metric"
@@ -23,6 +24,7 @@ type DatabaseDeps struct {
 
 	metric.MeterProvider
 	trace.TracerProvider
+	*lifecycle.ShutdownHooks
 
 	OTELConfig telemetry.OTELConfig
 
@@ -78,6 +80,8 @@ func newDBProvider(ctx context.Context) func(DatabaseDeps) (*Database, error) {
 		); err != nil {
 			return nil, fmt.Errorf("failed to initialize schema: %w", err)
 		}
+
+		deps.ShutdownHooks.RegisterNoCtx("database", db.Close)
 
 		return &Database{instance: db}, nil
 	}

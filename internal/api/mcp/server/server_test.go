@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
-	"github.com/gemyago/golang-backend-boilerplate/internal/system/shutdown"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/lifecycle"
 	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -23,7 +23,7 @@ func TestMCPServer(t *testing.T) {
 	makeMockDeps := func() MCPServerDeps {
 		return MCPServerDeps{
 			RootLogger:    telemetry.RootTestLogger(),
-			ShutdownHooks: shutdown.NewTestHooks(),
+			ShutdownHooks: lifecycle.NewTestShutdownHooks(),
 			Controllers:   []ToolsFactory{},
 			IDGen:         ident.NewDefaultGenerator(),
 		}

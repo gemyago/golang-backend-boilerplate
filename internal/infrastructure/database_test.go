@@ -5,6 +5,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/lifecycle"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -12,7 +13,8 @@ import (
 func TestSetupDatabase(t *testing.T) {
 	t.Run("should setup the database with all tables", func(t *testing.T) {
 		db, err := newDBProvider(t.Context())(DatabaseDeps{
-			DSN: ":memory:",
+			DSN:           ":memory:",
+			ShutdownHooks: lifecycle.NewTestShutdownHooks(),
 		})
 		require.NoError(t, err)
 
@@ -43,7 +45,8 @@ func TestSetupDatabase(t *testing.T) {
 		require.NoError(t, os.Chmod(dbFilePath, 0400))
 
 		_, err = newDBProvider(t.Context())(DatabaseDeps{
-			DSN: dbFilePath,
+			DSN:           dbFilePath,
+			ShutdownHooks: lifecycle.NewTestShutdownHooks(),
 		})
 		require.Error(t, err)
 		assert.Regexp(t, `failed to initialize schema`, err.Error())
