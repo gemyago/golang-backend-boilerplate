@@ -203,15 +203,15 @@
 				
 				<option value="file73">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/database_testing.go (93.3%)</option>
 				
-				<option value="file74">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http/client_factory.go (100.0%)</option>
+				<option value="file74">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient/client_factory.go (100.0%)</option>
 				
-				<option value="file75">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http/errors.go (100.0%)</option>
+				<option value="file75">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient/errors.go (100.0%)</option>
 				
-				<option value="file76">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http/middleware/correlation.go (100.0%)</option>
+				<option value="file76">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient/middleware/correlation.go (100.0%)</option>
 				
-				<option value="file77">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http/middleware/logging.go (100.0%)</option>
+				<option value="file77">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient/middleware/logging.go (100.0%)</option>
 				
-				<option value="file78">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http/send_request.go (93.1%)</option>
+				<option value="file78">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient/send_request.go (93.1%)</option>
 				
 				<option value="file79">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/pets_repository.go (91.7%)</option>
 				
@@ -5145,7 +5145,7 @@ type PetsQueriesDeps struct {
 
 // NewPetsQueries returns a concrete struct (not an interface).
 // This follows "accept interface, return struct" principle.
-func NewPetsQueries(deps PetsQueriesDeps) *PetsQueries <span class="cov10" title="9">{
+func NewPetsQueries(deps PetsQueriesDeps) *PetsQueries <span class="cov9" title="9">{
         return &amp;PetsQueries{
                 petsRepo:       deps.PetsRepo,
                 usersRepo:      deps.UsersRepo,
@@ -5187,8 +5187,8 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
         fetchGrp, grpCtx := errgroup.WithContext(ctx)
         fetchGrp.SetLimit(maxConcurrentFetches)
 
-        for _, petID := range petIDs </span><span class="cov10" title="9">{
-                fetchGrp.Go(func() error </span><span class="cov10" title="9">{
+        for _, petID := range petIDs </span><span class="cov10" title="10">{
+                fetchGrp.Go(func() error </span><span class="cov10" title="10">{
                         pet, petErr := q.petstoreClient.GetPetByID(grpCtx, petstore.GetPetByIDParams{
                                 PetID: strconv.FormatInt(petID, 10),
                         })
@@ -5199,10 +5199,10 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                                         slog.Int64("pet_id", petID),
                                         slog.String("error", petErr.Error()),
                                 )
-                        }</span> else<span class="cov9" title="8"> {
+                        }</span> else<span class="cov9" title="9"> {
                                 fetchedPetsResult &lt;- pet
                         }</span>
-                        <span class="cov10" title="9">return nil</span>
+                        <span class="cov10" title="10">return nil</span>
                 })
         }
 
@@ -5211,7 +5211,7 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                 close(fetchedPetsResult)
         }</span>()
 
-        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov9" title="8">{
+        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov9" title="9">{
                 pets = append(pets, pet)
         }</span>
 
@@ -6173,14 +6173,14 @@ func newTestDatabase(t *testing.T, opts ...testDatabaseOpts) *Database <span cla
 }
 </pre>
 		
-		<pre class="file" id="file74" style="display: none">package http
+		<pre class="file" id="file74" style="display: none">package httpclient
 
 import (
         "log/slog"
         "net/http"
         "time"
 
-        "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http/middleware"
+        "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient/middleware"
         "github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
         "go.uber.org/dig"
         "golang.org/x/oauth2"
@@ -6310,7 +6310,7 @@ func (f *ClientFactory) CreateClient(options ...ClientOption) *http.Client <span
 }
 </pre>
 		
-		<pre class="file" id="file75" style="display: none">package http
+		<pre class="file" id="file75" style="display: none">package httpclient
 
 import (
         "fmt"
@@ -6502,7 +6502,7 @@ func buildObfuscatedHeadersAttr(headers http.Header, obfuscatedHeaders map[strin
 }
 </pre>
 		
-		<pre class="file" id="file78" style="display: none">package http
+		<pre class="file" id="file78" style="display: none">package httpclient
 
 import (
         "bytes"
@@ -6760,7 +6760,7 @@ import (
         "context"
         "fmt"
 
-        httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
+        "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient"
 )
 
 // AddPetParams contains parameters for adding a pet.
@@ -6772,7 +6772,7 @@ type AddPetParams struct {
 // AddPet adds a new pet to the store.
 func (c *Client) AddPet(ctx context.Context, params AddPetParams) (*Pet, error) <span class="cov10" title="3">{
         var response Pet
-        err := httpsvc.SendRequest(ctx, c.httpClient, httpsvc.SendRequestParams[Pet, Pet]{
+        err := httpclient.SendRequest(ctx, c.httpClient, httpclient.SendRequestParams[Pet, Pet]{
                 Method: "POST",
                 URL:    c.baseURL + "/pet",
                 Body:   params.Request,
@@ -6792,7 +6792,7 @@ import (
         "log/slog"
         "net/http"
 
-        httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
+        "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient"
         "go.uber.org/dig"
 )
 
@@ -6805,14 +6805,14 @@ type Client struct {
 type ClientDeps struct {
         dig.In
 
-        ClientFactory *httpsvc.ClientFactory
+        ClientFactory *httpclient.ClientFactory
         RootLogger    *slog.Logger
         BaseURL       string `name:"config.petstore.baseURL"`
 }
 
 func NewClient(
         deps ClientDeps,
-        clientOpts ...httpsvc.ClientOption,
+        clientOpts ...httpclient.ClientOption,
 ) *Client <span class="cov10" title="11">{
         return &amp;Client{
                 httpClient: deps.ClientFactory.CreateClient(clientOpts...),
@@ -6828,7 +6828,7 @@ import (
         "context"
         "fmt"
 
-        httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
+        "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient"
 )
 
 // GetPetByIDParams contains parameters for getting a pet by ID.
@@ -6840,7 +6840,7 @@ type GetPetByIDParams struct {
 func (c *Client) GetPetByID(ctx context.Context, params GetPetByIDParams) (*Pet, error) <span class="cov10" title="3">{
         var response Pet
         path := fmt.Sprintf("/pet/%s", params.PetID)
-        err := httpsvc.SendRequest(ctx, c.httpClient, httpsvc.SendRequestParams[interface{}, Pet]{
+        err := httpclient.SendRequest(ctx, c.httpClient, httpclient.SendRequestParams[interface{}, Pet]{
                 Method: "GET",
                 URL:    c.baseURL + path,
                 Target: &amp;response,
@@ -6859,7 +6859,7 @@ import (
         "context"
         "fmt"
 
-        httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
+        "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient"
 )
 
 // UpdatePetParams contains parameters for updating a pet.
@@ -6869,7 +6869,7 @@ type UpdatePetParams struct {
 
 func (c *Client) UpdatePet(ctx context.Context, params UpdatePetParams) (*Pet, error) <span class="cov10" title="3">{
         var response Pet
-        err := httpsvc.SendRequest(ctx, c.httpClient, httpsvc.SendRequestParams[Pet, Pet]{
+        err := httpclient.SendRequest(ctx, c.httpClient, httpclient.SendRequestParams[Pet, Pet]{
                 Method: "PUT",
                 URL:    c.baseURL + "/pet",
                 Body:   params.Request,
@@ -6890,14 +6890,14 @@ import (
 
         "github.com/gemyago/golang-backend-boilerplate/internal/app"
         "github.com/gemyago/golang-backend-boilerplate/internal/di"
-        httpservices "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
+        "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient"
         "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
         "go.uber.org/dig"
 )
 
 func Register(rootCtx context.Context, container *dig.Container) error <span class="cov10" title="4">{
         return di.ProvideAll(container,
-                httpservices.NewClientFactory,
+                httpclient.NewClientFactory,
                 newDBProvider(rootCtx),
                 di.ProvideFactoryAs[app.UsersRepository](newUsersRepository),
                 di.ProvideFactoryAs[app.PetsRepository](newPetsRepository),
@@ -7515,7 +7515,7 @@ type StartupGroup struct {
         logger        *slog.Logger
 }
 
-func (g *StartupGroup) Add(fn StartupFn) <span class="cov10" title="15">{
+func (g *StartupGroup) Add(fn StartupFn) <span class="cov10" title="16">{
         g.startupFns = append(g.startupFns, fn)
 }</span>
 
