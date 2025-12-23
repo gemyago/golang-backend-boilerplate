@@ -8,8 +8,24 @@ import (
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
 	"github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
 	"github.com/gemyago/golang-backend-boilerplate/internal/app"
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
 	"go.uber.org/dig"
 )
+
+type PetsCommands interface {
+	AddPet(ctx context.Context, req app.AddPetRequest) (*app.AddPetResponse, error)
+	RemovePet(ctx context.Context, userID string, petID int64) error
+}
+
+// Ensure interface is compatible.
+var _ PetsCommands = (*app.PetsCommands)(nil)
+
+type PetsQueries interface {
+	ListUserPets(ctx context.Context, userID string) ([]*petstore.Pet, error)
+}
+
+// Ensure interface is compatible.
+var _ PetsQueries = (*app.PetsQueries)(nil)
 
 type PetsController struct {
 	commands PetsCommands

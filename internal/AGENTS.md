@@ -7,30 +7,33 @@ Please review project level [AGENTS.md](../AGENTS.md). This file complements it 
 ## Architecture Overview
 
 **Key architectural decisions**:
-- All components should follow "accept interface and return struct" principle for dependencies:
+- **Consumer-Defined interface** All components should follow "accept interface and return struct" principle for dependencies:
   - Component dependencies (services, repositories, etc.) should be accepted as interfaces (for flexibility and testability)
   - Return types should be concrete structs (for clarity and avoiding unnecessary abstraction)
-  - Note: This applies to dependencies/collaborators, not data types (DTOs, request/response objects, etc.)
   - Strong justification is required to deviate from this pattern
-- Consumer component should define interfaces for dependencies, not the provider (dependency inversion)
+- Define interfaces next to consumer by default (in a same file). Move to a separate if getting bigger or used by multiple consumers in the same package.
 
-The application applies hexagonal architecture principles with layers mapped as follows:
+The project follows Pragmatic Layered Architecture with layers mapped as follows:
+- APIs: `internal/api` (HTTP, MCP, ...) - "world" interacts with the system here
 - Application layer: `internal/app` (business logic)
-- Incoming adapters (APIs): `internal/api` (HTTP, MCP, ...)
-- Outgoing adapters: `internal/infrastructure` (DB, external APIs e.t.c)
+- Infrastructure: `internal/infrastructure` (DB, external APIs e.t.c)
 
 Additional notes:
-- Config loader: `internal/config` (embedded JSON via viper)
-- Register services and app wiring: [internal/app/register.go](./app/register.go)
+- Config loading: `internal/config` (embedded JSON via viper)
+- Register components and app wiring. Examples 
+  - Register app layer [internal/app/register.go](./app/register.go) 
+  - Wireup the app [internal/wireup.go](./wireup.go)
 
 ## Application Layer
 
-Application layer defines data types and behavior of the entire application. External `infrastructure` interactions are performed via `ports` (interfaces). Important rules:
-- Application layer only can define `ports`. Infrastructure can only provide implementations that satisfy ports.
-- Data types (DTOs) should generally not cross layers boundary, however AI must be pragmatic and allow exceptions:
-  - If the data type is fully identical or nearly identical - it can be defined on infrastructure layer and used on application layer.
-  - Data types of incoming adapters must never cross layers boundary.
+The Application layer contains all business logic and defines the core data structures of the system. It follows CQRS principles to separate state mutations (Commands) from data retrieval (Queries).
 
+### Dependency Rules
+- **Inward Imports**: The dependency flow is strictly inward. The Application layer must not import from the Infrastructure or API layers.
+- **Interface-Based Interaction**: Interactions with external systems (Databases, Third-party APIs) are defined via interfaces within the Application layer. Infrastructure provides the concrete implementations.
+- **Boundary Isolation:** Request/Response types from the API/CLI layers must never enter the Application layer. They must be mapped to Application types at the boundary.
+
+### CQRS Structure
 The Application layer is structured to follow CQRS principles:
 - Data mutations are handled by Commands
 - Data read operations are handled by Queries
@@ -38,21 +41,28 @@ The Application layer is structured to follow CQRS principles:
 Example components:
 - Users commands: [internal/app/users_commands.go](./app/users_commands.go)
 - Users commands tests: [internal/app/users_commands_test.go](./app/users_commands_test.go)
+- Pets queries: [internal/app/pets_queries.go](./app/pets_queries.go)
+- Pets queries tests: [internal/app/pets_queries_test.go](./app/pets_queries_test.go)
 
-## Incoming adapters ("Driver adapters", API Layer)
+## API Layer
 
-Incoming adapters are interacting with application layer via "ports" that are interfaces defining required application layer contract. Mocks for all ports are generated with mockery and should be used in unit tests.
+API layer follows the dependency inversion principle by defining interfaces for the required application layer components (commands, queries) and relying on DI to provide concrete implementations.
 
-Example ports: [internal/api/http/v1controllers/ports.go](./api/http/v1controllers/ports.go)
+Example API layer controllers:
+- Users HTTP controller: [internal/api/http/v1controllers/users.go](./api/http/v1controllers/users.go)
+- Users HTTP controller tests: [internal/api/http/v1controllers/users_test.go](./api/http/v1controllers/users_test.go)
 
-Each API "sub layer" should define its own set of ports. A DI hint is required to allow resolving implementations of the interfaces using `di.ProvideAs` approach (see [internal/api/http/v1controllers/register.go](./api/http/v1controllers/register.go) as an example)
+API layer DI registration is done in [internal/api/http/v1controllers/register.go](./api/http/v1controllers/register.go):
+* Simple components can be registered directly (e.g. `&UsersMapper{}`)
+* More complex components must have constructor functions (e.g. `newUsersController`)
+* Concrete implementation of application layer interface is defined using `di.ProvideImplementation` (e.g. `di.ProvideImplementation[*app.UserCommands, UserCommands]`)
 
 ### Data types compatibility
 
-Mapping from adapter specific data types to application layer data types may need to be performed. One off mapping can be done in-place. Data types that are used in few places can be mapped by a shared "mapper" component. Example mapper:
+Mapping from API specific data types to application layer data types may need to be performed. One off mapping can be done in-place. Data types that are used in few places can be mapped by a shared "mapper" component. Example mapper:
 - [internal/api/http/v1controllers/users_mapper.go](./api/http/v1controllers/users_mapper.go) and it's tests [internal/api/http/v1controllers/users_mapper_test.go](./api/http/v1controllers/users_mapper_test.go)
 
-### HTTP Layer (OpenAPI-first)
+### OpenAPI-first Generated HTTP routes/data types
 
 - Spec source of truth: [internal/api/http/v1routes.yaml](./api/http/v1routes.yaml)
 - Generated HTTP code: [internal/api/http/v1routes/](./api/http/v1routes/)
@@ -64,18 +74,25 @@ Mapping from adapter specific data types to application layer data types may nee
   - Server setup: [internal/api/http/server/register.go](./api/http/server/register.go)
   - Routes registration: [internal/api/http/register.go](./api/http/register.go)
 
+Generated with [apigen](https://github.com/gemyago/apigen). To regenerate after modifying the spec:
+```sh
+go generate ./internal/api/http
+```
+
 ### MCP Tools (dynamic context)
 - Example MCP tool controller: [internal/api/mcp/controllers/math.go](./api/mcp/controllers/math.go)
 
-## Outgoing adapters ("Driven adapters", infrastructure)
+## Infrastructure Layer
 
 - Example repository:
   - [internal/infrastructure/users_repository.go](./infrastructure/users_repository.go)
   - [internal/infrastructure/users_repository_test.go](./infrastructure/users_repository_test.go)
 
 ## Logging and Diagnostics
+
 - Use log/slog via DI; no globals. See [internal/telemetry/slog.go](./telemetry/slog.go) and [internal/telemetry/testing.go](./telemetry/testing.go)
 - Follow `.golangci.yml` slog rules; prefer context-aware logging.
+- Components that need logging should accept `RootLogger` as dependency and create a child logger with component name: `logger := deps.RootLogger.WithGroup("http-server")`
 
 ## Task completion protocol
 
