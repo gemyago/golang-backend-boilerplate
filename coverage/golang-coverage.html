@@ -245,7 +245,7 @@
 				
 				<option value="file94">github.com/gemyago/golang-backend-boilerplate/internal/system/lifecycle/testing.go (100.0%)</option>
 				
-				<option value="file95">github.com/gemyago/golang-backend-boilerplate/internal/telemetry/otel.go (38.1%)</option>
+				<option value="file95">github.com/gemyago/golang-backend-boilerplate/internal/telemetry/otel.go (33.3%)</option>
 				
 				<option value="file96">github.com/gemyago/golang-backend-boilerplate/internal/telemetry/otel_http_middleware.go (92.9%)</option>
 				
@@ -5187,8 +5187,8 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
         fetchGrp, grpCtx := errgroup.WithContext(ctx)
         fetchGrp.SetLimit(maxConcurrentFetches)
 
-        for _, petID := range petIDs </span><span class="cov8" title="7">{
-                fetchGrp.Go(func() error </span><span class="cov8" title="7">{
+        for _, petID := range petIDs </span><span class="cov10" title="9">{
+                fetchGrp.Go(func() error </span><span class="cov10" title="9">{
                         pet, petErr := q.petstoreClient.GetPetByID(grpCtx, petstore.GetPetByIDParams{
                                 PetID: strconv.FormatInt(petID, 10),
                         })
@@ -5199,10 +5199,10 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                                         slog.Int64("pet_id", petID),
                                         slog.String("error", petErr.Error()),
                                 )
-                        }</span> else<span class="cov8" title="6"> {
+                        }</span> else<span class="cov9" title="8"> {
                                 fetchedPetsResult &lt;- pet
                         }</span>
-                        <span class="cov8" title="7">return nil</span>
+                        <span class="cov10" title="9">return nil</span>
                 })
         }
 
@@ -5211,7 +5211,7 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                 close(fetchedPetsResult)
         }</span>()
 
-        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov8" title="6">{
+        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov9" title="8">{
                 pets = append(pets, pet)
         }</span>
 
@@ -7642,6 +7642,8 @@ type SetupDeps struct {
         dig.In
 
         OTELConfig
+        OTELMetricsConfig
+        OTELTracesConfig
         OTELLogsConfig
         ShutdownHooks
 
@@ -7668,17 +7670,25 @@ func OTELSetup(deps SetupDeps) error <span class="cov10" title="4">{ // coverage
                 otelLogger = logr.FromSlogHandler(deps.RootLogger.WithGroup("otel").Handler())
         }</span>
 
-        <span class="cov0" title="0">otel.SetLogger(otelLogger)
+        // V(1) will reduce noise from otel internals.
+        // Set to zero to see debug logs and trouble-shoot otel issues.
+        <span class="cov0" title="0">otel.SetLogger(otelLogger.V(1))
 
         otel.SetErrorHandler(otel.ErrorHandlerFunc(func(cause error) </span><span class="cov0" title="0">{
                 otelLogger.Error(cause, "OTEL error")
         }</span>))
 
-        <span class="cov0" title="0">registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-tracer", deps.TracerProvider)
-        registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-meter", deps.MeterProvider)
-        registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-logger", deps.LoggerProvider)
+        <span class="cov0" title="0">if deps.OTELTracesConfig.Enabled </span><span class="cov0" title="0">{
+                registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-tracer", deps.TracerProvider)
+        }</span>
+        <span class="cov0" title="0">if deps.OTELMetricsConfig.Enabled </span><span class="cov0" title="0">{
+                registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-meter", deps.MeterProvider)
+        }</span>
+        <span class="cov0" title="0">if deps.OTELLogsConfig.Enabled </span><span class="cov0" title="0">{
+                registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-logger", deps.LoggerProvider)
+        }</span>
 
-        if !deps.OTELConfig.RuntimeMetrics </span><span class="cov0" title="0">{
+        <span class="cov0" title="0">if !deps.OTELConfig.RuntimeMetrics </span><span class="cov0" title="0">{
                 return nil
         }</span>
 
@@ -8220,7 +8230,10 @@ func registerShutdownHook(logger *slog.Logger, hooks ShutdownHooks, name string,
         case shutdowner:<span class="cov0" title="0">
                 hooks.Register(name, target.Shutdown)</span>
         default:<span class="cov0" title="0">
-                logger.Warn("registerShutdownHook: target is not a shutdowner", "target", target)
+                logger.Warn("registerShutdownHook: target is not a shutdowner",
+                        slog.Any("target", target),
+                        slog.String("name", name),
+                )
                 return</span>
         }
 }
