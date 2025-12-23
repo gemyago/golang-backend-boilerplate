@@ -1329,8 +1329,24 @@ import (
         "github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/handlers"
         "github.com/gemyago/golang-backend-boilerplate/internal/api/http/v1routes/models"
         "github.com/gemyago/golang-backend-boilerplate/internal/app"
+        "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/petstore"
         "go.uber.org/dig"
 )
+
+type PetsCommands interface {
+        AddPet(ctx context.Context, req app.AddPetRequest) (*app.AddPetResponse, error)
+        RemovePet(ctx context.Context, userID string, petID int64) error
+}
+
+// Ensure interface is compatible.
+var _ PetsCommands = (*app.PetsCommands)(nil)
+
+type PetsQueries interface {
+        ListUserPets(ctx context.Context, userID string) ([]*petstore.Pet, error)
+}
+
+// Ensure interface is compatible.
+var _ PetsQueries = (*app.PetsQueries)(nil)
 
 type PetsController struct {
         commands PetsCommands
@@ -1424,7 +1440,7 @@ func Register(container *dig.Container) error <span class="cov10" title="2">{
                 di.ProvideValue(&amp;HealthController{}),
                 di.ProvideValue(&amp;UsersMapper{}),
 
-                // Application layer ports
+                // Application layer implementations
                 di.ProvideImplementation[*app.UserCommands, UserCommands],
                 di.ProvideImplementation[*app.UserQueries, UserQueries],
                 di.ProvideImplementation[*app.PetsCommands, PetsCommands],
@@ -1473,6 +1489,23 @@ import (
         "github.com/gemyago/golang-backend-boilerplate/internal/app"
         "go.uber.org/dig"
 )
+
+type UserCommands interface {
+        CreateUser(ctx context.Context, req app.CreateUserRequest) (*app.CreateUserResponse, error)
+        UpdateUser(ctx context.Context, req app.UpdateUserRequest) error
+        DeleteUser(ctx context.Context, userID string) error
+}
+
+// Ensure interface is compatible.
+var _ UserCommands = (*app.UserCommands)(nil)
+
+type UserQueries interface {
+        GetUserByID(ctx context.Context, userID string) (*app.User, error)
+        ListUsers(ctx context.Context) ([]*app.User, error)
+}
+
+// Ensure interface is compatible.
+var _ UserQueries = (*app.UserQueries)(nil)
 
 type UsersController struct {
         commands UserCommands
@@ -5154,8 +5187,8 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
         fetchGrp, grpCtx := errgroup.WithContext(ctx)
         fetchGrp.SetLimit(maxConcurrentFetches)
 
-        for _, petID := range petIDs </span><span class="cov9" title="8">{
-                fetchGrp.Go(func() error </span><span class="cov9" title="8">{
+        for _, petID := range petIDs </span><span class="cov8" title="7">{
+                fetchGrp.Go(func() error </span><span class="cov8" title="7">{
                         pet, petErr := q.petstoreClient.GetPetByID(grpCtx, petstore.GetPetByIDParams{
                                 PetID: strconv.FormatInt(petID, 10),
                         })
@@ -5166,10 +5199,10 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                                         slog.Int64("pet_id", petID),
                                         slog.String("error", petErr.Error()),
                                 )
-                        }</span> else<span class="cov8" title="7"> {
+                        }</span> else<span class="cov8" title="6"> {
                                 fetchedPetsResult &lt;- pet
                         }</span>
-                        <span class="cov9" title="8">return nil</span>
+                        <span class="cov8" title="7">return nil</span>
                 })
         }
 
@@ -5178,7 +5211,7 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                 close(fetchedPetsResult)
         }</span>()
 
-        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov8" title="7">{
+        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov8" title="6">{
                 pets = append(pets, pet)
         }</span>
 
@@ -7482,36 +7515,36 @@ type StartupGroup struct {
         logger        *slog.Logger
 }
 
-func (g *StartupGroup) Add(fn StartupFn) <span class="cov10" title="17">{
+func (g *StartupGroup) Add(fn StartupFn) <span class="cov10" title="15">{
         g.startupFns = append(g.startupFns, fn)
 }</span>
 
 // Start runs all startup functions and waits for shutdown signal.
 // It also sets up a listener for forceful shutdown signals to
 // terminate the application immediately if needed.
-func (g *StartupGroup) Start(ctx context.Context) error <span class="cov7" title="9">{
+func (g *StartupGroup) Start(ctx context.Context) error <span class="cov8" title="9">{
         watchForceSignal := func(
                 rootCtx context.Context,
                 signals []os.Signal,
-        ) </span><span class="cov7" title="9">{
+        ) </span><span class="cov8" title="9">{
                 forceSignal := make(chan os.Signal, 1)
                 signal.Notify(forceSignal, signals...)
 
-                go func() </span><span class="cov7" title="9">{
+                go func() </span><span class="cov8" title="9">{
                         &lt;-forceSignal
                         g.logger.InfoContext(rootCtx, "Forcing shutdown")
                         os.Exit(1)
                 }</span>()
         }
 
-        <span class="cov7" title="9">shutdownSignals := []os.Signal{unix.SIGINT, unix.SIGTERM}
+        <span class="cov8" title="9">shutdownSignals := []os.Signal{unix.SIGINT, unix.SIGTERM}
 
-        shutdown := func() error </span><span class="cov7" title="9">{
+        shutdown := func() error </span><span class="cov8" title="9">{
                 watchForceSignal(ctx, shutdownSignals)
                 return g.shutdownHooks.PerformShutdown(ctx)
         }</span>
 
-        <span class="cov7" title="9">signalCtx, cancel := signal.NotifyContext(ctx, shutdownSignals...)
+        <span class="cov8" title="9">signalCtx, cancel := signal.NotifyContext(ctx, shutdownSignals...)
         defer cancel()
 
         startupErrors := make(chan error, len(g.startupFns))
@@ -7521,7 +7554,7 @@ func (g *StartupGroup) Start(ctx context.Context) error <span class="cov7" title
                 }</span>(fn)
         }
 
-        <span class="cov7" title="9">var startupErr error
+        <span class="cov8" title="9">var startupErr error
         select </span>{
         case startupErr = &lt;-startupErrors:<span class="cov7" title="8">
                 if startupErr != nil </span><span class="cov3" title="2">{
@@ -7531,7 +7564,7 @@ func (g *StartupGroup) Start(ctx context.Context) error <span class="cov7" title
                 // We will attempt to shut down in both cases
                 // so doing it once on a next line
         }
-        <span class="cov7" title="9">return errors.Join(startupErr, shutdown())</span>
+        <span class="cov8" title="9">return errors.Join(startupErr, shutdown())</span>
 }
 </pre>
 		
