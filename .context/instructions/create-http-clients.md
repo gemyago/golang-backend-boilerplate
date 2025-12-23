@@ -56,7 +56,7 @@ type ClientDeps struct {
 
 func NewClient(
 	deps ClientDeps,
-	clientOpts ...httpservices.ClientOption,
+	clientOpts ...httpclient.ClientOption,
 ) *Client {
 	return &Client{
 		httpClient: deps.ClientFactory.CreateClient(clientOpts...),
@@ -192,7 +192,7 @@ import (
 		"testing"
 
 		"github.com/gemyago/atlacp/internal/telemetry"
-		httpservices "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
+		"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient"
 		"github.com/jaswdr/faker/v2"
 		"github.com/stretchr/testify/assert"
 		"github.com/stretchr/testify/require"
@@ -204,7 +204,7 @@ func TestClient_CreateResource(t *testing.T) {
 				// Always include test name in the logger for better debugging
 				rootLogger := telemetry.RootTestLogger().With("test", t.Name())
 				return ClientDeps{
-						ClientFactory: httpservices.NewClientFactory(httpservices.ClientFactoryDeps{
+						ClientFactory: httpclient.NewClientFactory(httpclient.ClientFactoryDeps{
 								RootLogger: rootLogger,
 						}),
 						RootLogger: rootLogger,

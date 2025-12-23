@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient"
 	"go.uber.org/dig"
 )
 
@@ -17,14 +17,14 @@ type Client struct {
 type ClientDeps struct {
 	dig.In
 
-	ClientFactory *httpsvc.ClientFactory
+	ClientFactory *httpclient.ClientFactory
 	RootLogger    *slog.Logger
 	BaseURL       string `name:"config.petstore.baseURL"`
 }
 
 func NewClient(
 	deps ClientDeps,
-	clientOpts ...httpsvc.ClientOption,
+	clientOpts ...httpclient.ClientOption,
 ) *Client {
 	return &Client{
 		httpClient: deps.ClientFactory.CreateClient(clientOpts...),
