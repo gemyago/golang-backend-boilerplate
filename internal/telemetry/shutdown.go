@@ -18,7 +18,10 @@ func registerShutdownHook(logger *slog.Logger, hooks ShutdownHooks, name string,
 	case shutdowner:
 		hooks.Register(name, target.Shutdown)
 	default:
-		logger.Warn("registerShutdownHook: target is not a shutdowner", "target", target)
+		logger.Warn("registerShutdownHook: target is not a shutdowner",
+			slog.Any("target", target),
+			slog.String("name", name),
+		)
 		return
 	}
 }

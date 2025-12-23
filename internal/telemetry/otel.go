@@ -51,6 +51,8 @@ type SetupDeps struct {
 	dig.In
 
 	OTELConfig
+	OTELMetricsConfig
+	OTELTracesConfig
 	OTELLogsConfig
 	ShutdownHooks
 
@@ -77,15 +79,23 @@ func OTELSetup(deps SetupDeps) error { // coverage-ignore -- Hard to test and th
 		otelLogger = logr.FromSlogHandler(deps.RootLogger.WithGroup("otel").Handler())
 	}
 
-	otel.SetLogger(otelLogger)
+	// V(1) will reduce noise from otel internals.
+	// Set to zero to see debug logs and trouble-shoot otel issues.
+	otel.SetLogger(otelLogger.V(1))
 
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(cause error) {
 		otelLogger.Error(cause, "OTEL error")
 	}))
 
-	registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-tracer", deps.TracerProvider)
-	registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-meter", deps.MeterProvider)
-	registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-logger", deps.LoggerProvider)
+	if deps.OTELTracesConfig.Enabled {
+		registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-tracer", deps.TracerProvider)
+	}
+	if deps.OTELMetricsConfig.Enabled {
+		registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-meter", deps.MeterProvider)
+	}
+	if deps.OTELLogsConfig.Enabled {
+		registerShutdownHook(deps.RootLogger, deps.ShutdownHooks, "otel-logger", deps.LoggerProvider)
+	}
 
 	if !deps.OTELConfig.RuntimeMetrics {
 		return nil
