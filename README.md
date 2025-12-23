@@ -16,6 +16,10 @@ Key features:
 * [testify](https://github.com/stretchr/testify) and [mockery](https://github.com/vektra/mockery) are used for tests
 * [go.opentelemetry.io/otel](https://github.com/open-telemetry/opentelemetry-go) is used for tracing and metrics (disabled by default)
 * [gow](https://github.com/mitranim/gow) is used to watch and restart tests or server
+* Build/CI/Docker/Deploy:
+  * Multi-platform docker images see [build](./build/README.md)
+  * Initial helm chart for k8s deployment see [deploy](./deploy/README.md)
+  * GitHub Actions CI workflow
 
 AI enabled:
 - Includes [AGENTS.md](./AGENTS.md) files to guide AI assistants (and humans) on project structure and conventions
