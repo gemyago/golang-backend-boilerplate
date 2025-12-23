@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	httpservices "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient"
 	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +18,7 @@ func TestClient_UpdatePet(t *testing.T) {
 		// Always include test name in the logger for better debugging
 		rootLogger := telemetry.RootTestLogger().With("test", t.Name())
 		return ClientDeps{
-			ClientFactory: httpservices.NewClientFactory(httpservices.ClientFactoryDeps{
+			ClientFactory: httpclient.NewClientFactory(httpclient.ClientFactoryDeps{
 				RootLogger: rootLogger,
 			}),
 			RootLogger: rootLogger,

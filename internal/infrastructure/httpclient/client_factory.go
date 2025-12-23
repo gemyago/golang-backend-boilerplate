@@ -1,11 +1,11 @@
-package http
+package httpclient
 
 import (
 	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http/middleware"
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient/middleware"
 	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
 	"go.uber.org/dig"
 	"golang.org/x/oauth2"

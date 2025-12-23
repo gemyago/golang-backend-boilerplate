@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	httpsvc "github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/http"
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/httpclient"
 )
 
 // UpdatePetParams contains parameters for updating a pet.
@@ -14,7 +14,7 @@ type UpdatePetParams struct {
 
 func (c *Client) UpdatePet(ctx context.Context, params UpdatePetParams) (*Pet, error) {
 	var response Pet
-	err := httpsvc.SendRequest(ctx, c.httpClient, httpsvc.SendRequestParams[Pet, Pet]{
+	err := httpclient.SendRequest(ctx, c.httpClient, httpclient.SendRequestParams[Pet, Pet]{
 		Method: "PUT",
 		URL:    c.baseURL + "/pet",
 		Body:   params.Request,
