@@ -6,15 +6,20 @@
 Basic golang boilerplate for backend projects.
 
 Key features:
-* [cobra](github.com/spf13/cobra) - CLI interactions
-* [viper](github.com/spf13/viper) - Configuration management
-* [apigen](github.com/gemyago/apigen) - API layer generator
-* uber [dig](go.uber.org/dig) is used as DI framework
+* [cobra](https://github.com/spf13/cobra) - CLI interactions
+* [viper](https://github.com/spf13/viper) - Configuration management
+* [apigen](https://github.com/gemyago/apigen) - API layer generator
+* uber [dig](https://github.com/uber-go/dig) is used as DI framework
   * for small projects it may make sense to setup dependencies manually
 * `slog` is used for logs
-* [slog-http](github.com/samber/slog-http) is used to produce access logs
-* [testify](github.com/stretchr/testify) and [mockery](github.com/vektra/mockery) are used for tests
-* [gow](github.com/mitranim/gow) is used to watch and restart tests or server
+* [slog-http](https://github.com/samber/slog-http) is used to produce access logs
+* [testify](https://github.com/stretchr/testify) and [mockery](https://github.com/vektra/mockery) are used for tests
+* [go.opentelemetry.io/otel](https://github.com/open-telemetry/opentelemetry-go) is used for tracing and metrics (disabled by default)
+* [gow](https://github.com/mitranim/gow) is used to watch and restart tests or server
+
+AI enabled:
+- Includes [AGENTS.md](./AGENTS.md) files to guide AI assistants (and humans) on project structure and conventions
+- Initial set of rules and prompts in [.context](./.context)
 
 ## Starting a new project
 
@@ -64,6 +69,10 @@ Feel free to use any other branch name. In this case please make sure to update 
   * [internal/api/http/v1routes.yaml](./internal/api/http/v1routes.yaml) - OpenAPI spec for the api routes. HTTP layer is generated with [apigen](github.com/gemyago/apigen)
 * `internal/app` - place to add application layer code (e.g business logic).
 * `internal/infrastructure` - lower level components are supposed to be here (e.g database access layer e.t.c).
+
+See agents files for more details on code structure and conventions:
+- [AGENTS.md](./AGENTS.md)
+- [internal/AGENTS.md](./internal/AGENTS.md)
 
 ## Project Setup
 
