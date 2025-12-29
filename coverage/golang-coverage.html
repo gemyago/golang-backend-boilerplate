@@ -189,9 +189,9 @@
 				
 				<option value="file66">github.com/gemyago/golang-backend-boilerplate/internal/app/users_metrics.go (80.0%)</option>
 				
-				<option value="file67">github.com/gemyago/golang-backend-boilerplate/internal/app/users_queries.go (100.0%)</option>
+				<option value="file67">github.com/gemyago/golang-backend-boilerplate/internal/app/users_queries.go (90.0%)</option>
 				
-				<option value="file68">github.com/gemyago/golang-backend-boilerplate/internal/app/users_testing.go (80.0%)</option>
+				<option value="file68">github.com/gemyago/golang-backend-boilerplate/internal/app/users_testing.go (100.0%)</option>
 				
 				<option value="file69">github.com/gemyago/golang-backend-boilerplate/internal/config/load.go (92.9%)</option>
 				
@@ -199,7 +199,7 @@
 				
 				<option value="file71">github.com/gemyago/golang-backend-boilerplate/internal/di/dig.go (100.0%)</option>
 				
-				<option value="file72">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/database.go (76.2%)</option>
+				<option value="file72">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/database.go (78.3%)</option>
 				
 				<option value="file73">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/database_testing.go (93.3%)</option>
 				
@@ -227,7 +227,7 @@
 				
 				<option value="file85">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/register.go (100.0%)</option>
 				
-				<option value="file86">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/users_repository.go (92.5%)</option>
+				<option value="file86">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/users_repository.go (94.2%)</option>
 				
 				<option value="file87">github.com/gemyago/golang-backend-boilerplate/internal/infrastructure/users_testing.go (85.7%)</option>
 				
@@ -4683,7 +4683,7 @@ func (s *testMCPServer) Start(
                 stdioServer := mcpserver.NewStdioServer(mcpServer)
                 stdioServer.SetErrorLogger(logger)
 
-                if err := stdioServer.Listen(ctx, s.serverReader, s.serverWriter); err != nil </span><span class="cov10" title="4">{
+                if err := stdioServer.Listen(ctx, s.serverReader, s.serverWriter); err != nil </span><span class="cov8" title="3">{
                         logger.Println("StdioServer.Listen failed:", err)
                 }</span>
         }()
@@ -4776,7 +4776,7 @@ func NewErrNotFound(resourceType string, resourceID string) *NotFoundError <span
 }</span>
 
 // Error implements the error interface.
-func (e *NotFoundError) Error() string <span class="cov3" title="2">{
+func (e *NotFoundError) Error() string <span class="cov4" title="3">{
         return fmt.Sprintf("%s not found: %s", e.Resource, e.ID)
 }</span>
 
@@ -5145,7 +5145,7 @@ type PetsQueriesDeps struct {
 
 // NewPetsQueries returns a concrete struct (not an interface).
 // This follows "accept interface, return struct" principle.
-func NewPetsQueries(deps PetsQueriesDeps) *PetsQueries <span class="cov9" title="9">{
+func NewPetsQueries(deps PetsQueriesDeps) *PetsQueries <span class="cov10" title="9">{
         return &amp;PetsQueries{
                 petsRepo:       deps.PetsRepo,
                 usersRepo:      deps.UsersRepo,
@@ -5187,8 +5187,8 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
         fetchGrp, grpCtx := errgroup.WithContext(ctx)
         fetchGrp.SetLimit(maxConcurrentFetches)
 
-        for _, petID := range petIDs </span><span class="cov10" title="10">{
-                fetchGrp.Go(func() error </span><span class="cov10" title="10">{
+        for _, petID := range petIDs </span><span class="cov10" title="9">{
+                fetchGrp.Go(func() error </span><span class="cov10" title="9">{
                         pet, petErr := q.petstoreClient.GetPetByID(grpCtx, petstore.GetPetByIDParams{
                                 PetID: strconv.FormatInt(petID, 10),
                         })
@@ -5199,10 +5199,10 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                                         slog.Int64("pet_id", petID),
                                         slog.String("error", petErr.Error()),
                                 )
-                        }</span> else<span class="cov9" title="9"> {
+                        }</span> else<span class="cov9" title="8"> {
                                 fetchedPetsResult &lt;- pet
                         }</span>
-                        <span class="cov10" title="10">return nil</span>
+                        <span class="cov10" title="9">return nil</span>
                 })
         }
 
@@ -5211,7 +5211,7 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                 close(fetchedPetsResult)
         }</span>()
 
-        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov9" title="9">{
+        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov9" title="8">{
                 pets = append(pets, pet)
         }</span>
 
@@ -5592,6 +5592,7 @@ func (m *UsersMetrics) recordUserEmailConflict(ctx context.Context) <span class=
 
 import (
         "context"
+        "fmt"
         "log/slog"
 
         "go.uber.org/dig"
@@ -5601,12 +5602,15 @@ import (
 // Controllers and other consumers use this directly.
 // Follows "accept interface, return struct" principle.
 type UserQueries struct {
-        usersRepo UsersRepository
-        logger    *slog.Logger
+        usersRepo       UsersRepository
+        logger          *slog.Logger
+        databaseQuerier Queryer
 }
 
 type UserQueriesDeps struct {
         dig.In
+
+        Queryer
 
         UsersRepo  UsersRepository
         RootLogger *slog.Logger
@@ -5614,27 +5618,55 @@ type UserQueriesDeps struct {
 
 // NewUserQueries returns a concrete struct (not an interface).
 // This follows "accept interface, return struct" principle.
-func NewUserQueries(deps UserQueriesDeps) *UserQueries <span class="cov10" title="9">{
+func NewUserQueries(deps UserQueriesDeps) *UserQueries <span class="cov10" title="7">{
         return &amp;UserQueries{
-                usersRepo: deps.UsersRepo,
-                logger:    deps.RootLogger.WithGroup("app.user-queries"),
+                usersRepo:       deps.UsersRepo,
+                logger:          deps.RootLogger.WithGroup("app.user-queries"),
+                databaseQuerier: deps.Queryer,
         }
 }</span>
 
-func (q *UserQueries) GetUserByID(ctx context.Context, userID string) (*User, error) <span class="cov5" title="3">{
+func (q *UserQueries) GetUserByID(ctx context.Context, userID string) (*User, error) <span class="cov4" title="2">{
         user, err := q.usersRepo.GetUserByID(ctx, userID)
-        if err != nil </span><span class="cov3" title="2">{
-                return nil, err
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, fmt.Errorf("failed to get user by ID: %w", err)
         }</span>
         <span class="cov1" title="1">return user, nil</span>
 }
 
-func (q *UserQueries) ListUsers(ctx context.Context) ([]*User, error) <span class="cov5" title="3">{
-        users, err := q.usersRepo.ListUsers(ctx)
+func (q *UserQueries) ListUsers(ctx context.Context) ([]*User, error) <span class="cov6" title="3">{
+        query := `
+                SELECT id, name, email, created_at, updated_at
+                FROM users
+                ORDER BY created_at ASC
+        `
+        rows, err := q.databaseQuerier.QueryContext(ctx, query)
         if err != nil </span><span class="cov1" title="1">{
                 return nil, err
         }</span>
-        <span class="cov3" title="2">return users, nil</span>
+        <span class="cov4" title="2">defer rows.Close()
+
+        var users []*User
+        for rows.Next() </span><span class="cov6" title="3">{
+                user := &amp;User{}
+                scanErr := rows.Scan(
+                        &amp;user.ID,
+                        &amp;user.Name,
+                        &amp;user.Email,
+                        &amp;user.CreatedAt,
+                        &amp;user.UpdatedAt,
+                )
+                if scanErr != nil </span><span class="cov0" title="0">{
+                        return nil, scanErr
+                }</span>
+                <span class="cov6" title="3">users = append(users, user)</span>
+        }
+
+        <span class="cov4" title="2">if rowsErr := rows.Err(); rowsErr != nil </span><span class="cov0" title="0">{
+                return nil, rowsErr
+        }</span>
+
+        <span class="cov4" title="2">return users, nil</span>
 }
 </pre>
 		
@@ -5656,10 +5688,10 @@ func WithUserID(id string) UserOption <span class="cov6" title="4">{
         }</span>
 }
 
-func WithUserTimestamps(createdAt, updatedAt time.Time) UserOption <span class="cov0" title="0">{
-        return func(u *User) </span><span class="cov0" title="0">{
-                u.CreatedAt = createdAt
-                u.UpdatedAt = updatedAt
+func WithUserTimestamps(createdAt, updatedAt time.Time) UserOption <span class="cov5" title="3">{
+        return func(u *User) </span><span class="cov5" title="3">{
+                u.CreatedAt = createdAt.Truncate(time.Millisecond)
+                u.UpdatedAt = updatedAt.Truncate(time.Millisecond)
         }</span>
 }
 
@@ -5669,16 +5701,18 @@ func WithUserEmail(email string) UserOption <span class="cov3" title="2">{
         }</span>
 }
 
-func NewRandomUser(fake faker.Faker, opts ...UserOption) *User <span class="cov7" title="5">{
+func NewRandomUser(fake faker.Faker, opts ...UserOption) *User <span class="cov10" title="9">{
         user := &amp;User{
-                ID:    fake.RandomStringWithLength(10),
-                Name:  fake.Person().Name(),
-                Email: fake.Internet().Email(),
+                ID:        fake.RandomStringWithLength(10),
+                Name:      fake.Person().Name(),
+                Email:     fake.Internet().Email(),
+                CreatedAt: fake.Time().Past(),
+                UpdatedAt: fake.Time().Recent(),
         }
-        for _, opt := range opts </span><span class="cov8" title="6">{
+        for _, opt := range opts </span><span class="cov10" title="9">{
                 opt(user)
         }</span>
-        <span class="cov7" title="5">return user</span>
+        <span class="cov10" title="9">return user</span>
 }
 
 func NewRandomCreateUserRequest(fake faker.Faker) *CreateUserRequest <span class="cov8" title="7">{
@@ -5714,17 +5748,17 @@ import (
 //go:embed *.yaml
 var resources embed.FS
 
-func mergeResourceCfg(cfg *viper.Viper, resourceName string) error <span class="cov10" title="137">{
+func mergeResourceCfg(cfg *viper.Viper, resourceName string) error <span class="cov10" title="143">{
         resourceStream, err := resources.Open(resourceName)
-        if err != nil </span><span class="cov8" title="48">{
+        if err != nil </span><span class="cov8" title="50">{
                 return fmt.Errorf("failed to read config %v: %w", resourceName, err)
         }</span>
-        <span class="cov9" title="89">defer resourceStream.Close()
+        <span class="cov9" title="93">defer resourceStream.Close()
 
         if err = cfg.MergeConfig(resourceStream); err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("failed to load config %v: %w", resourceName, err)
         }</span>
-        <span class="cov9" title="89">return nil</span>
+        <span class="cov9" title="93">return nil</span>
 }
 
 type LoadOpts struct {
@@ -5733,21 +5767,21 @@ type LoadOpts struct {
 }
 
 // NewLoadOpts creates a new LoadOpts instance.
-func NewLoadOpts() *LoadOpts <span class="cov8" title="48">{
+func NewLoadOpts() *LoadOpts <span class="cov8" title="50">{
         return &amp;LoadOpts{
                 env:                   "local",
                 defaultConfigFileName: "default.yaml",
         }
 }</span>
 
-func (opts *LoadOpts) WithEnv(val string) *LoadOpts <span class="cov8" title="46">{
-        if val != "" </span><span class="cov8" title="46">{
+func (opts *LoadOpts) WithEnv(val string) *LoadOpts <span class="cov8" title="48">{
+        if val != "" </span><span class="cov8" title="48">{
                 opts.env = val
         }</span>
-        <span class="cov8" title="46">return opts</span>
+        <span class="cov8" title="48">return opts</span>
 }
 
-func New() *viper.Viper <span class="cov8" title="48">{
+func New() *viper.Viper <span class="cov8" title="50">{
         v := viper.New()
         v.SetEnvPrefix("APP")
         v.SetConfigType("yaml")
@@ -5758,7 +5792,7 @@ func New() *viper.Viper <span class="cov8" title="48">{
         return v
 }</span>
 
-func Load(cfg *viper.Viper, opts *LoadOpts) error <span class="cov8" title="48">{
+func Load(cfg *viper.Viper, opts *LoadOpts) error <span class="cov8" title="50">{
         // env should only be used for tracing/debugging purposes
         cfg.Set("env", opts.env)
 
@@ -5766,19 +5800,19 @@ func Load(cfg *viper.Viper, opts *LoadOpts) error <span class="cov8" title="48">
                 return err
         }</span>
 
-        <span class="cov8" title="47">if err := mergeResourceCfg(cfg, opts.env+".yaml"); err != nil </span><span class="cov3" title="5">{
+        <span class="cov8" title="49">if err := mergeResourceCfg(cfg, opts.env+".yaml"); err != nil </span><span class="cov3" title="5">{
                 return err
         }</span>
 
         // load env user if exists
-        <span class="cov7" title="42">if err := mergeResourceCfg(cfg, opts.env+"-user.yaml"); err != nil </span><span class="cov7" title="42">{
+        <span class="cov7" title="44">if err := mergeResourceCfg(cfg, opts.env+"-user.yaml"); err != nil </span><span class="cov7" title="44">{
                 if !errors.Is(err, os.ErrNotExist) </span><span class="cov0" title="0">{
                         return err
                 }</span>
         }
 
         // Some common aliases to have cli params with the same name as config keys
-        <span class="cov7" title="42">cfg.RegisterAlias("defaultLogLevel", "log-level")
+        <span class="cov7" title="44">cfg.RegisterAlias("defaultLogLevel", "log-level")
         cfg.RegisterAlias("jsonLogs", "json-logs")
 
         return nil</span>
@@ -5913,13 +5947,13 @@ type ConstructorWithOpts struct {
 }
 
 func ProvideAll(container *dig.Container, providers ...interface{}) error <span class="cov6" title="50">{
-        for i, provider := range providers </span><span class="cov10" title="354">{
+        for i, provider := range providers </span><span class="cov10" title="358">{
                 switch p := provider.(type) </span>{
                 case ConstructorWithOpts:<span class="cov8" title="176">
                         if err := container.Provide(p.Constructor, p.Options...); err != nil </span><span class="cov1" title="1">{
                                 return fmt.Errorf("failed to provide %d-th dependency: %w", i, err)
                         }</span>
-                default:<span class="cov8" title="178">
+                default:<span class="cov8" title="182">
                         if err := container.Provide(provider); err != nil </span><span class="cov1" title="1">{
                                 return fmt.Errorf("failed to provide %d-th dependency: %w", i, err)
                         }</span>
@@ -5969,14 +6003,14 @@ func ProvideWithArgErr[
 // ProvideImplementation is used to define implementation of some particular
 // interface so DI container could resolve the implementation of the interface properly.
 // Usually you may want to use this method if implementation was injected on a different layer.
-func ProvideImplementation[TImplementation any, TInterface any](source TImplementation) (TInterface, error) <span class="cov5" title="21">{
+func ProvideImplementation[TImplementation any, TInterface any](source TImplementation) (TInterface, error) <span class="cov5" title="23">{
         target, ok := any(source).(TInterface)
         if !ok </span><span class="cov1" title="1">{
                 var src TImplementation
                 var tgt TInterface
                 return target, fmt.Errorf("failed to cast %s to %s", reflect.TypeOf(src), reflect.TypeOf(tgt))
         }</span>
-        <span class="cov5" title="20">return target, nil</span>
+        <span class="cov5" title="22">return target, nil</span>
 }
 
 // ProvideFactoryAs allows injecting implementation of a particular interface.
@@ -6030,6 +6064,14 @@ type Database struct {
         instance *sql.DB
 }
 
+func (db *Database) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) <span class="cov3" title="3">{
+        return db.instance.QueryContext(ctx, query, args...)
+}</span>
+
+func (db *Database) Close() error <span class="cov1" title="1">{
+        return db.instance.Close()
+}</span>
+
 type DatabaseDeps struct {
         dig.In
 
@@ -6042,8 +6084,8 @@ type DatabaseDeps struct {
         DSN string `name:"config.database.dsn"`
 }
 
-func newDBProvider(ctx context.Context) func(DatabaseDeps) (*Database, error) <span class="cov10" title="38">{
-        return func(deps DatabaseDeps) (*Database, error) </span><span class="cov9" title="36">{
+func newDBProvider(ctx context.Context) func(DatabaseDeps) (*Database, error) <span class="cov10" title="40">{
+        return func(deps DatabaseDeps) (*Database, error) </span><span class="cov9" title="38">{
                 var db *sql.DB
                 var err error
 
@@ -6055,11 +6097,11 @@ func newDBProvider(ctx context.Context) func(DatabaseDeps) (*Database, error) <s
                                 otelsql.WithMeterProvider(deps.MeterProvider),
                                 otelsql.WithTracerProvider(deps.TracerProvider),
                         )
-                }</span> else<span class="cov9" title="36"> {
+                }</span> else<span class="cov9" title="38"> {
                         db, err = sql.Open(driverName, deps.DSN)
                 }</span>
 
-                <span class="cov9" title="36">if err != nil </span><span class="cov0" title="0">{ // coverage-ignore -- No way to simulate this
+                <span class="cov9" title="38">if err != nil </span><span class="cov0" title="0">{ // coverage-ignore -- No way to simulate this
                         return nil, fmt.Errorf("failed to open database: %w", err)
                 }</span>
 
@@ -6067,7 +6109,7 @@ func newDBProvider(ctx context.Context) func(DatabaseDeps) (*Database, error) <s
                 // By default SQLite requires PRAGMA foreign_keys = ON per connection.
                 // The error path below is hard to simulate in tests (driver-level failures),
                 // so exclude it from coverage measurements.
-                <span class="cov9" title="36">if _, err = db.ExecContext(ctx, "PRAGMA foreign_keys = ON;"); err != nil </span><span class="cov0" title="0">{ // coverage-ignore -- No way to simulate this
+                <span class="cov9" title="38">if _, err = db.ExecContext(ctx, "PRAGMA foreign_keys = ON;"); err != nil </span><span class="cov0" title="0">{ // coverage-ignore -- No way to simulate this
                         // Attempt to close DB and report both errors if close fails.
                         if closeErr := db.Close(); closeErr != nil </span><span class="cov0" title="0">{
                                 // Use %s for the secondary error and wrap the primary using %w.
@@ -6084,7 +6126,7 @@ func newDBProvider(ctx context.Context) func(DatabaseDeps) (*Database, error) <s
                 // In a real-world application, you would handle migrations, connection pooling, etc.
                 // Migrations are very likely to be handled outside by a dedicated tool.
 
-                <span class="cov9" title="36">if err = errors.Join(
+                <span class="cov9" title="38">if err = errors.Join(
                         // Add other schema entries as needed
                         initUsersSchema(ctx, db),
                         initUserPetsSchema(ctx, db),
@@ -6092,13 +6134,13 @@ func newDBProvider(ctx context.Context) func(DatabaseDeps) (*Database, error) <s
                         return nil, fmt.Errorf("failed to initialize schema: %w", err)
                 }</span>
 
-                <span class="cov9" title="35">deps.ShutdownHooks.RegisterNoCtx("database", db.Close)
+                <span class="cov9" title="37">deps.ShutdownHooks.RegisterNoCtx("database", db.Close)
 
                 return &amp;Database{instance: db}, nil</span>
         }
 }
 
-func initUsersSchema(ctx context.Context, db *sql.DB) error <span class="cov9" title="36">{
+func initUsersSchema(ctx context.Context, db *sql.DB) error <span class="cov9" title="38">{
         _, err := db.ExecContext(ctx, `
                 CREATE TABLE IF NOT EXISTS users (
                         id TEXT PRIMARY KEY,
@@ -6111,7 +6153,7 @@ func initUsersSchema(ctx context.Context, db *sql.DB) error <span class="cov9" t
         return err
 }</span>
 
-func initUserPetsSchema(ctx context.Context, db *sql.DB) error <span class="cov9" title="36">{
+func initUserPetsSchema(ctx context.Context, db *sql.DB) error <span class="cov9" title="38">{
         _, err := db.ExecContext(ctx, `
                 CREATE TABLE IF NOT EXISTS user_pets (
                         user_id TEXT NOT NULL,
@@ -6139,19 +6181,19 @@ import (
         tracenoop "go.opentelemetry.io/otel/trace/noop"
 )
 
-type testDatabaseOpts func(deps *DatabaseDeps)
+type TestDatabaseOpts func(deps *DatabaseDeps)
 
-func newTestDatabase(t *testing.T, opts ...testDatabaseOpts) *Database <span class="cov10" title="32">{
+func NewTestDatabase(t *testing.T, opts ...TestDatabaseOpts) *Database <span class="cov10" title="34">{
         t.Helper()
 
         cfg := config.New()
 
         env := cfg.GetString("env")
-        if env == "" </span><span class="cov10" title="32">{
+        if env == "" </span><span class="cov10" title="34">{
                 env = "test"
         }</span>
 
-        <span class="cov10" title="32">err := config.Load(cfg, config.NewLoadOpts().WithEnv(env))
+        <span class="cov10" title="34">err := config.Load(cfg, config.NewLoadOpts().WithEnv(env))
         require.NoError(t, err)
 
         deps := DatabaseDeps{
@@ -6163,13 +6205,13 @@ func newTestDatabase(t *testing.T, opts ...testDatabaseOpts) *Database <span cla
         for _, opt := range opts </span><span class="cov0" title="0">{
                 opt(&amp;deps)
         }</span>
-        <span class="cov10" title="32">db, err := newDBProvider(t.Context())(deps)
+        <span class="cov10" title="34">db, err := newDBProvider(t.Context())(deps)
         require.NoError(t, err)
-        t.Cleanup(func() </span><span class="cov10" title="32">{
+        t.Cleanup(func() </span><span class="cov10" title="34">{
                 db.instance.Close()
         }</span>)
 
-        <span class="cov10" title="32">return db</span>
+        <span class="cov10" title="34">return db</span>
 }
 </pre>
 		
@@ -6899,7 +6941,8 @@ func Register(rootCtx context.Context, container *dig.Container) error <span cla
         return di.ProvideAll(container,
                 httpclient.NewClientFactory,
                 newDBProvider(rootCtx),
-                di.ProvideFactoryAs[app.UsersRepository](newUsersRepository),
+                di.ProvideImplementation[*Database, app.Queryer],
+                di.ProvideFactoryAs[app.UsersRepository](NewUsersRepository),
                 di.ProvideFactoryAs[app.PetsRepository](newPetsRepository),
                 di.ProvideFactoryAs[app.PetstoreClient](func(deps petstore.ClientDeps) *petstore.Client </span><span class="cov5" title="2">{
                         return petstore.NewClient(deps)
@@ -6922,16 +6965,16 @@ import (
         _ "modernc.org/sqlite" // SQLite driver
 )
 
-type sqliteUsersRepository struct {
+type SQLiteUsersRepository struct {
         db    *sql.DB
         time  apptime.Provider
         idGen ident.Generator
 }
 
 // Ensure sqliteUsersRepository implements app.UsersRepository.
-var _ app.UsersRepository = (*sqliteUsersRepository)(nil)
+var _ app.UsersRepository = (*SQLiteUsersRepository)(nil)
 
-type usersRepositoryDeps struct {
+type UsersRepositoryDeps struct {
         dig.In
 
         DB    *Database
@@ -6939,15 +6982,15 @@ type usersRepositoryDeps struct {
         IDGen ident.Generator
 }
 
-func newUsersRepository(deps usersRepositoryDeps) *sqliteUsersRepository <span class="cov10" title="29">{
-        return &amp;sqliteUsersRepository{
+func NewUsersRepository(deps UsersRepositoryDeps) *SQLiteUsersRepository <span class="cov10" title="31">{
+        return &amp;SQLiteUsersRepository{
                 db:    deps.DB.instance,
                 time:  deps.Time,
                 idGen: deps.IDGen,
         }
 }</span>
 
-func (r *sqliteUsersRepository) ensureRowsUpdated(result sql.Result) error <span class="cov6" title="7">{
+func (r *SQLiteUsersRepository) ensureRowsUpdated(result sql.Result) error <span class="cov6" title="7">{
         rowsAffected, err := result.RowsAffected()
         if err != nil </span><span class="cov0" title="0">{
                 return err
@@ -6958,14 +7001,14 @@ func (r *sqliteUsersRepository) ensureRowsUpdated(result sql.Result) error <span
         <span class="cov4" title="4">return nil</span>
 }
 
-func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user app.User) error <span class="cov9" title="21">{
+func (r *SQLiteUsersRepository) CreateUser(ctx context.Context, user app.User) error <span class="cov9" title="22">{
         // Generate UUID if not provided
         if user.ID == "" </span><span class="cov1" title="1">{
                 user.ID = r.idGen.MustNewV7().String()
         }</span>
 
         // Set timestamps
-        <span class="cov9" title="21">now := r.time.Now()
+        <span class="cov9" title="22">now := r.time.Now()
         user.CreatedAt = now
         user.UpdatedAt = now
 
@@ -6978,7 +7021,7 @@ func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user app.User) e
         return err</span>
 }
 
-func (r *sqliteUsersRepository) UpdateUser(ctx context.Context, user app.User) error <span class="cov5" title="6">{
+func (r *SQLiteUsersRepository) UpdateUser(ctx context.Context, user app.User) error <span class="cov5" title="6">{
         // Update updated_at timestamp to current time
         user.UpdatedAt = r.time.Now()
 
@@ -7004,7 +7047,7 @@ func (r *sqliteUsersRepository) UpdateUser(ctx context.Context, user app.User) e
         <span class="cov2" title="2">return nil</span>
 }
 
-func (r *sqliteUsersRepository) DeleteUser(ctx context.Context, userID string) error <span class="cov4" title="4">{
+func (r *SQLiteUsersRepository) DeleteUser(ctx context.Context, userID string) error <span class="cov4" title="4">{
         query := `
                 DELETE FROM users
                 WHERE id = ?
@@ -7024,7 +7067,7 @@ func (r *sqliteUsersRepository) DeleteUser(ctx context.Context, userID string) e
         <span class="cov2" title="2">return nil</span>
 }
 
-func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) (*app.User, error) <span class="cov4" title="4">{
+func (r *SQLiteUsersRepository) GetUserByID(ctx context.Context, userID string) (*app.User, error) <span class="cov5" title="6">{
         query := `
                 SELECT id, name, email, created_at, updated_at
                 FROM users
@@ -7038,16 +7081,16 @@ func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) 
                 &amp;user.CreatedAt,
                 &amp;user.UpdatedAt,
         )
-        if err != nil </span><span class="cov2" title="2">{
-                if err == sql.ErrNoRows </span><span class="cov1" title="1">{
+        if err != nil </span><span class="cov3" title="3">{
+                if err == sql.ErrNoRows </span><span class="cov2" title="2">{
                         return nil, app.NewErrNotFound("user", userID)
                 }</span>
                 <span class="cov1" title="1">return nil, err</span>
         }
-        <span class="cov2" title="2">return user, nil</span>
+        <span class="cov3" title="3">return user, nil</span>
 }
 
-func (r *sqliteUsersRepository) GetUserByEmail(ctx context.Context, email string) (*app.User, error) <span class="cov3" title="3">{
+func (r *SQLiteUsersRepository) GetUserByEmail(ctx context.Context, email string) (*app.User, error) <span class="cov3" title="3">{
         query := `
                 SELECT id, name, email, created_at, updated_at
                 FROM users
@@ -7068,41 +7111,6 @@ func (r *sqliteUsersRepository) GetUserByEmail(ctx context.Context, email string
                 <span class="cov1" title="1">return nil, err</span>
         }
         <span class="cov1" title="1">return user, nil</span>
-}
-
-func (r *sqliteUsersRepository) ListUsers(ctx context.Context) ([]*app.User, error) <span class="cov3" title="3">{
-        query := `
-                SELECT id, name, email, created_at, updated_at
-                FROM users
-                ORDER BY created_at ASC
-        `
-        rows, err := r.db.QueryContext(ctx, query)
-        if err != nil </span><span class="cov1" title="1">{
-                return nil, err
-        }</span>
-        <span class="cov2" title="2">defer rows.Close()
-
-        var users []*app.User
-        for rows.Next() </span><span class="cov3" title="3">{
-                user := &amp;app.User{}
-                scanErr := rows.Scan(
-                        &amp;user.ID,
-                        &amp;user.Name,
-                        &amp;user.Email,
-                        &amp;user.CreatedAt,
-                        &amp;user.UpdatedAt,
-                )
-                if scanErr != nil </span><span class="cov0" title="0">{
-                        return nil, scanErr
-                }</span>
-                <span class="cov3" title="3">users = append(users, user)</span>
-        }
-
-        <span class="cov2" title="2">if rowsErr := rows.Err(); rowsErr != nil </span><span class="cov0" title="0">{
-                return nil, rowsErr
-        }</span>
-
-        <span class="cov2" title="2">return users, nil</span>
 }
 </pre>
 		
@@ -7134,20 +7142,20 @@ func WithUserName(name string) RandomUserOpt <span class="cov0" title="0">{
         }</span>
 }
 
-func WithUserEmail(email string) RandomUserOpt <span class="cov2" title="2">{
-        return func(u *app.User) </span><span class="cov2" title="2">{
+func WithUserEmail(email string) RandomUserOpt <span class="cov3" title="2">{
+        return func(u *app.User) </span><span class="cov3" title="2">{
                 u.Email = email
         }</span>
 }
 
-func WithUserTimestamps(createdAt, updatedAt time.Time) RandomUserOpt <span class="cov8" title="12">{
-        return func(u *app.User) </span><span class="cov8" title="12">{
+func WithUserTimestamps(createdAt, updatedAt time.Time) RandomUserOpt <span class="cov7" title="9">{
+        return func(u *app.User) </span><span class="cov7" title="9">{
                 u.CreatedAt = createdAt
                 u.UpdatedAt = updatedAt
         }</span>
 }
 
-func NewRandomUser(fake faker.Faker, opts ...RandomUserOpt) *app.User <span class="cov10" title="23">{
+func NewRandomUser(fake faker.Faker, opts ...RandomUserOpt) *app.User <span class="cov10" title="20">{
         randomPrefix := "(" + fake.RandomStringWithLength(5) + ") "
         user := &amp;app.User{
                 ID:        ident.NewDefaultGenerator().MustNewV7().String(),
@@ -7157,11 +7165,11 @@ func NewRandomUser(fake faker.Faker, opts ...RandomUserOpt) *app.User <span clas
                 UpdatedAt: fake.Time().Time(time.Now().Add(-time.Hour * pastYearHours)),
         }
 
-        for _, opt := range opts </span><span class="cov8" title="15">{
+        for _, opt := range opts </span><span class="cov8" title="12">{
                 opt(user)
         }</span>
 
-        <span class="cov10" title="23">return user</span>
+        <span class="cov10" title="20">return user</span>
 }
 </pre>
 		
@@ -7204,7 +7212,7 @@ type MockProvider struct {
 var _ Provider = &amp;MockProvider{}
 
 // NewMockProvider constructor for MockProvider.
-func NewMockProvider() *MockProvider <span class="cov9" title="32">{
+func NewMockProvider() *MockProvider <span class="cov9" title="34">{
         fake := faker.New()
         return &amp;MockProvider{
                 value: time.UnixMilli(fake.Time().Unix(time.Now())),
@@ -7215,7 +7223,7 @@ func (m *MockProvider) SetValue(t time.Time) <span class="cov1" title="1">{
         m.value = t
 }</span>
 
-func (m *MockProvider) Now() time.Time <span class="cov10" title="38">{
+func (m *MockProvider) Now() time.Time <span class="cov10" title="39">{
         return m.value
 }</span>
 
@@ -7269,18 +7277,18 @@ type DefaultGenerator struct {
 var _ Generator = (*DefaultGenerator)(nil)
 
 // NewDefaultGenerator creates a new instance of Generator.
-func NewDefaultGenerator() *DefaultGenerator <span class="cov10" title="78">{
+func NewDefaultGenerator() *DefaultGenerator <span class="cov10" title="77">{
         return &amp;DefaultGenerator{
                 gen: uuid.NewGen(),
         }
 }</span>
 
-func (g *DefaultGenerator) MustNewV7() UUID <span class="cov9" title="72">{
+func (g *DefaultGenerator) MustNewV7() UUID <span class="cov9" title="71">{
         id, err := g.gen.NewV7()
         if err != nil </span><span class="cov0" title="0">{ // coverage-ignore // no idea how to simulate this gracefully
                 panic(fmt.Errorf("failed to generate UUIDv7: %w", err))</span>
         }
-        <span class="cov9" title="72">return id</span>
+        <span class="cov9" title="71">return id</span>
 }
 
 func (g *DefaultGenerator) NewV7() (UUID, error) <span class="cov4" title="5">{
@@ -7307,7 +7315,7 @@ type MockGenerator struct {
 var _ Generator = &amp;MockGenerator{}
 
 // NewMockGenerator creates a new MockGenerator with default upstream.
-func NewMockGenerator() *MockGenerator <span class="cov10" title="42">{
+func NewMockGenerator() *MockGenerator <span class="cov10" title="44">{
         upstream := NewDefaultGenerator()
         return &amp;MockGenerator{
                 upstream:      upstream,
@@ -7393,7 +7401,7 @@ type ShutdownHooks struct {
 }
 
 // NewShutdownHooks creates a new instance of Hooks.
-func NewShutdownHooks(deps ShutdownHooksDeps) *ShutdownHooks <span class="cov10" title="57">{
+func NewShutdownHooks(deps ShutdownHooksDeps) *ShutdownHooks <span class="cov10" title="59">{
         return &amp;ShutdownHooks{
                 logger: deps.RootLogger.WithGroup("shutdown"),
                 deps:   deps,
@@ -7411,11 +7419,11 @@ func (h *ShutdownHooks) HasHook(name string, method any) bool <span class="cov4"
         <span class="cov2" title="2">return false</span>
 }
 
-func (h *ShutdownHooks) Register(name string, shutdown func(ctx context.Context) error) <span class="cov10" title="57">{
+func (h *ShutdownHooks) Register(name string, shutdown func(ctx context.Context) error) <span class="cov10" title="59">{
         h.hooks = append(h.hooks, shutdownHook{name: name, shutdownFn: shutdown})
 }</span>
 
-func (h *ShutdownHooks) RegisterNoCtx(name string, shutdown func() error) <span class="cov9" title="38">{
+func (h *ShutdownHooks) RegisterNoCtx(name string, shutdown func() error) <span class="cov9" title="40">{
         h.Register(name, func(_ context.Context) error </span><span class="cov4" title="4">{
                 return shutdown()
         }</span>)
@@ -7515,7 +7523,7 @@ type StartupGroup struct {
         logger        *slog.Logger
 }
 
-func (g *StartupGroup) Add(fn StartupFn) <span class="cov10" title="16">{
+func (g *StartupGroup) Add(fn StartupFn) <span class="cov10" title="15">{
         g.startupFns = append(g.startupFns, fn)
 }</span>
 
@@ -7581,7 +7589,7 @@ import (
 const defaultTestShutdownTimeout = 30 * time.Second
 
 // NewTestShutdownHooks constructor for shutdown Hooks that can be used in tests.
-func NewTestShutdownHooks() *ShutdownHooks <span class="cov10" title="48">{
+func NewTestShutdownHooks() *ShutdownHooks <span class="cov10" title="50">{
         return NewShutdownHooks(ShutdownHooksDeps{
                 RootLogger:              telemetry.RootTestLogger(),
                 GracefulShutdownTimeout: defaultTestShutdownTimeout,
@@ -8299,11 +8307,11 @@ func (h *diagLogHandler) Handle(ctx context.Context, rec slog.Record) error <spa
         <span class="cov9" title="170">return h.target.Handle(ctx, rec)</span>
 }
 
-func (h *diagLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler <span class="cov10" title="275">{
+func (h *diagLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler <span class="cov10" title="282">{
         return &amp;diagLogHandler{target: h.target.WithAttrs(attrs)}
 }</span>
 
-func (h *diagLogHandler) WithGroup(name string) slog.Handler <span class="cov9" title="265">{
+func (h *diagLogHandler) WithGroup(name string) slog.Handler <span class="cov9" title="272">{
         // Using WithAttrs here since group will nest all the attributes
         // inside of it (including correlationId), which makes it harder to
         // filter logs by the correlationId.
@@ -8326,7 +8334,7 @@ type RootLoggerOpts struct {
         otellogProvider otellog.LoggerProvider
 }
 
-func NewRootLoggerOpts() *RootLoggerOpts <span class="cov9" title="207">{
+func NewRootLoggerOpts() *RootLoggerOpts <span class="cov9" title="214">{
         return &amp;RootLoggerOpts{
                 output: os.Stdout,
         }
@@ -8342,7 +8350,7 @@ func (opts *RootLoggerOpts) WithLogLevel(logLevel slog.Level) *RootLoggerOpts <s
         return opts
 }</span>
 
-func (opts *RootLoggerOpts) WithOutput(output io.Writer) *RootLoggerOpts <span class="cov9" title="199">{
+func (opts *RootLoggerOpts) WithOutput(output io.Writer) *RootLoggerOpts <span class="cov9" title="206">{
         opts.output = output
         return opts
 }</span>
@@ -8370,15 +8378,15 @@ func (opts *RootLoggerOpts) WithOTELConfigs(
         return opts
 }</span>
 
-func newStandardSlogHandler(opts *RootLoggerOpts) slog.Handler <span class="cov9" title="206">{
+func newStandardSlogHandler(opts *RootLoggerOpts) slog.Handler <span class="cov9" title="213">{
         logHandlerOpts := &amp;slog.HandlerOptions{Level: opts.logLevel}
         if opts.jsonLogs </span><span class="cov4" title="7">{
                 return slog.NewJSONHandler(opts.output, logHandlerOpts)
         }</span>
-        <span class="cov9" title="199">return slog.NewTextHandler(opts.output, logHandlerOpts)</span>
+        <span class="cov9" title="206">return slog.NewTextHandler(opts.output, logHandlerOpts)</span>
 }
 
-func NewRootLogger(opts *RootLoggerOpts) *slog.Logger <span class="cov9" title="207">{
+func NewRootLogger(opts *RootLoggerOpts) *slog.Logger <span class="cov9" title="214">{
         var logHandler slog.Handler
         if opts.otelConfig.Enabled &amp;&amp; opts.otelLogsConfig.Enabled </span><span class="cov2" title="2">{
                 logHandler = otelslog.NewHandler(
@@ -8392,11 +8400,11 @@ func NewRootLogger(opts *RootLoggerOpts) *slog.Logger <span class="cov9" title="
                                 logHandler,
                         )
                 }</span>
-        } else<span class="cov9" title="205"> {
+        } else<span class="cov9" title="212"> {
                 logHandler = newStandardSlogHandler(opts)
         }</span>
 
-        <span class="cov9" title="207">rootLogger := slog.New(&amp;diagLogHandler{target: logHandler})
+        <span class="cov9" title="214">rootLogger := slog.New(&amp;diagLogHandler{target: logHandler})
 
         return rootLogger</span>
 }
@@ -8440,7 +8448,7 @@ func openTestLogFile() *os.File <span class="cov5" title="15">{
 
 var testOutput = openTestLogFile() //nolint:gochecknoglobals //it's ok for tests
 
-func RootTestLogger() *slog.Logger <span class="cov10" title="192">{
+func RootTestLogger() *slog.Logger <span class="cov10" title="199">{
         return NewRootLogger(
                 NewRootLoggerOpts().WithOutput(testOutput),
         )
