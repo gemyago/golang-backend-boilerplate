@@ -14,7 +14,8 @@ func Register(rootCtx context.Context, container *dig.Container) error {
 	return di.ProvideAll(container,
 		httpclient.NewClientFactory,
 		newDBProvider(rootCtx),
-		di.ProvideFactoryAs[app.UsersRepository](newUsersRepository),
+		di.ProvideImplementation[*Database, app.Queryer],
+		di.ProvideFactoryAs[app.UsersRepository](NewUsersRepository),
 		di.ProvideFactoryAs[app.PetsRepository](newPetsRepository),
 		di.ProvideFactoryAs[app.PetstoreClient](func(deps petstore.ClientDeps) *petstore.Client {
 			return petstore.NewClient(deps)

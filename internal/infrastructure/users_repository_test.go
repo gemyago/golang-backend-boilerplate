@@ -1,7 +1,6 @@
 package infrastructure
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -14,9 +13,9 @@ import (
 )
 
 func TestUsersRepository(t *testing.T) {
-	makeMockDeps := func(t *testing.T) usersRepositoryDeps {
-		return usersRepositoryDeps{
-			DB:    newTestDatabase(t),
+	makeMockDeps := func(t *testing.T) UsersRepositoryDeps {
+		return UsersRepositoryDeps{
+			DB:    NewTestDatabase(t),
 			Time:  apptime.NewMockProvider(),
 			IDGen: ident.NewMockGenerator(),
 		}
@@ -30,7 +29,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -61,7 +60,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 
 			email := fake.Internet().Email()
 			user1 := NewRandomUser(fake, WithUserEmail(email))
@@ -85,7 +84,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake, WithUserID("")) // Empty ID to trigger UUID generation
 
@@ -113,7 +112,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -152,7 +151,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 
 			user := NewRandomUser(fake)
 
@@ -172,7 +171,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 
 			user1 := NewRandomUser(fake)
 			err := repo.CreateUser(ctx, *user1)
@@ -203,7 +202,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -233,7 +232,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 
 			// When
 			err := repo.DeleteUser(ctx, "non-existent-id")
@@ -251,7 +250,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 
 			// Close DB
 			deps.DB.instance.Close()
@@ -272,7 +271,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -303,7 +302,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -324,7 +323,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -350,7 +349,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -371,7 +370,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 
 			// When
 			retrievedUser, err := repo.GetUserByID(ctx, "non-existent-id")
@@ -390,7 +389,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 			// Close the DB to simulate failure
 			deps.DB.instance.Close()
 
@@ -411,7 +410,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 			mockNow := apptime.MockProviderValue(deps.Time)
 
 			user := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
@@ -432,7 +431,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 
 			// When
 			retrievedUser, err := repo.GetUserByEmail(ctx, "nonexistent@example.com")
@@ -451,7 +450,7 @@ func TestUsersRepository(t *testing.T) {
 
 			// Given
 			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
+			repo := NewUsersRepository(deps)
 			// Close the DB to simulate failure
 			deps.DB.instance.Close()
 
@@ -461,81 +460,6 @@ func TestUsersRepository(t *testing.T) {
 			// Then
 			require.Error(t, err)
 			assert.Nil(t, retrievedUser)
-		})
-	})
-
-	t.Run("ListUsers", func(t *testing.T) {
-		fake := faker.New()
-
-		t.Run("should return all users", func(t *testing.T) {
-			ctx := t.Context()
-
-			// Given
-			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
-			mockNow := apptime.MockProviderValue(deps.Time)
-
-			// Create multiple users
-			user1 := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
-			user2 := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
-			user3 := NewRandomUser(fake, WithUserTimestamps(mockNow, mockNow))
-
-			err := errors.Join(
-				repo.CreateUser(ctx, *user1),
-				repo.CreateUser(ctx, *user2),
-				repo.CreateUser(ctx, *user3),
-			)
-			require.NoError(t, err)
-
-			// When
-			users, err := repo.ListUsers(ctx)
-
-			// Then
-			require.NoError(t, err)
-			require.Len(t, users, 3)
-
-			// Verify all users are returned (order may vary, so check by content)
-			userMap := make(map[string]*app.User)
-			for _, u := range users {
-				userMap[u.ID] = u
-			}
-
-			assert.Equal(t, user1, userMap[user1.ID])
-			assert.Equal(t, user2, userMap[user2.ID])
-			assert.Equal(t, user3, userMap[user3.ID])
-		})
-
-		t.Run("should return empty slice when no users", func(t *testing.T) {
-			ctx := t.Context()
-
-			// Given
-			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
-
-			// When
-			users, err := repo.ListUsers(ctx)
-
-			// Then
-			require.NoError(t, err)
-			assert.Empty(t, users)
-		})
-
-		t.Run("should return error for database failure", func(t *testing.T) {
-			ctx := t.Context()
-
-			// Given
-			deps := makeMockDeps(t)
-			repo := newUsersRepository(deps)
-
-			// Close DB
-			deps.DB.instance.Close()
-
-			// When
-			users, err := repo.ListUsers(ctx)
-
-			// Then
-			require.Error(t, err)
-			assert.Nil(t, users)
 		})
 	})
 }

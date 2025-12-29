@@ -12,7 +12,7 @@ import (
 func TestPetsRepository(t *testing.T) {
 	makeMockDeps := func(t *testing.T) petsRepositoryDeps {
 		return petsRepositoryDeps{
-			DB:   newTestDatabase(t),
+			DB:   NewTestDatabase(t),
 			Time: apptime.NewMockProvider(),
 		}
 	}
@@ -24,8 +24,8 @@ func TestPetsRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
-			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
-			usersRepo := newUsersRepository(usersDeps)
+			usersDeps := UsersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := NewUsersRepository(usersDeps)
 			fake := faker.New()
 			user := NewRandomUser(fake)
 			err := usersRepo.CreateUser(ctx, *user)
@@ -44,8 +44,8 @@ func TestPetsRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
-			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
-			usersRepo := newUsersRepository(usersDeps)
+			usersDeps := UsersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := NewUsersRepository(usersDeps)
 			fake := faker.New()
 			user := NewRandomUser(fake)
 			err := usersRepo.CreateUser(ctx, *user)
@@ -69,8 +69,8 @@ func TestPetsRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
-			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
-			usersRepo := newUsersRepository(usersDeps)
+			usersDeps := UsersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := NewUsersRepository(usersDeps)
 			fake := faker.New()
 			user := NewRandomUser(fake)
 			err := usersRepo.CreateUser(ctx, *user)
@@ -125,8 +125,8 @@ func TestPetsRepository(t *testing.T) {
 			userID := fake.RandomStringWithLength(10)
 
 			// Create multiple pets for the user
-			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
-			usersRepo := newUsersRepository(usersDeps)
+			usersDeps := UsersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := NewUsersRepository(usersDeps)
 			user := NewRandomUser(fake)
 			user.ID = userID
 			err := usersRepo.CreateUser(ctx, *user)
@@ -193,8 +193,8 @@ func TestPetsRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			repo := newPetsRepository(deps)
-			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
-			usersRepo := newUsersRepository(usersDeps)
+			usersDeps := UsersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := NewUsersRepository(usersDeps)
 			fake := faker.New()
 			user := NewRandomUser(fake)
 			err := usersRepo.CreateUser(ctx, *user)
@@ -258,8 +258,8 @@ func TestPetsRepository(t *testing.T) {
 			// Given
 			deps := makeMockDeps(t)
 			petsRepo := newPetsRepository(deps)
-			usersDeps := usersRepositoryDeps{DB: deps.DB, Time: deps.Time}
-			usersRepo := newUsersRepository(usersDeps)
+			usersDeps := UsersRepositoryDeps{DB: deps.DB, Time: deps.Time}
+			usersRepo := NewUsersRepository(usersDeps)
 			fake := faker.New()
 			mockNow := apptime.MockProviderValue(deps.Time)
 
