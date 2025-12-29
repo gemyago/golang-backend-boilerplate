@@ -19,6 +19,14 @@ type Database struct {
 	instance *sql.DB
 }
 
+func (db *Database) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	return db.instance.QueryContext(ctx, query, args...)
+}
+
+func (db *Database) Close() error {
+	return db.instance.Close()
+}
+
 type DatabaseDeps struct {
 	dig.In
 

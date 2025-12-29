@@ -22,5 +22,4 @@ type UsersRepository interface {
 	DeleteUser(ctx context.Context, userID string) error
 	GetUserByID(ctx context.Context, userID string) (*User, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
-	ListUsers(ctx context.Context) ([]*User, error)
 }

@@ -12,16 +12,16 @@ import (
 	_ "modernc.org/sqlite" // SQLite driver
 )
 
-type sqliteUsersRepository struct {
+type SQLiteUsersRepository struct {
 	db    *sql.DB
 	time  apptime.Provider
 	idGen ident.Generator
 }
 
 // Ensure sqliteUsersRepository implements app.UsersRepository.
-var _ app.UsersRepository = (*sqliteUsersRepository)(nil)
+var _ app.UsersRepository = (*SQLiteUsersRepository)(nil)
 
-type usersRepositoryDeps struct {
+type UsersRepositoryDeps struct {
 	dig.In
 
 	DB    *Database
@@ -29,15 +29,15 @@ type usersRepositoryDeps struct {
 	IDGen ident.Generator
 }
 
-func newUsersRepository(deps usersRepositoryDeps) *sqliteUsersRepository {
-	return &sqliteUsersRepository{
+func NewUsersRepository(deps UsersRepositoryDeps) *SQLiteUsersRepository {
+	return &SQLiteUsersRepository{
 		db:    deps.DB.instance,
 		time:  deps.Time,
 		idGen: deps.IDGen,
 	}
 }
 
-func (r *sqliteUsersRepository) ensureRowsUpdated(result sql.Result) error {
+func (r *SQLiteUsersRepository) ensureRowsUpdated(result sql.Result) error {
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
@@ -48,7 +48,7 @@ func (r *sqliteUsersRepository) ensureRowsUpdated(result sql.Result) error {
 	return nil
 }
 
-func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user app.User) error {
+func (r *SQLiteUsersRepository) CreateUser(ctx context.Context, user app.User) error {
 	// Generate UUID if not provided
 	if user.ID == "" {
 		user.ID = r.idGen.MustNewV7().String()
@@ -68,7 +68,7 @@ func (r *sqliteUsersRepository) CreateUser(ctx context.Context, user app.User) e
 	return err
 }
 
-func (r *sqliteUsersRepository) UpdateUser(ctx context.Context, user app.User) error {
+func (r *SQLiteUsersRepository) UpdateUser(ctx context.Context, user app.User) error {
 	// Update updated_at timestamp to current time
 	user.UpdatedAt = r.time.Now()
 
@@ -94,7 +94,7 @@ func (r *sqliteUsersRepository) UpdateUser(ctx context.Context, user app.User) e
 	return nil
 }
 
-func (r *sqliteUsersRepository) DeleteUser(ctx context.Context, userID string) error {
+func (r *SQLiteUsersRepository) DeleteUser(ctx context.Context, userID string) error {
 	query := `
 		DELETE FROM users
 		WHERE id = ?
@@ -114,7 +114,7 @@ func (r *sqliteUsersRepository) DeleteUser(ctx context.Context, userID string) e
 	return nil
 }
 
-func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) (*app.User, error) {
+func (r *SQLiteUsersRepository) GetUserByID(ctx context.Context, userID string) (*app.User, error) {
 	query := `
 		SELECT id, name, email, created_at, updated_at
 		FROM users
@@ -137,7 +137,7 @@ func (r *sqliteUsersRepository) GetUserByID(ctx context.Context, userID string) 
 	return user, nil
 }
 
-func (r *sqliteUsersRepository) GetUserByEmail(ctx context.Context, email string) (*app.User, error) {
+func (r *SQLiteUsersRepository) GetUserByEmail(ctx context.Context, email string) (*app.User, error) {
 	query := `
 		SELECT id, name, email, created_at, updated_at
 		FROM users
@@ -158,39 +158,4 @@ func (r *sqliteUsersRepository) GetUserByEmail(ctx context.Context, email string
 		return nil, err
 	}
 	return user, nil
-}
-
-func (r *sqliteUsersRepository) ListUsers(ctx context.Context) ([]*app.User, error) {
-	query := `
-		SELECT id, name, email, created_at, updated_at
-		FROM users
-		ORDER BY created_at ASC
-	`
-	rows, err := r.db.QueryContext(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var users []*app.User
-	for rows.Next() {
-		user := &app.User{}
-		scanErr := rows.Scan(
-			&user.ID,
-			&user.Name,
-			&user.Email,
-			&user.CreatedAt,
-			&user.UpdatedAt,
-		)
-		if scanErr != nil {
-			return nil, scanErr
-		}
-		users = append(users, user)
-	}
-
-	if rowsErr := rows.Err(); rowsErr != nil {
-		return nil, rowsErr
-	}
-
-	return users, nil
 }

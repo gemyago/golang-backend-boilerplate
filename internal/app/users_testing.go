@@ -18,8 +18,8 @@ func WithUserID(id string) UserOption {
 
 func WithUserTimestamps(createdAt, updatedAt time.Time) UserOption {
 	return func(u *User) {
-		u.CreatedAt = createdAt
-		u.UpdatedAt = updatedAt
+		u.CreatedAt = createdAt.Truncate(time.Millisecond)
+		u.UpdatedAt = updatedAt.Truncate(time.Millisecond)
 	}
 }
 
@@ -31,9 +31,11 @@ func WithUserEmail(email string) UserOption {
 
 func NewRandomUser(fake faker.Faker, opts ...UserOption) *User {
 	user := &User{
-		ID:    fake.RandomStringWithLength(10),
-		Name:  fake.Person().Name(),
-		Email: fake.Internet().Email(),
+		ID:        fake.RandomStringWithLength(10),
+		Name:      fake.Person().Name(),
+		Email:     fake.Internet().Email(),
+		CreatedAt: fake.Time().Past(),
+		UpdatedAt: fake.Time().Recent(),
 	}
 	for _, opt := range opts {
 		opt(user)

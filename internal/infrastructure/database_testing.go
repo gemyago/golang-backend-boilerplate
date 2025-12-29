@@ -12,9 +12,9 @@ import (
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 )
 
-type testDatabaseOpts func(deps *DatabaseDeps)
+type TestDatabaseOpts func(deps *DatabaseDeps)
 
-func newTestDatabase(t *testing.T, opts ...testDatabaseOpts) *Database {
+func NewTestDatabase(t *testing.T, opts ...TestDatabaseOpts) *Database {
 	t.Helper()
 
 	cfg := config.New()

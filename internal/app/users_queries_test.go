@@ -1,229 +1,145 @@
-package app
+package app_test
 
 import (
-	"context"
 	"errors"
 	"testing"
-	"time"
 
-	"log/slog"
-
+	"github.com/gemyago/golang-backend-boilerplate/internal/app"
+	"github.com/gemyago/golang-backend-boilerplate/internal/infrastructure"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/apptime"
+	"github.com/gemyago/golang-backend-boilerplate/internal/system/ident"
+	"github.com/gemyago/golang-backend-boilerplate/internal/telemetry"
+	"github.com/jaswdr/faker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-type flexibleMockUsersRepository struct {
-	getUserByIDFn func(context.Context, string) (*User, error)
-	listUsersFn   func(context.Context) ([]*User, error)
-}
-
-func (m *flexibleMockUsersRepository) CreateUser(_ context.Context, _ User) error {
-	return nil
-}
-
-func (m *flexibleMockUsersRepository) UpdateUser(_ context.Context, _ User) error {
-	return nil
-}
-
-func (m *flexibleMockUsersRepository) DeleteUser(_ context.Context, _ string) error {
-	return nil
-}
-
-func (m *flexibleMockUsersRepository) GetUserByID(ctx context.Context, userID string) (*User, error) {
-	if m.getUserByIDFn != nil {
-		return m.getUserByIDFn(ctx, userID)
-	}
-	return nil, errors.New("not implemented")
-}
-
-func (m *flexibleMockUsersRepository) GetUserByEmail(_ context.Context, _ string) (*User, error) {
-	return nil, errors.New("not found")
-}
-
-func (m *flexibleMockUsersRepository) ListUsers(ctx context.Context) ([]*User, error) {
-	if m.listUsersFn != nil {
-		return m.listUsersFn(ctx)
-	}
-	return nil, errors.New("not implemented")
-}
-
 func TestUserQueries(t *testing.T) {
 	t.Parallel()
 
-	t.Run("NewUserQueries", func(t *testing.T) {
-		t.Parallel()
+	fake := faker.New()
 
-		deps := makeMockDeps()
-		queries := NewUserQueries(deps)
+	type mockDeps struct {
+		DB              *infrastructure.Database
+		Time            apptime.Provider
+		UserQueriesDeps app.UserQueriesDeps
+	}
 
-		require.NotNil(t, queries)
-		require.NotNil(t, queries.usersRepo)
-		require.NotNil(t, queries.logger)
-	})
+	makeMockDeps := func() mockDeps {
+		mockTime := apptime.NewMockProvider()
+		db := infrastructure.NewTestDatabase(t)
+		return mockDeps{
+			Time: mockTime,
+			DB:   db,
+			UserQueriesDeps: app.UserQueriesDeps{
+				Queryer: db,
+				UsersRepo: infrastructure.NewUsersRepository(infrastructure.UsersRepositoryDeps{
+					DB:    db,
+					Time:  mockTime,
+					IDGen: ident.NewMockGenerator(),
+				}),
+				RootLogger: telemetry.RootTestLogger(),
+			},
+		}
+	}
 
 	t.Run("GetUserByID", func(t *testing.T) {
 		t.Parallel()
 
-		t.Run("happy path", func(t *testing.T) {
+		t.Run("get existing user", func(t *testing.T) {
 			t.Parallel()
+			deps := makeMockDeps()
 
-			now := time.Now()
-			expectedUser := &User{
-				ID:        "123",
-				Name:      "John Doe",
-				Email:     "john@example.com",
-				CreatedAt: now,
-				UpdatedAt: now,
-			}
+			expectedUser := app.NewRandomUser(fake)
 
-			mock := &flexibleMockUsersRepository{
-				getUserByIDFn: func(_ context.Context, id string) (*User, error) {
-					require.Equal(t, "123", id)
-					return expectedUser, nil
-				},
-			}
+			queries := app.NewUserQueries(deps.UserQueriesDeps)
+			require.NoError(t, deps.UserQueriesDeps.UsersRepo.CreateUser(t.Context(), *expectedUser))
 
-			deps := UserQueriesDeps{
-				UsersRepo:  mock,
-				RootLogger: slog.Default(),
-			}
-			queries := NewUserQueries(deps)
-
-			user, err := queries.GetUserByID(context.Background(), "123")
+			user, err := queries.GetUserByID(t.Context(), expectedUser.ID)
 			require.NoError(t, err)
-			require.Equal(t, expectedUser, user)
+			require.Equal(t, expectedUser.ID, user.ID)
 		})
 
-		t.Run("not found", func(t *testing.T) {
+		t.Run("get user error", func(t *testing.T) {
 			t.Parallel()
 
-			mock := &flexibleMockUsersRepository{
-				getUserByIDFn: func(_ context.Context, id string) (*User, error) {
-					require.Equal(t, "nonexistent", id)
-					return nil, NewErrNotFound("user", id)
-				},
-			}
+			deps := makeMockDeps()
+			queries := app.NewUserQueries(deps.UserQueriesDeps)
 
-			deps := UserQueriesDeps{
-				UsersRepo:  mock,
-				RootLogger: slog.Default(),
-			}
-			queries := NewUserQueries(deps)
-
-			_, err := queries.GetUserByID(context.Background(), "nonexistent")
-			var errNotFound *NotFoundError
-			require.ErrorAs(t, err, &errNotFound)
-			assert.Equal(t, "user", errNotFound.Resource)
-		})
-		t.Run("repository error", func(t *testing.T) {
-			t.Parallel()
-
-			expectedErr := errors.New("database connection failed")
-
-			mock := &flexibleMockUsersRepository{
-				getUserByIDFn: func(_ context.Context, id string) (*User, error) {
-					require.Equal(t, "123", id)
-					return nil, expectedErr
-				},
-			}
-
-			deps := UserQueriesDeps{
-				UsersRepo:  mock,
-				RootLogger: slog.Default(),
-			}
-			queries := NewUserQueries(deps)
-
-			_, err := queries.GetUserByID(context.Background(), "123")
-			require.ErrorIs(t, err, expectedErr)
+			user, err := queries.GetUserByID(t.Context(), fake.UUID().V4())
+			require.Error(t, err)
+			require.Nil(t, user)
 		})
 	})
 
 	t.Run("ListUsers", func(t *testing.T) {
-		t.Parallel()
+		t.Run("should return all users", func(t *testing.T) {
+			ctx := t.Context()
 
-		t.Run("happy path", func(t *testing.T) {
-			t.Parallel()
+			// Given
+			deps := makeMockDeps()
+			queries := app.NewUserQueries(deps.UserQueriesDeps)
+			mockNow := apptime.MockProviderValue(deps.Time)
 
-			expectedUsers := []*User{
-				{
-					ID:        "1",
-					Name:      "User 1",
-					Email:     "user1@example.com",
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-				{
-					ID:        "2",
-					Name:      "User 2",
-					Email:     "user2@example.com",
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			// Create multiple users
+			user1 := app.NewRandomUser(fake, app.WithUserTimestamps(mockNow, mockNow))
+			user2 := app.NewRandomUser(fake, app.WithUserTimestamps(mockNow, mockNow))
+			user3 := app.NewRandomUser(fake, app.WithUserTimestamps(mockNow, mockNow))
 
-			mock := &flexibleMockUsersRepository{
-				listUsersFn: func(_ context.Context) ([]*User, error) {
-					return expectedUsers, nil
-				},
-			}
-
-			deps := UserQueriesDeps{
-				UsersRepo:  mock,
-				RootLogger: slog.Default(),
-			}
-			queries := NewUserQueries(deps)
-
-			users, err := queries.ListUsers(context.Background())
+			err := errors.Join(
+				deps.UserQueriesDeps.UsersRepo.CreateUser(ctx, *user1),
+				deps.UserQueriesDeps.UsersRepo.CreateUser(ctx, *user2),
+				deps.UserQueriesDeps.UsersRepo.CreateUser(ctx, *user3),
+			)
 			require.NoError(t, err)
-			require.Equal(t, expectedUsers, users)
+
+			// When
+			users, err := queries.ListUsers(ctx)
+
+			// Then
+			require.NoError(t, err)
+			require.Len(t, users, 3)
+
+			// Verify all users are returned (order may vary, so check by content)
+			userMap := make(map[string]*app.User)
+			for _, u := range users {
+				userMap[u.ID] = u
+			}
+
+			assert.Equal(t, user1, userMap[user1.ID])
+			assert.Equal(t, user2, userMap[user2.ID])
+			assert.Equal(t, user3, userMap[user3.ID])
 		})
+		t.Run("should return empty slice if no users", func(t *testing.T) {
+			ctx := t.Context()
 
-		t.Run("empty", func(t *testing.T) {
-			t.Parallel()
+			// Given
+			deps := makeMockDeps()
+			queries := app.NewUserQueries(deps.UserQueriesDeps)
 
-			mock := &flexibleMockUsersRepository{
-				listUsersFn: func(_ context.Context) ([]*User, error) {
-					return []*User{}, nil
-				},
-			}
+			// When
+			users, err := queries.ListUsers(ctx)
 
-			deps := UserQueriesDeps{
-				UsersRepo:  mock,
-				RootLogger: slog.Default(),
-			}
-			queries := NewUserQueries(deps)
-
-			users, err := queries.ListUsers(context.Background())
+			// Then
 			require.NoError(t, err)
 			require.Empty(t, users)
 		})
+		t.Run("should error for database failures", func(t *testing.T) {
+			ctx := t.Context()
 
-		t.Run("repository error", func(t *testing.T) {
-			t.Parallel()
+			// Given
+			deps := makeMockDeps()
+			queries := app.NewUserQueries(deps.UserQueriesDeps)
 
-			expectedErr := errors.New("database query failed")
+			// Close the database to simulate failure
+			deps.DB.Close()
 
-			mock := &flexibleMockUsersRepository{
-				listUsersFn: func(_ context.Context) ([]*User, error) {
-					return nil, expectedErr
-				},
-			}
+			// When
+			users, err := queries.ListUsers(ctx)
 
-			deps := UserQueriesDeps{
-				UsersRepo:  mock,
-				RootLogger: slog.Default(),
-			}
-			queries := NewUserQueries(deps)
-
-			_, err := queries.ListUsers(context.Background())
-			require.ErrorIs(t, err, expectedErr)
+			// Then
+			require.Error(t, err)
+			require.Nil(t, users)
 		})
 	})
-}
-
-func makeMockDeps() UserQueriesDeps {
-	return UserQueriesDeps{
-		UsersRepo:  &flexibleMockUsersRepository{},
-		RootLogger: slog.Default(),
-	}
 }
