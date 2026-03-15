@@ -4683,7 +4683,7 @@ func (s *testMCPServer) Start(
                 stdioServer := mcpserver.NewStdioServer(mcpServer)
                 stdioServer.SetErrorLogger(logger)
 
-                if err := stdioServer.Listen(ctx, s.serverReader, s.serverWriter); err != nil </span><span class="cov8" title="3">{
+                if err := stdioServer.Listen(ctx, s.serverReader, s.serverWriter); err != nil </span><span class="cov10" title="4">{
                         logger.Println("StdioServer.Listen failed:", err)
                 }</span>
         }()
@@ -5187,8 +5187,8 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
         fetchGrp, grpCtx := errgroup.WithContext(ctx)
         fetchGrp.SetLimit(maxConcurrentFetches)
 
-        for _, petID := range petIDs </span><span class="cov10" title="9">{
-                fetchGrp.Go(func() error </span><span class="cov10" title="9">{
+        for _, petID := range petIDs </span><span class="cov8" title="7">{
+                fetchGrp.Go(func() error </span><span class="cov8" title="7">{
                         pet, petErr := q.petstoreClient.GetPetByID(grpCtx, petstore.GetPetByIDParams{
                                 PetID: strconv.FormatInt(petID, 10),
                         })
@@ -5199,10 +5199,10 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                                         slog.Int64("pet_id", petID),
                                         slog.String("error", petErr.Error()),
                                 )
-                        }</span> else<span class="cov9" title="8"> {
+                        }</span> else<span class="cov8" title="6"> {
                                 fetchedPetsResult &lt;- pet
                         }</span>
-                        <span class="cov10" title="9">return nil</span>
+                        <span class="cov8" title="7">return nil</span>
                 })
         }
 
@@ -5211,7 +5211,7 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                 close(fetchedPetsResult)
         }</span>()
 
-        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov9" title="8">{
+        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov8" title="6">{
                 pets = append(pets, pet)
         }</span>
 
@@ -7523,36 +7523,36 @@ type StartupGroup struct {
         logger        *slog.Logger
 }
 
-func (g *StartupGroup) Add(fn StartupFn) <span class="cov10" title="15">{
+func (g *StartupGroup) Add(fn StartupFn) <span class="cov10" title="18">{
         g.startupFns = append(g.startupFns, fn)
 }</span>
 
 // Start runs all startup functions and waits for shutdown signal.
 // It also sets up a listener for forceful shutdown signals to
 // terminate the application immediately if needed.
-func (g *StartupGroup) Start(ctx context.Context) error <span class="cov8" title="9">{
+func (g *StartupGroup) Start(ctx context.Context) error <span class="cov7" title="9">{
         watchForceSignal := func(
                 rootCtx context.Context,
                 signals []os.Signal,
-        ) </span><span class="cov8" title="9">{
+        ) </span><span class="cov7" title="9">{
                 forceSignal := make(chan os.Signal, 1)
                 signal.Notify(forceSignal, signals...)
 
-                go func() </span><span class="cov8" title="9">{
+                go func() </span><span class="cov7" title="9">{
                         &lt;-forceSignal
                         g.logger.InfoContext(rootCtx, "Forcing shutdown")
                         os.Exit(1)
                 }</span>()
         }
 
-        <span class="cov8" title="9">shutdownSignals := []os.Signal{unix.SIGINT, unix.SIGTERM}
+        <span class="cov7" title="9">shutdownSignals := []os.Signal{unix.SIGINT, unix.SIGTERM}
 
-        shutdown := func() error </span><span class="cov8" title="9">{
+        shutdown := func() error </span><span class="cov7" title="9">{
                 watchForceSignal(ctx, shutdownSignals)
                 return g.shutdownHooks.PerformShutdown(ctx)
         }</span>
 
-        <span class="cov8" title="9">signalCtx, cancel := signal.NotifyContext(ctx, shutdownSignals...)
+        <span class="cov7" title="9">signalCtx, cancel := signal.NotifyContext(ctx, shutdownSignals...)
         defer cancel()
 
         startupErrors := make(chan error, len(g.startupFns))
@@ -7562,7 +7562,7 @@ func (g *StartupGroup) Start(ctx context.Context) error <span class="cov8" title
                 }</span>(fn)
         }
 
-        <span class="cov8" title="9">var startupErr error
+        <span class="cov7" title="9">var startupErr error
         select </span>{
         case startupErr = &lt;-startupErrors:<span class="cov7" title="8">
                 if startupErr != nil </span><span class="cov3" title="2">{
@@ -7572,7 +7572,7 @@ func (g *StartupGroup) Start(ctx context.Context) error <span class="cov8" title
                 // We will attempt to shut down in both cases
                 // so doing it once on a next line
         }
-        <span class="cov8" title="9">return errors.Join(startupErr, shutdown())</span>
+        <span class="cov7" title="9">return errors.Join(startupErr, shutdown())</span>
 }
 </pre>
 		
