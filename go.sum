@@ -120,8 +120,12 @@ github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zx
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/mitranim/gg v0.1.29 h1:Jpu9tWq+RpDoeMds3KyG0ebErsxXKqGBiP34VBCIidA=
 github.com/mitranim/gg v0.1.29/go.mod h1:x2V+nJJOpeMl/XEoHou9zlTvFxYAcGOCqOAKpVkF0Yc=
+github.com/mitranim/gg v0.1.31 h1:fqHz57cY9vDwRBQxnj/PA5a4U4/ZxQxYzxH07xKlhzw=
+github.com/mitranim/gg v0.1.31/go.mod h1:x2V+nJJOpeMl/XEoHou9zlTvFxYAcGOCqOAKpVkF0Yc=
 github.com/mitranim/gow v0.0.0-20250926091427-aad163e590a8 h1:TpGHxDFAli5/0EIvKDdnVuUe6Bbgxpcn1GLLe+6UwF8=
 github.com/mitranim/gow v0.0.0-20250926091427-aad163e590a8/go.mod h1:QMe54SwKHDjY6vv71rGoGCgIYnKLWYNhS3Bf/8R7YRI=
+github.com/mitranim/gow v0.0.0-20260225145757-ff0f6779ab4c h1:4f1bOpJ3TtK6jJaM9Auv873EEjv8FLtW01dvTU6ivNs=
+github.com/mitranim/gow v0.0.0-20260225145757-ff0f6779ab4c/go.mod h1:0D7n3WoAzgZq5YJmt5q3YgbLkwsUjtYQyPZCvUdB3W4=
 github.com/narqo/go-badge v0.0.0-20230821190521-c9a75c019a59 h1:kbREB9muGo4sHLoZJD/E/IV8yK3Y15eEA9mYi/ztRsk=
 github.com/narqo/go-badge v0.0.0-20230821190521-c9a75c019a59/go.mod h1:m9BzkaxwU4IfPQi9ko23cmuFltayFe8iS0dlRlnEWiM=
 github.com/ncruces/go-strftime v1.0.0 h1:HMFp8mLCTPp341M/ZnA4qaf7ZlsbTc+miZjCLOFAw7w=
