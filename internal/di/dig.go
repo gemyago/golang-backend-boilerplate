@@ -73,8 +73,7 @@ func ProvideWithArgErr[
 // ProvideImplementation is used to define implementation of some particular
 // interface so DI container could resolve the implementation of the interface properly.
 // Usually you may want to use this method if implementation was injected on a different layer.
-
-func ProvideImplementation[TImplementation any, TInterface any](
+func ProvideImplementation[TImplementation any, TInterface any]( //nolint:ireturn
 	source TImplementation,
 ) (TInterface, error) {
 	target, ok := any(source).(TInterface)

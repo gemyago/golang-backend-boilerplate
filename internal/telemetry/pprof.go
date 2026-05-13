@@ -39,6 +39,7 @@ func StartPProfListener(deps PProfListenerDeps) error { // coverage-ignore
 		pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 		// We don't need to worry about graceful shutdown here
+		//nolint:gosec // Development-only pprof listener.
 		if err := http.ListenAndServe(deps.Addr, pprofMux); err != nil {
 			panic(fmt.Errorf("failed to start pprof listener on %s: %w", deps.Addr, err))
 		}

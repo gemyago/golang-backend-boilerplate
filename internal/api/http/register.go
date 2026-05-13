@@ -1,4 +1,4 @@
-package http
+package http //nolint:revive // Package name follows the directory structure and API domain.
 
 import (
 	"errors"

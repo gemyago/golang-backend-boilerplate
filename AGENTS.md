@@ -83,6 +83,7 @@ More detailed testing best practices are in [doc/testing-best-practices.md](./do
 ## Security
 - NEVER hardcode secrets. Use env vars/secret stores. Authenticate to GHCR before push/pull when required.
 - Validate/sanitize all external inputs. Do not disable security linters without explicit justification.
+- For config fields that legitimately carry secrets/tokens, prefer struct-tag suppression such as `json:"-"` over `//nolint:gosec` when compatible.
 
 ## Most common AI instructions
 
