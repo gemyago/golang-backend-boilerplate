@@ -22,7 +22,7 @@ type OTELMetricsConfig struct {
 	URLPath        string        `name:"config.openTelemetry.metrics.urlPath"`
 	Protocol       string        `name:"config.openTelemetry.metrics.protocol"`
 	ExportInterval time.Duration `name:"config.openTelemetry.metrics.exportInterval"`
-	AuthToken      string        `name:"config.openTelemetry.metrics.auth.token"`
+	AuthToken      string        `name:"config.openTelemetry.metrics.auth.token"     json:"-"`
 	AuthTokenType  string        `name:"config.openTelemetry.metrics.auth.tokenType"`
 }
 
@@ -36,6 +36,8 @@ type MeterProviderDeps struct {
 }
 
 // NewMeterProvider creates a new MeterProvider suitable for the given configuration.
+//
+//nolint:ireturn // OTEL integrations are consumed through provider interfaces.
 func NewMeterProvider(
 	ctx context.Context,
 	deps MeterProviderDeps,

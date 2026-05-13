@@ -1,6 +1,6 @@
 module github.com/gemyago/golang-backend-boilerplate
 
-go 1.25
+go 1.26
 
 require (
 	github.com/go-logr/logr v1.4.3
@@ -77,8 +77,8 @@ require (
 	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/mitranim/gg v0.1.29 // indirect
-	github.com/mitranim/gow v0.0.0-20250926091427-aad163e590a8 // indirect
+	github.com/mitranim/gg v0.1.31 // indirect
+	github.com/mitranim/gow v0.0.0-20260225145757-ff0f6779ab4c // indirect
 	github.com/narqo/go-badge v0.0.0-20230821190521-c9a75c019a59 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect

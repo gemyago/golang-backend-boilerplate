@@ -21,7 +21,7 @@ func TestRecover(t *testing.T) {
 	t.Run("should call next", func(t *testing.T) {
 		nextCalled := true
 		wantNextStatus := 200 + rand.Intn(399)
-		wantRes := map[string]interface{}{
+		wantRes := map[string]any{
 			"key1": fake.UUID().V4(),
 			"key2": fake.UUID().V4(),
 		}
@@ -38,7 +38,7 @@ func TestRecover(t *testing.T) {
 		assert.True(t, nextCalled)
 		assert.Equal(t, wantNextStatus, w.Code)
 
-		var gotRes map[string]interface{}
+		var gotRes map[string]any
 		require.NoError(t, json.NewDecoder(w.Body).Decode(&gotRes))
 		assert.Equal(t, wantRes, gotRes)
 	})

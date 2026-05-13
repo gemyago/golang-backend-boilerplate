@@ -101,7 +101,7 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
 	}
 
 	go func() {
-		_ = fetchGrp.Wait() //nolint:errcheck // This can not error, goroutines return nil all the time.
+		_ = fetchGrp.Wait()
 		close(fetchedPetsResult)
 	}()
 

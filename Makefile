@@ -13,8 +13,11 @@ all: test
 
 # Installing from sources is not recommended, binary is a preferred approach.
 # More info is here https://golangci-lint.run/docs/welcome/install/#install-from-sources
-bin/golangci-lint: .golangci-version
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s $(shell cat .golangci-version)
+bin/golangci-lint: .golangci-lint-version
+	@set -eu; \
+	version="$$(cat .golangci-lint-version)"; \
+	mkdir -p "$(@D)"; \
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$(@D)" "$$version"
 
 lint: bin/golangci-lint
 	bin/golangci-lint run

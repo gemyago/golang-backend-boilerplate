@@ -21,7 +21,7 @@ type OTELTracesConfig struct {
 	URLPath       string  `name:"config.openTelemetry.traces.urlPath"`
 	Protocol      string  `name:"config.openTelemetry.traces.protocol"`
 	SamplingRate  float64 `name:"config.openTelemetry.traces.samplingRate"`
-	AuthToken     string  `name:"config.openTelemetry.traces.auth.token"`
+	AuthToken     string  `name:"config.openTelemetry.traces.auth.token"     json:"-"`
 	AuthTokenType string  `name:"config.openTelemetry.traces.auth.tokenType"`
 }
 
@@ -34,6 +34,8 @@ type TracerProviderDeps struct {
 }
 
 // NewTracerProvider creates a new TracerProvider with OTLP exporter.
+//
+//nolint:ireturn // OTEL integrations are consumed through provider interfaces.
 func NewTracerProvider(
 	ctx context.Context,
 	deps TracerProviderDeps,

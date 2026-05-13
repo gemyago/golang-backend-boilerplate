@@ -9,7 +9,7 @@
     - Build Artifacts: `.github/workflows/build-artifacts.yml`
       - Steps include: `go mod download && go install tool`, then `make -C build build-artifacts.tar.bz2`
     - Tests: `.github/workflows/tests-run.yml`
-      - Lint via `golangci-lint-action` using version from `.golangci-version`
+      - Lint via `golangci-lint-action` using version from `.golangci-lint-version`
       - Run tests via `make test` and upload `.cover/coverage.*`
     - Docker Image: `.github/workflows/build-docker-image.yml` (push permissions enabled)
 
@@ -19,6 +19,9 @@
   - `make -C build build-artifacts.tar.bz2`
   - `make lint`
   - `make test`
+
+## Action Pinning
+- Pin GitHub Actions to exact published release tags and keep them on the latest stable upstream versions when updating workflows.
 
 ## Living Doc Policy
 - When workflows, Make targets, or CI steps change, update this file and the root [../AGENTS.md](../AGENTS.md) in the same PR.

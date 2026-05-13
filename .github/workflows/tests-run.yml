@@ -9,27 +9,23 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6.4.0
         with:
           go-version-file: "go.mod"
           cache-dependency-path: "go.sum"
 
-      - id: golangci-version
-        name: Get golangci version
-        run: echo "value=$(cat .golangci-version)" >> $GITHUB_OUTPUT
-
       - name: lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v9.2.0
         with:
-          version: "${{ steps.golangci-version.outputs.value }}"
+          version-file: .golangci-lint-version
 
       - name: Run Tests
         run: make test
 
       - name: Store Test Logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         if: ${{ always() }}
         with:
           path: test.log
@@ -37,7 +33,7 @@ jobs:
           overwrite: true
 
       - name: Store Test Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: test-artifacts-pr-${{ github.event.pull_request.node_id }}
           path: |

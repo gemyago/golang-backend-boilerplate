@@ -54,6 +54,7 @@ func SendRequest[TBody any, TTarget any](
 		req.Header.Set("Content-Type", "application/json")
 	}
 
+	//nolint:gosec // Request destination is supplied by the caller's configured client flow.
 	resp, err := client.Do(req)
 	if err != nil {
 		return httpTransportErr(req, err)

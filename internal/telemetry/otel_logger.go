@@ -22,7 +22,7 @@ type OTELLogsConfig struct {
 	Endpoint             string `name:"config.openTelemetry.logs.endpoint"`
 	URLPath              string `name:"config.openTelemetry.logs.urlPath"`
 	Protocol             string `name:"config.openTelemetry.logs.protocol"`
-	AuthToken            string `name:"config.openTelemetry.logs.auth.token"`
+	AuthToken            string `name:"config.openTelemetry.logs.auth.token"           json:"-"`
 	AuthTokenType        string `name:"config.openTelemetry.logs.auth.tokenType"`
 }
 
@@ -36,6 +36,8 @@ type LoggerProviderDeps struct {
 }
 
 // NewLoggerProvider creates a new LoggerProvider with OTLP exporter.
+//
+//nolint:ireturn // OTEL integrations are consumed through provider interfaces.
 func NewLoggerProvider(
 	ctx context.Context,
 	deps LoggerProviderDeps,

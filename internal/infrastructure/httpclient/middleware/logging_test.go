@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -154,9 +155,7 @@ func TestLoggingMiddleware(t *testing.T) {
 			wantReqHeaders["Header1-"+fake.Lorem().Word()] = []string{fake.Lorem().Word()}
 			wantReqHeaders["Header2-"+fake.Lorem().Word()] = []string{fake.Lorem().Word()}
 			wantReqHeaders["Header3-"+fake.Lorem().Word()] = []string{fake.Lorem().Word()}
-			for k, v := range wantReqHeaders {
-				req.Header[k] = v
-			}
+			maps.Copy(req.Header, wantReqHeaders)
 
 			wantStatus := fake.IntBetween(200, 399)
 			expectedResponse := &http.Response{
@@ -168,9 +167,7 @@ func TestLoggingMiddleware(t *testing.T) {
 			wantResHeaders := logEntryHeaders{}
 			wantResHeaders["Res-Header1-"+fake.Lorem().Word()] = []string{fake.Lorem().Word()}
 			wantResHeaders["Res-Header2-"+fake.Lorem().Word()] = []string{fake.Lorem().Word()}
-			for k, v := range wantResHeaders {
-				expectedResponse.Header[k] = v
-			}
+			maps.Copy(expectedResponse.Header, wantResHeaders)
 
 			mockTransport.On("RoundTrip", req).Return(expectedResponse, nil)
 

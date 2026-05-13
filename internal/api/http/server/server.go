@@ -51,7 +51,7 @@ type HTTPServer struct {
 	logger  *slog.Logger
 }
 
-// NewHTTPServer constructor factory for general use *http.Server.
+// NewHTTPServer constructor factory for general use [http.Server].
 func NewHTTPServer(deps HTTPServerDeps) *HTTPServer {
 	address := fmt.Sprintf("%s:%d", deps.Host, deps.Port)
 	srv := &http.Server{

@@ -153,8 +153,8 @@ func (mc *MathController) newDivideServerTool() mcpserver.ServerTool {
 }
 
 // extractCalculateParams extracts operation, a, and b parameters from arguments.
-func (mc *MathController) extractCalculateParams(args interface{}) (string, float64, float64, error) {
-	argsMap, ok := args.(map[string]interface{})
+func (mc *MathController) extractCalculateParams(args any) (string, float64, float64, error) {
+	argsMap, ok := args.(map[string]any)
 	if !ok {
 		return "", 0, 0, errors.New("arguments must be an object")
 	}
@@ -178,8 +178,8 @@ func (mc *MathController) extractCalculateParams(args interface{}) (string, floa
 }
 
 // extractNumberParams extracts a and b number parameters from arguments.
-func (mc *MathController) extractNumberParams(args interface{}) (float64, float64, error) {
-	argsMap, ok := args.(map[string]interface{})
+func (mc *MathController) extractNumberParams(args any) (float64, float64, error) {
+	argsMap, ok := args.(map[string]any)
 	if !ok {
 		return 0, 0, errors.New("arguments must be an object")
 	}
@@ -199,7 +199,7 @@ func (mc *MathController) extractNumberParams(args interface{}) (float64, float6
 
 // extractNumberParam extracts and validates a number parameter from args.
 func (mc *MathController) extractNumberParam(
-	args map[string]interface{},
+	args map[string]any,
 	paramName string,
 ) (float64, error) {
 	value, exists := args[paramName]

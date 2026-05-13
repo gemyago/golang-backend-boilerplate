@@ -16,7 +16,7 @@ type GetPetByIDParams struct {
 func (c *Client) GetPetByID(ctx context.Context, params GetPetByIDParams) (*Pet, error) {
 	var response Pet
 	path := fmt.Sprintf("/pet/%s", params.PetID)
-	err := httpclient.SendRequest(ctx, c.httpClient, httpclient.SendRequestParams[interface{}, Pet]{
+	err := httpclient.SendRequest(ctx, c.httpClient, httpclient.SendRequestParams[any, Pet]{
 		Method: "GET",
 		URL:    c.baseURL + path,
 		Target: &response,
