@@ -167,7 +167,7 @@
 				
 				<option value="file55">github.com/gemyago/golang-backend-boilerplate/internal/api/mcp/server/server.go (88.0%)</option>
 				
-				<option value="file56">github.com/gemyago/golang-backend-boilerplate/internal/api/mcp/server/testing.go (90.9%)</option>
+				<option value="file56">github.com/gemyago/golang-backend-boilerplate/internal/api/mcp/server/testing.go (90.0%)</option>
 				
 				<option value="file57">github.com/gemyago/golang-backend-boilerplate/internal/app/echo.go (100.0%)</option>
 				
@@ -928,7 +928,7 @@ func NewRecovererMiddleware(rootLogger *slog.Logger) Middleware <span class="cov
 }
 </pre>
 		
-		<pre class="file" id="file14" style="display: none">package http
+		<pre class="file" id="file14" style="display: none">package http //nolint:revive // Package name follows the directory structure and API domain.
 
 import (
         "errors"
@@ -1121,7 +1121,7 @@ type HTTPServer struct {
         logger  *slog.Logger
 }
 
-// NewHTTPServer constructor factory for general use *http.Server.
+// NewHTTPServer constructor factory for general use [http.Server].
 func NewHTTPServer(deps HTTPServerDeps) *HTTPServer <span class="cov10" title="5">{
         address := fmt.Sprintf("%s:%d", deps.Host, deps.Port)
         srv := &amp;http.Server{
@@ -4259,8 +4259,8 @@ func (mc *MathController) newDivideServerTool() mcpserver.ServerTool <span class
 }</span>
 
 // extractCalculateParams extracts operation, a, and b parameters from arguments.
-func (mc *MathController) extractCalculateParams(args interface{}) (string, float64, float64, error) <span class="cov5" title="8">{
-        argsMap, ok := args.(map[string]interface{})
+func (mc *MathController) extractCalculateParams(args any) (string, float64, float64, error) <span class="cov5" title="8">{
+        argsMap, ok := args.(map[string]any)
         if !ok </span><span class="cov1" title="1">{
                 return "", 0, 0, errors.New("arguments must be an object")
         }</span>
@@ -4284,8 +4284,8 @@ func (mc *MathController) extractCalculateParams(args interface{}) (string, floa
 }
 
 // extractNumberParams extracts a and b number parameters from arguments.
-func (mc *MathController) extractNumberParams(args interface{}) (float64, float64, error) <span class="cov7" title="17">{
-        argsMap, ok := args.(map[string]interface{})
+func (mc *MathController) extractNumberParams(args any) (float64, float64, error) <span class="cov7" title="17">{
+        argsMap, ok := args.(map[string]any)
         if !ok </span><span class="cov2" title="2">{
                 return 0, 0, errors.New("arguments must be an object")
         }</span>
@@ -4305,7 +4305,7 @@ func (mc *MathController) extractNumberParams(args interface{}) (float64, float6
 
 // extractNumberParam extracts and validates a number parameter from args.
 func (mc *MathController) extractNumberParam(
-        args map[string]interface{},
+        args map[string]any,
         paramName string,
 ) (float64, error) <span class="cov10" title="43">{
         value, exists := args[paramName]
@@ -4417,7 +4417,7 @@ func (tc *TimeController) newGetCurrentTimeServerTool() server.ServerTool <span 
         handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) </span><span class="cov8" title="7">{
                 format := app.TimeFormatISO
                 if request.Params.Arguments != nil </span><span class="cov7" title="6">{
-                        if args, argsOk := request.Params.Arguments.(map[string]interface{}); argsOk </span><span class="cov7" title="6">{
+                        if args, argsOk := request.Params.Arguments.(map[string]any); argsOk </span><span class="cov7" title="6">{
                                 if formatStr, formatOk := args["format"].(string); formatOk </span><span class="cov7" title="6">{
                                         switch formatStr </span>{
                                         case string(app.TimeFormatRFC3339):<span class="cov1" title="1">
@@ -4673,20 +4673,16 @@ func (s *testMCPServer) Start(
         ctx context.Context,
         mcpServer *mcpserver.MCPServer,
 ) error <span class="cov10" title="4">{
-        s.wg.Add(1)
-
-        go func() </span><span class="cov10" title="4">{
-                defer s.wg.Done()
-
+        s.wg.Go(func() </span><span class="cov10" title="4">{
                 logger := slog.NewLogLogger(slog.NewTextHandler(&amp;s.logBuffer, nil), slog.LevelDebug)
 
                 stdioServer := mcpserver.NewStdioServer(mcpServer)
                 stdioServer.SetErrorLogger(logger)
 
-                if err := stdioServer.Listen(ctx, s.serverReader, s.serverWriter); err != nil </span><span class="cov10" title="4">{
+                if err := stdioServer.Listen(ctx, s.serverReader, s.serverWriter); err != nil </span><span class="cov8" title="3">{
                         logger.Println("StdioServer.Listen failed:", err)
                 }</span>
-        }()
+        })
 
         <span class="cov10" title="4">s.transport = transport.NewIO(s.clientReader, s.clientWriter, io.NopCloser(&amp;s.logBuffer))
         if err := s.transport.Start(ctx); err != nil </span><span class="cov0" title="0">{
@@ -5187,8 +5183,8 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
         fetchGrp, grpCtx := errgroup.WithContext(ctx)
         fetchGrp.SetLimit(maxConcurrentFetches)
 
-        for _, petID := range petIDs </span><span class="cov8" title="7">{
-                fetchGrp.Go(func() error </span><span class="cov8" title="7">{
+        for _, petID := range petIDs </span><span class="cov9" title="8">{
+                fetchGrp.Go(func() error </span><span class="cov9" title="8">{
                         pet, petErr := q.petstoreClient.GetPetByID(grpCtx, petstore.GetPetByIDParams{
                                 PetID: strconv.FormatInt(petID, 10),
                         })
@@ -5199,19 +5195,19 @@ func (q *PetsQueries) ListUserPets(ctx context.Context, userID string) ([]*petst
                                         slog.Int64("pet_id", petID),
                                         slog.String("error", petErr.Error()),
                                 )
-                        }</span> else<span class="cov8" title="6"> {
+                        }</span> else<span class="cov8" title="7"> {
                                 fetchedPetsResult &lt;- pet
                         }</span>
-                        <span class="cov8" title="7">return nil</span>
+                        <span class="cov9" title="8">return nil</span>
                 })
         }
 
         <span class="cov5" title="3">go func() </span><span class="cov5" title="3">{
-                _ = fetchGrp.Wait() //nolint:errcheck // This can not error, goroutines return nil all the time.
+                _ = fetchGrp.Wait()
                 close(fetchedPetsResult)
         }</span>()
 
-        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov8" title="6">{
+        <span class="cov5" title="3">for pet := range fetchedPetsResult </span><span class="cov8" title="7">{
                 pets = append(pets, pet)
         }</span>
 
@@ -5942,11 +5938,11 @@ import (
 // we are not creating any abstraction over it, but we do have a set of tools to make it easier to use
 
 type ConstructorWithOpts struct {
-        Constructor interface{}
+        Constructor any
         Options     []dig.ProvideOption
 }
 
-func ProvideAll(container *dig.Container, providers ...interface{}) error <span class="cov6" title="50">{
+func ProvideAll(container *dig.Container, providers ...any) error <span class="cov6" title="50">{
         for i, provider := range providers </span><span class="cov10" title="358">{
                 switch p := provider.(type) </span>{
                 case ConstructorWithOpts:<span class="cov8" title="176">
@@ -6003,7 +5999,9 @@ func ProvideWithArgErr[
 // ProvideImplementation is used to define implementation of some particular
 // interface so DI container could resolve the implementation of the interface properly.
 // Usually you may want to use this method if implementation was injected on a different layer.
-func ProvideImplementation[TImplementation any, TInterface any](source TImplementation) (TInterface, error) <span class="cov5" title="23">{
+func ProvideImplementation[TImplementation any, TInterface any]( //nolint:ireturn
+        source TImplementation,
+) (TInterface, error) <span class="cov5" title="23">{
         target, ok := any(source).(TInterface)
         if !ok </span><span class="cov1" title="1">{
                 var src TImplementation
@@ -6109,7 +6107,10 @@ func newDBProvider(ctx context.Context) func(DatabaseDeps) (*Database, error) <s
                 // By default SQLite requires PRAGMA foreign_keys = ON per connection.
                 // The error path below is hard to simulate in tests (driver-level failures),
                 // so exclude it from coverage measurements.
-                <span class="cov9" title="38">if _, err = db.ExecContext(ctx, "PRAGMA foreign_keys = ON;"); err != nil </span><span class="cov0" title="0">{ // coverage-ignore -- No way to simulate this
+                <span class="cov9" title="38">if _, err = db.ExecContext(
+                        ctx,
+                        "PRAGMA foreign_keys = ON;",
+                ); err != nil </span><span class="cov0" title="0">{ // coverage-ignore -- No way to simulate this
                         // Attempt to close DB and report both errors if close fails.
                         if closeErr := db.Close(); closeErr != nil </span><span class="cov0" title="0">{
                                 // Use %s for the secondary error and wrap the primary using %w.
@@ -6403,7 +6404,7 @@ import (
 // CorrelationMiddlewareDeps contains dependencies for the correlation middleware.
 type CorrelationMiddlewareDeps struct{}
 
-// CorrelationMiddleware wraps an http.RoundTripper to add correlation ID to outbound requests.
+// CorrelationMiddleware wraps an [http.RoundTripper] to add correlation ID to outbound requests.
 type CorrelationMiddleware struct {
         transport http.RoundTripper
 }
@@ -6415,7 +6416,7 @@ func NewCorrelationMiddleware(transport http.RoundTripper) http.RoundTripper <sp
         }
 }</span>
 
-// RoundTrip implements http.RoundTripper interface.
+// RoundTrip implements the [http.RoundTripper] interface.
 // Adds correlation ID header to the request.
 func (c *CorrelationMiddleware) RoundTrip(req *http.Request) (*http.Response, error) <span class="cov9" title="16">{
         logAttrs := telemetry.GetLogAttributesFromContext(req.Context())
@@ -6442,7 +6443,7 @@ type LoggingMiddlewareDeps struct {
         RootLogger *slog.Logger
 }
 
-// LoggingMiddleware wraps an http.RoundTripper to add structured logging.
+// LoggingMiddleware wraps an [http.RoundTripper] to add structured logging.
 type LoggingMiddleware struct {
         transport                 http.RoundTripper
         logger                    *slog.Logger
@@ -6473,7 +6474,7 @@ func NewLoggingMiddleware(transport http.RoundTripper, deps LoggingMiddlewareDep
         }
 }</span>
 
-// RoundTrip implements http.RoundTripper interface.
+// RoundTrip implements the [http.RoundTripper] interface.
 // Logs request and response details with structured logging.
 func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error) <span class="cov7" title="18">{
         start := time.Now()
@@ -6600,6 +6601,7 @@ func SendRequest[TBody any, TTarget any](
                 req.Header.Set("Content-Type", "application/json")
         }</span>
 
+        //nolint:gosec // Request destination is supplied by the caller's configured client flow.
         <span class="cov9" title="15">resp, err := client.Do(req)
         if err != nil </span><span class="cov1" title="1">{
                 return httpTransportErr(req, err)
@@ -6882,7 +6884,7 @@ type GetPetByIDParams struct {
 func (c *Client) GetPetByID(ctx context.Context, params GetPetByIDParams) (*Pet, error) <span class="cov10" title="3">{
         var response Pet
         path := fmt.Sprintf("/pet/%s", params.PetID)
-        err := httpclient.SendRequest(ctx, c.httpClient, httpclient.SendRequestParams[interface{}, Pet]{
+        err := httpclient.SendRequest(ctx, c.httpClient, httpclient.SendRequestParams[any, Pet]{
                 Method: "GET",
                 URL:    c.baseURL + path,
                 Target: &amp;response,
@@ -7446,8 +7448,7 @@ func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error <span class="
         var wg sync.WaitGroup
 
         for _, hook := range h.hooks </span><span class="cov7" title="19">{
-                wg.Add(1)
-                go func() </span><span class="cov7" title="19">{
+                wg.Go(func() </span><span class="cov7" title="19">{
                         hookName := hook.name
                         h.logger.InfoContext(ctx, fmt.Sprintf("Shutting down %s", hookName))
                         if err := hook.shutdownFn(ctx); err != nil </span><span class="cov4" title="5">{
@@ -7455,8 +7456,7 @@ func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error <span class="
                         }</span> else<span class="cov6" title="14"> {
                                 resultsChan &lt;- nil
                         }</span>
-                        <span class="cov7" title="19">wg.Done()</span>
-                }()
+                })
         }
 
         <span class="cov6" title="13">done := make(chan error)
@@ -7627,7 +7627,7 @@ type OTELConfig struct {
         RuntimeMetrics bool `name:"config.openTelemetry.runtimeMetrics"`
 }
 
-func NewTextMapPropagator() propagation.TextMapPropagator <span class="cov10" title="4">{
+func NewTextMapPropagator() propagation.TextMapPropagator <span class="cov10" title="4">{ //nolint:ireturn // OTEL expects a propagator interface here.
         return propagation.NewCompositeTextMapPropagator(
                 propagation.TraceContext{},
                 propagation.Baggage{},
@@ -7850,7 +7850,7 @@ type OTELLogsConfig struct {
         Endpoint             string `name:"config.openTelemetry.logs.endpoint"`
         URLPath              string `name:"config.openTelemetry.logs.urlPath"`
         Protocol             string `name:"config.openTelemetry.logs.protocol"`
-        AuthToken            string `name:"config.openTelemetry.logs.auth.token"`
+        AuthToken            string `name:"config.openTelemetry.logs.auth.token"           json:"-"`
         AuthTokenType        string `name:"config.openTelemetry.logs.auth.tokenType"`
 }
 
@@ -7864,6 +7864,8 @@ type LoggerProviderDeps struct {
 }
 
 // NewLoggerProvider creates a new LoggerProvider with OTLP exporter.
+//
+//nolint:ireturn // OTEL integrations are consumed through provider interfaces.
 func NewLoggerProvider(
         ctx context.Context,
         deps LoggerProviderDeps,
@@ -7940,7 +7942,7 @@ type OTELMetricsConfig struct {
         URLPath        string        `name:"config.openTelemetry.metrics.urlPath"`
         Protocol       string        `name:"config.openTelemetry.metrics.protocol"`
         ExportInterval time.Duration `name:"config.openTelemetry.metrics.exportInterval"`
-        AuthToken      string        `name:"config.openTelemetry.metrics.auth.token"`
+        AuthToken      string        `name:"config.openTelemetry.metrics.auth.token"     json:"-"`
         AuthTokenType  string        `name:"config.openTelemetry.metrics.auth.tokenType"`
 }
 
@@ -7954,6 +7956,8 @@ type MeterProviderDeps struct {
 }
 
 // NewMeterProvider creates a new MeterProvider suitable for the given configuration.
+//
+//nolint:ireturn // OTEL integrations are consumed through provider interfaces.
 func NewMeterProvider(
         ctx context.Context,
         deps MeterProviderDeps,
@@ -8076,7 +8080,7 @@ type OTELTracesConfig struct {
         URLPath       string  `name:"config.openTelemetry.traces.urlPath"`
         Protocol      string  `name:"config.openTelemetry.traces.protocol"`
         SamplingRate  float64 `name:"config.openTelemetry.traces.samplingRate"`
-        AuthToken     string  `name:"config.openTelemetry.traces.auth.token"`
+        AuthToken     string  `name:"config.openTelemetry.traces.auth.token"     json:"-"`
         AuthTokenType string  `name:"config.openTelemetry.traces.auth.tokenType"`
 }
 
@@ -8089,6 +8093,8 @@ type TracerProviderDeps struct {
 }
 
 // NewTracerProvider creates a new TracerProvider with OTLP exporter.
+//
+//nolint:ireturn // OTEL integrations are consumed through provider interfaces.
 func NewTracerProvider(
         ctx context.Context,
         deps TracerProviderDeps,
@@ -8181,7 +8187,8 @@ func StartPProfListener(deps PProfListenerDeps) error <span class="cov10" title=
                 pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
                 // We don't need to worry about graceful shutdown here
-                if err := http.ListenAndServe(deps.Addr, pprofMux); err != nil </span><span class="cov0" title="0">{ //nolint:gosec // it's fine for non production code
+                //nolint:gosec // Development-only pprof listener.
+                if err := http.ListenAndServe(deps.Addr, pprofMux); err != nil </span><span class="cov0" title="0">{
                         panic(fmt.Errorf("failed to start pprof listener on %s: %w", deps.Addr, err))</span>
                 }
         }()
