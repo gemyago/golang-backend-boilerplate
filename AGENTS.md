@@ -98,6 +98,7 @@ When asked to perform common tasks, AI must follow these instructions:
   - Build/test commands change
   - New architectural patterns are introduced
   - CI or deploy workflows change
+- CI workflows should pin GitHub Actions to exact published release tags and keep them current when touched
 - Avoid duplication with `README.md`, `build/README.md`, `deploy/README.md`. Link instead.
 
 ## References (human docs)
