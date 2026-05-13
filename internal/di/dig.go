@@ -12,11 +12,11 @@ import (
 // we are not creating any abstraction over it, but we do have a set of tools to make it easier to use
 
 type ConstructorWithOpts struct {
-	Constructor interface{}
+	Constructor any
 	Options     []dig.ProvideOption
 }
 
-func ProvideAll(container *dig.Container, providers ...interface{}) error {
+func ProvideAll(container *dig.Container, providers ...any) error {
 	for i, provider := range providers {
 		switch p := provider.(type) {
 		case ConstructorWithOpts:
@@ -73,7 +73,10 @@ func ProvideWithArgErr[
 // ProvideImplementation is used to define implementation of some particular
 // interface so DI container could resolve the implementation of the interface properly.
 // Usually you may want to use this method if implementation was injected on a different layer.
-func ProvideImplementation[TImplementation any, TInterface any](source TImplementation) (TInterface, error) {
+
+func ProvideImplementation[TImplementation any, TInterface any](
+	source TImplementation,
+) (TInterface, error) {
 	target, ok := any(source).(TInterface)
 	if !ok {
 		var src TImplementation

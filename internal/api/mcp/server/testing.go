@@ -50,11 +50,7 @@ func (s *testMCPServer) Start(
 	ctx context.Context,
 	mcpServer *mcpserver.MCPServer,
 ) error {
-	s.wg.Add(1)
-
-	go func() {
-		defer s.wg.Done()
-
+	s.wg.Go(func() {
 		logger := slog.NewLogLogger(slog.NewTextHandler(&s.logBuffer, nil), slog.LevelDebug)
 
 		stdioServer := mcpserver.NewStdioServer(mcpServer)
@@ -63,7 +59,7 @@ func (s *testMCPServer) Start(
 		if err := stdioServer.Listen(ctx, s.serverReader, s.serverWriter); err != nil {
 			logger.Println("StdioServer.Listen failed:", err)
 		}
-	}()
+	})
 
 	s.transport = transport.NewIO(s.clientReader, s.clientWriter, io.NopCloser(&s.logBuffer))
 	if err := s.transport.Start(ctx); err != nil {

@@ -47,7 +47,7 @@ func (tc *TimeController) newGetCurrentTimeServerTool() server.ServerTool {
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		format := app.TimeFormatISO
 		if request.Params.Arguments != nil {
-			if args, argsOk := request.Params.Arguments.(map[string]interface{}); argsOk {
+			if args, argsOk := request.Params.Arguments.(map[string]any); argsOk {
 				if formatStr, formatOk := args["format"].(string); formatOk {
 					switch formatStr {
 					case string(app.TimeFormatRFC3339):

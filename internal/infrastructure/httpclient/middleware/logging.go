@@ -12,7 +12,7 @@ type LoggingMiddlewareDeps struct {
 	RootLogger *slog.Logger
 }
 
-// LoggingMiddleware wraps an http.RoundTripper to add structured logging.
+// LoggingMiddleware wraps an [http.RoundTripper] to add structured logging.
 type LoggingMiddleware struct {
 	transport                 http.RoundTripper
 	logger                    *slog.Logger
@@ -43,7 +43,7 @@ func NewLoggingMiddleware(transport http.RoundTripper, deps LoggingMiddlewareDep
 	}
 }
 
-// RoundTrip implements http.RoundTripper interface.
+// RoundTrip implements the [http.RoundTripper] interface.
 // Logs request and response details with structured logging.
 func (l *LoggingMiddleware) RoundTrip(req *http.Request) (*http.Response, error) {
 	start := time.Now()

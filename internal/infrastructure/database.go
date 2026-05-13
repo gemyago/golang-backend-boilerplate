@@ -64,7 +64,10 @@ func newDBProvider(ctx context.Context) func(DatabaseDeps) (*Database, error) {
 		// By default SQLite requires PRAGMA foreign_keys = ON per connection.
 		// The error path below is hard to simulate in tests (driver-level failures),
 		// so exclude it from coverage measurements.
-		if _, err = db.ExecContext(ctx, "PRAGMA foreign_keys = ON;"); err != nil { // coverage-ignore -- No way to simulate this
+		if _, err = db.ExecContext(
+			ctx,
+			"PRAGMA foreign_keys = ON;",
+		); err != nil { // coverage-ignore -- No way to simulate this
 			// Attempt to close DB and report both errors if close fails.
 			if closeErr := db.Close(); closeErr != nil {
 				// Use %s for the secondary error and wrap the primary using %w.

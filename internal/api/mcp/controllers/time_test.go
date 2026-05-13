@@ -62,7 +62,7 @@ func TestTimeController_HandleGetCurrentTime_ISO(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "get_current_time",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"format": "iso",
 				},
 			},
@@ -97,7 +97,7 @@ func TestTimeController_HandleGetCurrentTime_RFC3339(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "get_current_time",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"format": "rfc3339",
 				},
 			},
@@ -132,7 +132,7 @@ func TestTimeController_HandleGetCurrentTime_Unix(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "get_current_time",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"format": "unix",
 				},
 			},
@@ -201,7 +201,7 @@ func TestTimeController_HandleGetCurrentTime_InvalidFormat(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "get_current_time",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"format": fake.Lorem().Word(), // Random invalid format
 				},
 			},
@@ -237,7 +237,7 @@ func TestTimeController_HandleGetCurrentTime_ContextCancellation(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "get_current_time",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"format": "iso",
 				},
 			},
@@ -278,7 +278,7 @@ func TestTimeController_Integration(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: serverTool.Tool.Name,
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"format": "iso",
 				},
 			},

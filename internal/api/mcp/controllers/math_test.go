@@ -112,7 +112,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"operation": "add",
 					"a":         5.0,
 					"b":         3.0,
@@ -146,7 +146,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"operation": "multiply",
 					"a":         6.0,
 					"b":         7.0,
@@ -180,7 +180,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"operation": 123, // Invalid type
 					"a":         5.0,
 					"b":         3.0,
@@ -213,7 +213,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"operation": "add",
 					"a":         5.0,
 					// Missing "b" parameter
@@ -275,7 +275,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"a": 5.0,
 					"b": 3.0,
 					// Missing "operation" parameter
@@ -308,7 +308,7 @@ func TestMathController_HandleCalculate(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "calculate",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"operation": "divide",
 					"a":         5.0,
 					"b":         0.0,
@@ -343,7 +343,7 @@ func TestMathController_HandleAdd(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "add",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"a": 7.0,
 					"b": 3.0,
 				},
@@ -375,7 +375,7 @@ func TestMathController_HandleAdd(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "add",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"a": "invalid", // Invalid type
 					"b": 3.0,
 				},
@@ -409,7 +409,7 @@ func TestMathController_HandleSubtract(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "subtract",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"a": 10.0,
 					"b": 4.0,
 				},
@@ -441,7 +441,7 @@ func TestMathController_HandleSubtract(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "subtract",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"a": "invalid", // Invalid type
 					"b": 3.0,
 				},
@@ -475,7 +475,7 @@ func TestMathController_HandleMultiply(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "multiply",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"a": 6.0,
 					"b": 7.0,
 				},
@@ -507,7 +507,7 @@ func TestMathController_HandleMultiply(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "multiply",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"a": 6.0,
 					"b": "invalid", // Invalid type
 				},
@@ -541,7 +541,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "divide",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"a": 20.0,
 					"b": 4.0,
 				},
@@ -573,7 +573,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "divide",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"a": 10.0,
 					"b": 0.0,
 				},
@@ -605,7 +605,7 @@ func TestMathController_HandleDivide(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "divide",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"a": "invalid", // Invalid type
 					"b": 4.0,
 				},
@@ -640,7 +640,7 @@ func TestMathController_HandleAdd_ParameterErrors(t *testing.T) {
 		request := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
 				Name: "add",
-				Arguments: map[string]interface{}{
+				Arguments: map[string]any{
 					"b": 3.0,
 					// Missing "a" parameter
 				},
@@ -697,7 +697,7 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 		controller := NewMathController(deps)
 
 		// Test with float64
-		args := map[string]interface{}{
+		args := map[string]any{
 			"a": 5.5,
 			"b": 3.2,
 		}
@@ -707,7 +707,7 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 		assert.InEpsilon(t, 3.2, b, 0.0001)
 
 		// Test with int
-		args = map[string]interface{}{
+		args = map[string]any{
 			"a": 5,
 			"b": 3,
 		}
@@ -717,7 +717,7 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 		assert.InEpsilon(t, 3.0, b, 0.0001)
 
 		// Test with int64
-		args = map[string]interface{}{
+		args = map[string]any{
 			"a": int64(5),
 			"b": int64(3),
 		}
@@ -737,7 +737,7 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 		assert.Contains(t, err.Error(), "arguments must be an object")
 
 		// Test with missing parameters
-		args := map[string]interface{}{
+		args := map[string]any{
 			"a": 5.0,
 			// Missing "b"
 		}
@@ -746,7 +746,7 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 		assert.Contains(t, err.Error(), "b parameter is required")
 
 		// Test with invalid parameter type
-		args = map[string]interface{}{
+		args = map[string]any{
 			"a": "invalid",
 			"b": 3.0,
 		}
@@ -759,7 +759,7 @@ func TestMathController_ParameterExtraction(t *testing.T) {
 		deps := makeMathControllerDeps()
 		controller := NewMathController(deps)
 
-		args := map[string]interface{}{
+		args := map[string]any{
 			"operation": "multiply",
 			"a":         6.0,
 			"b":         7.0,
@@ -791,7 +791,7 @@ func TestMathController_ParameterTypeSafety(t *testing.T) {
 
 		testCases := []struct {
 			name      string
-			value     interface{}
+			value     any
 			expected  float64
 			shouldErr bool
 		}{
@@ -807,7 +807,7 @@ func TestMathController_ParameterTypeSafety(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				args := map[string]interface{}{
+				args := map[string]any{
 					"test_param": tc.value,
 				}
 

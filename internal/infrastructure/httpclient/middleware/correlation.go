@@ -10,7 +10,7 @@ import (
 // CorrelationMiddlewareDeps contains dependencies for the correlation middleware.
 type CorrelationMiddlewareDeps struct{}
 
-// CorrelationMiddleware wraps an http.RoundTripper to add correlation ID to outbound requests.
+// CorrelationMiddleware wraps an [http.RoundTripper] to add correlation ID to outbound requests.
 type CorrelationMiddleware struct {
 	transport http.RoundTripper
 }
@@ -22,7 +22,7 @@ func NewCorrelationMiddleware(transport http.RoundTripper) http.RoundTripper {
 	}
 }
 
-// RoundTrip implements http.RoundTripper interface.
+// RoundTrip implements the [http.RoundTripper] interface.
 // Adds correlation ID header to the request.
 func (c *CorrelationMiddleware) RoundTrip(req *http.Request) (*http.Response, error) {
 	logAttrs := telemetry.GetLogAttributesFromContext(req.Context())

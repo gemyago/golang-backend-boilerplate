@@ -83,8 +83,7 @@ func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error {
 	var wg sync.WaitGroup
 
 	for _, hook := range h.hooks {
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			hookName := hook.name
 			h.logger.InfoContext(ctx, fmt.Sprintf("Shutting down %s", hookName))
 			if err := hook.shutdownFn(ctx); err != nil {
@@ -92,8 +91,7 @@ func (h *ShutdownHooks) PerformShutdown(ctx context.Context) error {
 			} else {
 				resultsChan <- nil
 			}
-			wg.Done()
-		}()
+		})
 	}
 
 	done := make(chan error)
